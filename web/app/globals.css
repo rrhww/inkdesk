@@ -1,0 +1,87 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  @apply bg-ink-bg text-ink-text font-label;
+  background:
+    radial-gradient(circle at top left, rgba(107, 216, 203, 0.08), transparent 26%),
+    linear-gradient(180deg, #fbfcfc 0%, #f4f6f6 100%);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+a,
+button,
+input,
+textarea {
+  @apply transition-all duration-200;
+}
+
+.material-symbols-outlined {
+  font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+  vertical-align: middle;
+}
+
+.paper-card {
+  @apply rounded-[28px] bg-white shadow-paper;
+}
+
+.public-eyebrow {
+  @apply text-[11px] uppercase tracking-[0.22em] text-ink-muted;
+}
+
+.public-panel {
+  @apply rounded-[30px] border border-black/5 bg-white/70;
+  box-shadow: 0 16px 36px rgba(25, 28, 29, 0.04);
+}
+
+.public-list-item {
+  @apply rounded-[26px] border border-black/5 bg-white/65 px-6 py-6;
+  box-shadow: 0 10px 24px rgba(25, 28, 29, 0.03);
+}
+
+.public-list-item:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 18px 34px rgba(25, 28, 29, 0.05);
+}
+
+.research-card {
+  @apply rounded-[28px] border border-black/5 bg-white px-6 py-6;
+  background-color: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 12px 30px rgba(25, 28, 29, 0.035);
+}
+
+.research-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 18px 34px rgba(25, 28, 29, 0.05);
+}
+
+.public-soft-rule {
+  @apply border-black/5;
+}
+
+.hide-scrollbar {
+  scrollbar-width: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.reading-prose p {
+  @apply text-[1.1rem] leading-[1.9] text-[#313738];
+}
+
+.reading-prose blockquote {
+  @apply border-l-4 border-ink-primary bg-ink-low px-6 py-5 text-[1.45rem] italic text-ink-text;
+}

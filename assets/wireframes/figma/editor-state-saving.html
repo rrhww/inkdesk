@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html class="light" lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+  <title>Inkdesk 编辑页 - 保存中</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+  <script>tailwind.config={theme:{extend:{colors:{surface:"#f8f9fa","surface-low":"#f3f4f5","surface-card":"#ffffff",text:"#191c1d",muted:"#687573",primary:"#00685f","primary-soft":"#e8f6f4"},fontFamily:{headline:["Manrope","PingFang SC","sans-serif"],body:["Newsreader","Source Han Serif SC","serif"],label:["Inter","PingFang SC","sans-serif"]},boxShadow:{paper:"0 18px 40px rgba(25,28,29,.06)"}}}};</script>
+  <style>.material-symbols-outlined{font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24;vertical-align:middle}body{font-family:'Inter','PingFang SC',sans-serif;background:linear-gradient(180deg,#fbfcfc 0%,#f4f6f6 100%)}.ui{font-family:'Manrope','PingFang SC',sans-serif}.reading{font-family:'Newsreader','Source Han Serif SC',serif}</style>
+  <link href="./inkdesk-unified.css" rel="stylesheet" />
+</head>
+<body class="min-h-screen bg-surface text-text">
+  <div class="grid min-h-screen xl:grid-cols-[220px_minmax(0,1fr)_280px]">
+    <aside class="bg-surface-low px-6 py-8"></aside>
+    <main class="bg-surface-card px-8 py-10 md:px-12 lg:px-16">
+      <div class="flex items-center gap-3 text-[11px] uppercase tracking-[.2em] text-muted">
+        <span class="flex items-center gap-2 rounded-full bg-primary-soft px-3 py-1 ui font-semibold text-primary"><span class="material-symbols-outlined animate-pulse text-sm">cloud_upload</span>保存中</span>
+        <span>内容已局部同步</span>
+      </div>
+      <h1 class="ui mt-8 text-5xl font-extrabold leading-[1.04] tracking-tight md:text-6xl">重塑留白的哲学：从纸张到像素的跨越</h1>
+      <div class="reading mt-10 max-w-3xl space-y-8 text-[1.35rem] leading-[1.85] text-[#313738]">
+        <p>保存中的状态不应该冻结页面，也不应该弹出刺耳的提示框。最好的反馈是仍旧允许用户继续写作，同时让顶部状态保持可感知但不抢戏。</p>
+        <p>因此，这里只保留一条轻量状态带和稳定的版式，不新增浮层，也不改变主画布结构。</p>
+      </div>
+    </main>
+    <aside class="bg-surface-low px-6 py-8"><div class="rounded-sm bg-white px-5 py-5 text-sm leading-6 text-muted shadow-paper">最近一次修改已进入队列。写作可以继续，保存完成后会自动恢复“已保存”。</div></aside>
+  </div>
+</body>
+</html>

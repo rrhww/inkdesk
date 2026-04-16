@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html class="light" lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+  <title>Inkdesk 编辑页 - 未发布</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <script>tailwind.config={theme:{extend:{colors:{surface:"#f8f9fa","surface-low":"#f3f4f5","surface-card":"#ffffff",text:"#191c1d",muted:"#687573",primary:"#00685f",tertiary:"#924628"},fontFamily:{headline:["Manrope","PingFang SC","sans-serif"],body:["Newsreader","Source Han Serif SC","serif"],label:["Inter","PingFang SC","sans-serif"]},boxShadow:{paper:"0 18px 40px rgba(25,28,29,.06)"}}}};</script>
+  <style>body{font-family:'Inter','PingFang SC',sans-serif;background:linear-gradient(180deg,#fbfcfc 0%,#f4f6f6 100%)}.ui{font-family:'Manrope','PingFang SC',sans-serif}.reading{font-family:'Newsreader','Source Han Serif SC',serif}</style>
+  <link href="./inkdesk-unified.css" rel="stylesheet" />
+</head>
+<body class="min-h-screen bg-surface text-text">
+  <div class="grid min-h-screen xl:grid-cols-[220px_minmax(0,1fr)_280px]">
+    <aside class="bg-surface-low px-6 py-8"><div class="ui text-[10px] uppercase tracking-[.22em] text-muted">Workspace</div></aside>
+    <main class="bg-surface-card px-8 py-10 md:px-12 lg:px-16">
+      <div class="flex flex-wrap items-center gap-3 text-[11px] uppercase tracking-[.2em] text-muted"><span class="rounded-full bg-[#fff1ea] px-3 py-1 ui font-semibold text-tertiary">未发布</span><span>上次编辑：2 小时前</span></div>
+      <h1 class="ui mt-8 text-5xl font-extrabold leading-[1.04] tracking-tight md:text-6xl">沉默的几何：如何在极简中寻找叙事感</h1>
+      <div class="reading mt-10 max-w-3xl space-y-8 text-[1.35rem] leading-[1.85] text-[#313738]">
+        <p>草稿状态不该显得“没完成”，而应该显得“正在酝酿”。因此它需要完整的写作纸面，只在右侧轻声提醒尚未发布。</p>
+        <blockquote class="border-l-4 border-primary bg-surface-low px-6 py-5 text-[1.55rem] italic text-text">设计不是为了增加什么，而是当没有任何东西可以被减去时，它才达到了完美。</blockquote>
+        <p>在这个状态中，编辑器依旧应保持完整的章节节奏、引文样式和插图区域，避免因为“草稿”而回退成粗糙的后台表单。</p>
+      </div>
+    </main>
+    <aside class="bg-surface-low px-6 py-8">
+      <div class="rounded-sm bg-white px-5 py-5 shadow-paper">
+        <div class="ui text-xs uppercase tracking-[.18em] text-muted">发布准备</div>
+        <ul class="mt-4 space-y-3 text-sm text-muted"><li>摘要待补充</li><li>标签待确认</li><li>公开页说明待填写</li></ul>
+      </div>
+      <button class="mt-5 w-full rounded-sm bg-primary px-4 py-3 ui text-sm font-semibold text-white">发布</button>
+    </aside>
+  </div>
+</body>
+</html>

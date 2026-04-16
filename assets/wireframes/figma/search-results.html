@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+  <title>Inkdesk - 搜索结果</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=Inter:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "on-tertiary": "#ffffff",
+            "secondary-container": "#d6e0f4",
+            "surface-container-highest": "#e1e3e4",
+            "on-secondary-fixed-variant": "#3d4757",
+            "on-secondary": "#ffffff",
+            "surface": "#f8f9fa",
+            "primary-fixed-dim": "#6bd8cb",
+            "tertiary-container": "#b05e3d",
+            "tertiary-fixed": "#ffdbce",
+            "outline": "#6d7a77",
+            "on-error": "#ffffff",
+            "error-container": "#ffdad6",
+            "inverse-surface": "#2e3132",
+            "inverse-primary": "#6bd8cb",
+            "secondary-fixed-dim": "#bdc7db",
+            "surface-container-low": "#f3f4f5",
+            "on-surface-variant": "#3d4947",
+            "secondary-fixed": "#d9e3f7",
+            "on-primary-container": "#f4fffc",
+            "surface-variant": "#e1e3e4",
+            "outline-variant": "#bcc9c6",
+            "inverse-on-surface": "#f0f1f2",
+            "on-surface": "#191c1d",
+            "surface-tint": "#006a61",
+            "on-tertiary-container": "#fffbff",
+            "on-primary-fixed": "#00201d",
+            "primary": "#00685f",
+            "surface-bright": "#f8f9fa",
+            "secondary": "#555f70",
+            "surface-container-lowest": "#ffffff",
+            "primary-fixed": "#89f5e7",
+            "on-primary-fixed-variant": "#005049",
+            "on-primary": "#ffffff",
+            "on-tertiary-fixed": "#370e00",
+            "on-secondary-container": "#596374",
+            "tertiary": "#924628",
+            "surface-dim": "#d9dadb",
+            "on-tertiary-fixed-variant": "#773215",
+            "error": "#ba1a1a",
+            "on-secondary-fixed": "#121c2a",
+            "background": "#f8f9fa",
+            "surface-container-high": "#e7e8e9",
+            "on-background": "#191c1d",
+            "tertiary-fixed-dim": "#ffb59a",
+            "surface-container": "#edeeef",
+            "on-error-container": "#93000a",
+            "primary-container": "#008378"
+          },
+          fontFamily: {
+            "headline": ["Manrope", "PingFang SC", "sans-serif"],
+            "body": ["Newsreader", "Source Han Serif SC", "serif"],
+            "label": ["Inter", "PingFang SC", "sans-serif"]
+          },
+          borderRadius: {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    body {
+      background-color: #f8f9fa;
+      -webkit-font-smoothing: antialiased;
+    }
+    .search-highlight {
+      text-decoration: underline;
+      text-decoration-color: #00685f;
+      text-underline-offset: 4px;
+      font-weight: 600;
+      color: #00685f;
+    }
+  </style>
+  <link href="./inkdesk-unified.css" rel="stylesheet" />
+</head>
+<body class="font-label text-on-surface selection:bg-primary-fixed selection:text-on-primary-fixed">
+  <aside class="fixed left-0 top-0 z-50 flex h-screen w-64 flex-col bg-slate-50 p-4 font-headline text-sm">
+    <div class="mb-8 px-2">
+      <h1 class="text-lg font-semibold text-slate-900">Inkdesk</h1>
+      <p class="mt-1 text-xs text-slate-500">个人策展空间</p>
+    </div>
+    <button class="mb-6 flex items-center justify-center gap-2 rounded-sm bg-primary px-4 py-2.5 font-medium text-on-primary transition-opacity hover:opacity-90">
+      <span class="material-symbols-outlined text-sm">add</span>
+      新建笔记
+    </button>
+    <nav class="flex-1 space-y-1">
+      <a class="flex items-center gap-3 rounded-sm px-3 py-2 text-slate-600 transition-colors hover:bg-slate-200/50 hover:text-teal-600" href="#">
+        <span class="material-symbols-outlined">description</span>
+        所有笔记
+      </a>
+      <a class="flex items-center gap-3 rounded-sm bg-white px-3 py-2 font-medium text-primary" href="#">
+        <span class="material-symbols-outlined">search</span>
+        搜索
+      </a>
+      <a class="flex items-center gap-3 rounded-sm px-3 py-2 text-slate-600 transition-colors hover:bg-slate-200/50 hover:text-teal-600" href="#">
+        <span class="material-symbols-outlined">history</span>
+        最近编辑
+      </a>
+      <a class="flex items-center gap-3 rounded-sm px-3 py-2 text-slate-600 transition-colors hover:bg-slate-200/50 hover:text-teal-600" href="#">
+        <span class="material-symbols-outlined">star</span>
+        收藏夹
+      </a>
+      <a class="flex items-center gap-3 rounded-sm px-3 py-2 text-slate-600 transition-colors hover:bg-slate-200/50 hover:text-teal-600" href="#">
+        <span class="material-symbols-outlined">label</span>
+        标签云
+      </a>
+    </nav>
+    <div class="mt-auto border-t border-outline-variant/10 pt-4">
+      <div class="flex items-center gap-3 px-3 py-2 text-slate-500">
+        <span class="material-symbols-outlined">account_circle</span>
+        <span class="truncate text-xs">Curator Studio</span>
+      </div>
+    </div>
+  </aside>
+
+  <main class="ml-64 flex min-h-screen flex-col">
+    <header class="sticky top-0 z-40 flex w-full items-center justify-between border-b border-black/5 bg-white px-8 py-4 font-headline tracking-tight">
+      <div class="flex items-center gap-4">
+        <div class="text-xl font-bold uppercase tracking-widest text-teal-800">Inkdesk</div>
+        <div class="text-xs uppercase tracking-[0.18em] text-slate-400">检索结果</div>
+      </div>
+      <div class="flex items-center gap-4">
+        <button class="rounded-full p-2 text-slate-500 transition-colors duration-200 hover:bg-slate-50">
+          <span class="material-symbols-outlined">settings</span>
+        </button>
+        <button class="rounded-full p-2 text-slate-500 transition-colors duration-200 hover:bg-slate-50">
+          <span class="material-symbols-outlined">account_circle</span>
+        </button>
+      </div>
+    </header>
+
+    <div class="mx-auto flex-1 w-full max-w-5xl px-8 py-14 lg:py-16">
+      <section class="mb-14 rounded-sm bg-surface-container-low p-6">
+        <div class="relative w-full">
+          <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-6">
+            <span class="material-symbols-outlined text-outline">search</span>
+          </div>
+          <input class="block w-full border-none border-b-2 border-outline-variant bg-white py-5 pl-16 pr-6 font-headline text-[1.65rem] font-medium transition-all focus:border-primary focus:ring-0" placeholder="输入关键词搜索..." type="text" value="数字化时代" />
+        </div>
+        <div class="mt-4 flex items-center gap-4 text-xs uppercase tracking-[0.18em] text-outline">
+          <span>找到 4 条匹配内容</span>
+          <span class="h-px flex-1 bg-outline-variant/20"></span>
+          <span>标题 / 正文 / 标签</span>
+        </div>
+      </section>
+
+      <section class="space-y-10">
+        <article class="group relative flex flex-col items-start gap-4 border-b border-outline-variant/10 pb-10">
+          <div class="flex w-full items-center gap-3">
+            <span class="rounded-sm bg-primary-container px-2 py-0.5 text-[10px] font-bold uppercase tracking-tight text-on-primary-container">标题命中</span>
+            <span class="text-xs text-outline">2023年11月14日</span>
+          </div>
+          <div class="space-y-3">
+            <h2 class="cursor-pointer font-headline text-3xl font-bold leading-tight text-on-surface transition-colors group-hover:text-primary">
+              <span class="search-highlight">数字化时代</span>下的存在主义危机
+            </h2>
+            <div class="flex flex-wrap gap-2">
+              <span class="cursor-pointer text-xs font-medium text-primary hover:underline">#哲学</span>
+              <span class="cursor-pointer text-xs font-medium text-primary hover:underline">#写作</span>
+              <span class="cursor-pointer text-xs font-medium text-primary hover:underline">#现代性</span>
+            </div>
+            <p class="max-w-3xl font-body text-lg leading-relaxed text-on-surface-variant">
+              当我们沉浸在<span class="search-highlight">数字化时代</span>的洪流中，个体的独特性往往被算法所消解。策展不再仅仅是信息的筛选，而是对自我意识的重新锚定。在这个透明的社会里，孤独变成了一种稀缺的奢侈品...
+            </p>
+          </div>
+        </article>
+
+        <article class="group relative flex flex-col items-start gap-4 border-b border-outline-variant/10 pb-10">
+          <div class="flex w-full items-center gap-3">
+            <span class="rounded-sm bg-surface-container-high px-2 py-0.5 text-[10px] font-bold uppercase tracking-tight text-on-surface-variant">正文命中</span>
+            <span class="text-xs text-outline">2023年10月28日</span>
+          </div>
+          <div class="space-y-3">
+            <h2 class="cursor-pointer font-headline text-3xl font-bold leading-tight text-on-surface transition-colors group-hover:text-primary">
+              技术中立性辩论：从海德格尔到当代
+            </h2>
+            <div class="flex flex-wrap gap-2">
+              <span class="cursor-pointer text-xs font-medium text-primary hover:underline">#技术评论</span>
+              <span class="cursor-pointer text-xs font-medium text-primary hover:underline">#读书笔记</span>
+            </div>
+            <p class="max-w-3xl font-body text-lg leading-relaxed text-on-surface-variant">
+              ...在探讨<span class="search-highlight">数字化时代</span>的工具理性能否保持中立时，我们必须考虑到媒介环境对感知的重塑。正如文中提到的，技术不仅是手段，更是一种揭示世界的方式。
+            </p>
+          </div>
+        </article>
+
+        <article class="group relative flex flex-col items-start gap-4 border-b border-outline-variant/10 pb-10">
+          <div class="flex w-full items-center gap-3">
+            <span class="rounded-sm bg-surface-container-high px-2 py-0.5 text-[10px] font-bold uppercase tracking-tight text-on-surface-variant">正文命中</span>
+            <span class="text-xs text-outline">2023年09月15日</span>
+          </div>
+          <div class="space-y-3">
+            <h2 class="cursor-pointer font-headline text-3xl font-bold leading-tight text-on-surface transition-colors group-hover:text-primary">
+              碎片化阅读的策展策略
+            </h2>
+            <div class="flex flex-wrap gap-2">
+              <span class="cursor-pointer text-xs font-medium text-primary hover:underline">#效率管理</span>
+              <span class="cursor-pointer text-xs font-medium text-primary hover:underline">#数字化</span>
+            </div>
+            <p class="max-w-3xl font-body text-lg leading-relaxed text-on-surface-variant">
+              要在<span class="search-highlight">数字化时代</span>保持深度思考的能力，必须建立一套严谨的笔记过滤机制。通过将散落的信息碎片重新编织成知识网络，我们才能抵御信息熵增的侵蚀。
+            </p>
+          </div>
+        </article>
+
+        <article class="group relative flex flex-col items-start gap-4 pb-2">
+          <div class="flex w-full items-center gap-3">
+            <span class="rounded-sm bg-surface-container-high px-2 py-0.5 text-[10px] font-bold uppercase tracking-tight text-on-surface-variant">正文命中</span>
+            <span class="text-xs text-outline">2023年08月20日</span>
+          </div>
+          <div class="space-y-3">
+            <h2 class="cursor-pointer font-headline text-3xl font-bold leading-tight text-on-surface transition-colors group-hover:text-primary">
+              极简主义设计与屏幕美学
+            </h2>
+            <div class="flex flex-wrap gap-2">
+              <span class="cursor-pointer text-xs font-medium text-primary hover:underline">#美学</span>
+              <span class="cursor-pointer text-xs font-medium text-primary hover:underline">#设计</span>
+            </div>
+            <p class="max-w-3xl font-body text-lg leading-relaxed text-on-surface-variant">
+              设计在进入<span class="search-highlight">数字化时代</span>后，逐渐从物理形态的雕琢转向了对交互意图的引导。极简主义不再是单纯的视觉风格，而是一种减轻认知负荷的必要手段。
+            </p>
+          </div>
+        </article>
+      </section>
+
+      <footer class="mt-20 flex items-center justify-between border-t border-outline-variant/10 pt-10 text-xs uppercase tracking-widest text-outline">
+        <div class="flex items-center gap-6">
+          <button class="transition-colors hover:text-primary">第一页</button>
+          <button class="font-bold text-on-surface underline decoration-2 underline-offset-4">1</button>
+          <button class="transition-colors hover:text-primary">最后一页</button>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-sm">search_insights</span>
+          已按标题与正文相关度排序
+        </div>
+      </footer>
+    </div>
+  </main>
+</body>
+</html>

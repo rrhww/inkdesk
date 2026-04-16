@@ -1,0 +1,43 @@
+# OS
+Thumbs.db
+.DS_Store
+
+# Editors
+.idea/
+.vscode/
+
+# Node
+node_modules/
+.next/
+dist/
+coverage/
+
+# Java
+target/
+.mvn/wrapper/maven-wrapper.jar
+
+# Env
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+server-start-*.out
+server-start-*.err
+web-start-*.out
+web-start-*.err
+web-dev-*.out
+web-dev-*.err
+
+# Local tooling
+.superpowers/
+.worktrees/
+publish-flow-cookies.txt
+
+# Generated assets
+assets/wireframes/*.tmp
+
+# Test and build caches
+test-results/
+*.tsbuildinfo

@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&amp;family=Inter:wght@400;500&amp;display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet" />
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "secondary-fixed-dim": "#bdc7db",
+            "on-primary": "#ffffff",
+            "outline-variant": "#bcc9c6",
+            "tertiary-fixed": "#ffdbce",
+            "on-background": "#191c1d",
+            "background": "#f8f9fa",
+            "surface": "#f8f9fa",
+            "secondary-container": "#d6e0f4",
+            "tertiary": "#924628",
+            "error-container": "#ffdad6",
+            "surface-dim": "#d9dadb",
+            "surface-container-high": "#e7e8e9",
+            "surface-container": "#edeeef",
+            "secondary-fixed": "#d9e3f7",
+            "primary-fixed": "#89f5e7",
+            "on-secondary-container": "#596374",
+            "inverse-on-surface": "#f0f1f2",
+            "tertiary-fixed-dim": "#ffb59a",
+            "on-secondary-fixed": "#121c2a",
+            "error": "#ba1a1a",
+            "surface-container-low": "#f3f4f5",
+            "primary-fixed-dim": "#6bd8cb",
+            "on-tertiary-container": "#fffbff",
+            "on-tertiary": "#ffffff",
+            "secondary": "#555f70",
+            "inverse-primary": "#6bd8cb",
+            "on-primary-container": "#f4fffc",
+            "on-error-container": "#93000a",
+            "surface-tint": "#006a61",
+            "primary": "#00685f",
+            "on-secondary-fixed-variant": "#3d4757",
+            "on-tertiary-fixed": "#370e00",
+            "on-primary-fixed-variant": "#005049",
+            "surface-bright": "#f8f9fa",
+            "primary-container": "#008378",
+            "on-surface-variant": "#3d4947",
+            "tertiary-container": "#b05e3d",
+            "on-error": "#ffffff",
+            "outline": "#6d7a77",
+            "surface-container-lowest": "#ffffff",
+            "on-secondary": "#ffffff",
+            "inverse-surface": "#2e3132",
+            "on-tertiary-fixed-variant": "#773215",
+            "on-surface": "#191c1d",
+            "on-primary-fixed": "#00201d",
+            "surface-variant": "#e1e3e4",
+            "surface-container-highest": "#e1e3e4"
+          },
+          fontFamily: {
+            "headline": ["Manrope", "PingFang SC", "sans-serif"],
+            "body": ["Newsreader", "Source Han Serif SC", "serif"],
+            "label": ["Inter", "sans-serif"]
+          },
+          borderRadius: {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      vertical-align: middle;
+    }
+    body {
+      font-feature-settings: "kern" 1, "onum" 1, "pnum" 1;
+      -webkit-font-smoothing: antialiased;
+    }
+    .prose h1, .prose h2, .prose h3 { font-family: 'Manrope', sans-serif; }
+    .prose p, .prose li, .prose blockquote { font-family: 'Newsreader', serif; }
+    .preview-16-9 {
+      aspect-ratio: 16 / 9;
+      width: 100%;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+  </style>
+  <link href="./inkdesk-unified.css" rel="stylesheet" />
+</head>
+<body class="bg-surface text-on-surface selection:bg-primary/10">
+  <div class="preview-16-9 min-h-screen">
+    <nav class="sticky top-0 z-50 w-full flex items-center justify-between px-12 py-6 mx-auto bg-white dark:bg-zinc-950 border-b border-zinc-100 dark:border-zinc-800">
+      <div class="flex items-center gap-12">
+        <a class="text-2xl font-black tracking-tighter text-zinc-900 dark:text-zinc-50" href="/">Inkdesk</a>
+        <div class="hidden md:flex gap-8 items-center">
+          <a class="text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors duration-200 tracking-widest uppercase text-[12px] font-semibold" href="#">Home</a>
+          <a class="text-teal-700 dark:text-teal-400 font-semibold border-b-2 border-teal-700 dark:border-teal-400 pb-1 tracking-widest uppercase text-[12px]" href="#">归档</a>
+          <a class="text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors duration-200 tracking-widest uppercase text-[12px] font-semibold" href="#">About</a>
+        </div>
+      </div>
+      <div class="flex items-center gap-4">
+        <span class="material-symbols-outlined text-zinc-900 dark:text-zinc-50 cursor-pointer p-2 hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors duration-200">login</span>
+      </div>
+    </nav>
+
+    <main class="flex-grow grid grid-cols-12 gap-6 xl:gap-8 px-8 xl:px-10 py-14 xl:py-18 w-full max-w-[1680px] mx-auto">
+      <aside class="col-span-1 hidden xl:block sticky top-32 self-start">
+        <a class="group flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors duration-200 mb-16" href="#">
+          <span class="material-symbols-outlined text-[20px]">arrow_back</span>
+          <span class="font-label text-xs uppercase tracking-[0.18em] font-semibold">Back to list</span>
+        </a>
+        <div class="space-y-6">
+          <h4 class="font-headline text-[9px] uppercase tracking-[0.24em] text-outline font-bold mb-6">Table of Contents</h4>
+          <ul class="space-y-4 border-l border-outline-variant/20 ml-1">
+            <li class="pl-4 border-l-2 border-primary -ml-[1px]">
+              <a class="font-label text-[11px] leading-5 text-primary font-medium block line-clamp-2" href="#intro">设计美学的深度：从排版到交互</a>
+            </li>
+            <li class="pl-4 border-l-2 border-transparent -ml-[1px]">
+              <a class="font-label text-[11px] leading-5 text-on-surface-variant hover:text-on-surface transition-colors block" href="#section-1">第一章：数字策展人的角色</a>
+            </li>
+            <li class="pl-4 border-l-2 border-transparent -ml-[1px]">
+              <a class="font-label text-[11px] leading-5 text-on-surface-variant hover:text-on-surface transition-colors block" href="#section-2">第二章：文字作为视觉锚点</a>
+            </li>
+            <li class="pl-4 border-l-2 border-transparent -ml-[1px]">
+              <a class="font-label text-[11px] leading-5 text-on-surface-variant hover:text-on-surface transition-colors block" href="#section-3">第三章：代码排版的诗意</a>
+            </li>
+            <li class="pl-4 border-l-2 border-transparent -ml-[1px]">
+              <a class="font-label text-[11px] leading-5 text-on-surface-variant hover:text-on-surface transition-colors block" href="#conclusion">结语：留白的哲学</a>
+            </li>
+          </ul>
+        </div>
+      </aside>
+
+      <article class="col-span-12 xl:col-span-10 w-full max-w-[960px] mx-auto">
+        <header class="mb-20">
+          <div class="flex items-center gap-4 mb-8">
+            <span class="font-label text-[10px] uppercase tracking-widest bg-surface-container-high px-2 py-1 text-on-surface-variant font-bold">Design philosophy</span>
+            <span class="font-label text-[10px] uppercase tracking-widest text-outline font-medium">2024-03-20</span>
+          </div>
+          <h1 class="font-headline text-[44px] xl:text-5xl font-extrabold text-on-surface leading-[1.12] tracking-tight mb-8" id="intro">
+            静谧笔谈：在信息过载时代重塑深度阅读的策展艺术
+          </h1>
+          <div class="flex items-center gap-8 text-on-surface-variant border-y border-outline-variant/10 py-6">
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-[18px]">schedule</span>
+              <span class="font-label text-xs tracking-tight">12 min read</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-[18px]">edit_note</span>
+              <span class="font-label text-xs tracking-tight">2,450 Words</span>
+            </div>
+          </div>
+        </header>
+
+        <div class="prose max-w-none text-on-surface-variant">
+          <p class="text-[22px] leading-[1.8] font-body mb-12 text-on-surface">
+            在当下的数字环境中，我们的视线被各种弹窗、自动播放的视频和闪烁的通知所割裂。深度阅读（Deep Reading）不再仅仅是一种获取知识的方式，它正逐渐演变成一种奢侈的、需要被“策展”的体验。作为 Inkdesk 的设计核心，我们致力于构建一个“数字避难所”，让文字重新回归其权力的中心。
+          </p>
+
+          <h2 class="text-3xl font-bold text-on-surface mt-20 mb-8 tracking-tight" id="section-1">第一章：数字策展人的角色</h2>
+          <p class="text-lg leading-[1.8] font-body mb-10">
+            我们不追求花哨的装饰，而是追求“有意的留白”与“排版的绝对权威”。这意味着在每一行文字、每一个边距的设计中，都要体现出对读者专注力的尊重。数字策展人不仅仅是展示内容，更是通过剔除干扰来引导读者的思绪。
+          </p>
+
+          <blockquote class="my-16 pl-10 border-l-4 border-primary bg-surface-container-low py-10 pr-10">
+            <p class="text-2xl italic font-body text-on-surface leading-relaxed">
+              “设计不是为了填满空间，而是为了在空间中创造呼吸。好的排版应该是透明的，它让思想直接流向读者的灵魂，而不会被纸张（或屏幕）的质感所阻断。”
+            </p>
+            <cite class="block mt-6 font-label text-xs uppercase tracking-widest text-outline">— Inkdesk 视觉哲学手册</cite>
+          </blockquote>
+
+          <h2 class="text-3xl font-bold text-on-surface mt-20 mb-8 tracking-tight" id="section-2">第二章：文字作为视觉锚点</h2>
+          <p class="text-lg leading-[1.8] font-body mb-10">
+            在本系统中，我们通过 Newsreader 与 Manrope 的共生来实现层级分明。Newsreader 的衬线体特征在长文中能有效降低视觉疲劳，而 Manrope 的非对称对齐则为界面注入了现代感。
+          </p>
+
+          <ul class="space-y-6 mb-12 list-none">
+            <li class="flex gap-4">
+              <span class="text-primary font-bold">01.</span>
+              <span class="text-lg leading-[1.7] font-body">绝对的视觉层级：利用巨大的 Display 字体建立权威感。</span>
+            </li>
+            <li class="flex gap-4">
+              <span class="text-primary font-bold">02.</span>
+              <span class="text-lg leading-[1.7] font-body">动态的克制：所有的转场都应像翻阅高档纸张般丝滑。</span>
+            </li>
+            <li class="flex gap-4">
+              <span class="text-primary font-bold">03.</span>
+              <span class="text-lg leading-[1.7] font-body">色调分层：拒绝投影，使用背景色的微妙切换来界定空间。</span>
+            </li>
+          </ul>
+
+          <figure class="my-20">
+            <div class="bg-surface-container-high w-full aspect-[16/9] overflow-hidden">
+              <img alt="Desktop with books and coffee" class="w-full h-full object-cover mix-blend-multiply opacity-80" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDaYDRl3dSjsPbu1XPIB730QLzDPPfucto1rAAFFlAcpBTxP71DPQc0YD3a8FpmXbTA6sirgCnv-h3i8EN6kIiXz1rLjrMvOKAsT2zqfwLIWzmwRPFHOhfbd1CxlxeB9HUVjmxsFVSEpPRjGi9a4PNxNqqRyMaNPBOWcLj5LmX16zr08zw6Fg5bEV6KzQS15-NDJZb0WwU7vIK8xwz1St1OMqh8ZyQx4BTLlXeQThA37awnexqr7z6MLE8MmuDLyVGv9Fuo4dVhK1tH" />
+            </div>
+            <figcaption class="mt-6 text-center font-label text-xs text-outline tracking-wider italic">
+              图 1.1：物理阅读空间与数字阅读界面的通感连接
+            </figcaption>
+          </figure>
+
+          <h2 class="text-3xl font-bold text-on-surface mt-20 mb-8 tracking-tight" id="section-3">第三章：代码排版的诗意</h2>
+          <p class="text-lg leading-[1.8] font-body mb-10">
+            即便是技术文档，也需要审美的关怀。我们将代码块视为文中的“插图”，通过高对比度的深色底色和经过挑选的等宽字体，使其在视觉上既突出又和谐。
+          </p>
+
+          <div class="my-12 bg-on-background rounded-lg p-8 overflow-x-auto shadow-sm">
+            <pre class="text-sm font-mono text-secondary-fixed-dim leading-relaxed"><code><span class="text-primary-fixed">function</span> <span class="text-on-primary-container">curateContent</span>(input) {
+  <span class="text-outline">/* 拒绝平庸的分割 */</span>
+  <span class="text-primary-fixed">const</span> philosophy = <span class="text-tertiary-fixed-dim">"Typography as visual power"</span>;
+
+  <span class="text-primary-fixed">return</span> input.map(item =&gt; ({
+    ...item,
+    style: <span class="text-tertiary-fixed-dim">"minimalist"</span>,
+    spacing: <span class="text-primary-fixed">7</span> <span class="text-outline">// rem</span>
+  }));
+}</code></pre>
+          </div>
+
+          <h3 class="text-xl font-bold text-on-surface mt-16 mb-6">子章节：无边框的逻辑</h3>
+          <p class="text-lg leading-[1.8] font-body mb-16">
+            正如你所见，整个页面几乎没有使用 1px 的线条。我们通过 <code>surface-container-low</code> 与 <code>surface-container-lowest</code> 的对比来界定区块。这种“幽灵边界”让界面看起来更加开阔且富有整体感。
+          </p>
+
+          <h2 class="text-3xl font-bold text-on-surface mt-20 mb-8 tracking-tight" id="conclusion">结语：留白的哲学</h2>
+          <p class="text-lg leading-[1.8] font-body mb-20">
+            最后，请记住：每一像素的克制，都是对读者专注力的尊重。Inkdesk 不仅仅是一个发布平台，它是一个关于如何思考、如何阅读、如何沉淀的声明。在这个喧嚣的时代，我们邀请你一同进入这段静谧的笔谈。
+          </p>
+        </div>
+
+        <footer class="mt-24 pt-16 border-t border-outline-variant/20 mb-20">
+          <div class="grid grid-cols-2 gap-8">
+            <a class="group p-8 bg-surface-container-low hover:bg-surface-container transition-colors duration-300" href="#">
+              <span class="font-label text-[10px] uppercase tracking-widest text-outline mb-6 block">Previous Article</span>
+              <span class="font-headline text-xl font-bold text-on-surface group-hover:text-primary transition-colors">现代主义排版的历史沿革</span>
+            </a>
+            <a class="group p-8 bg-surface-container-low hover:bg-surface-container transition-colors duration-300 text-right" href="#">
+              <span class="font-label text-[10px] uppercase tracking-widest text-outline mb-6 block">Next Article</span>
+              <span class="font-headline text-xl font-bold text-on-surface group-hover:text-primary transition-colors">极简主义色彩心理学研究</span>
+            </a>
+          </div>
+        </footer>
+      </article>
+
+      <aside class="col-span-1 hidden xl:block sticky top-32 self-start">
+        <div class="space-y-16">
+          <div>
+            <h4 class="font-headline text-[9px] uppercase tracking-[0.24em] text-outline font-bold mb-5">Reading Info</h4>
+            <div class="space-y-4 mb-6">
+              <div class="text-on-surface-variant">
+                <div class="font-label text-[10px] uppercase tracking-[0.18em] text-outline mb-1">Read</div>
+                <div class="font-label text-sm font-medium">12 min</div>
+              </div>
+              <div class="text-on-surface-variant">
+                <div class="font-label text-[10px] uppercase tracking-[0.18em] text-outline mb-1">Words</div>
+                <div class="font-label text-sm font-medium">2,450</div>
+              </div>
+            </div>
+            <button class="w-12 h-12 flex items-center justify-center bg-white border border-outline-variant/20 hover:border-primary/40 hover:text-primary transition-all duration-300 rounded-sm" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
+              <span class="material-symbols-outlined">north</span>
+            </button>
+          </div>
+        </div>
+      </aside>
+    </main>
+
+    <footer class="w-full flex flex-col items-center justify-center gap-6 text-center px-12 bg-zinc-50 dark:bg-zinc-900 py-16 border-t border-zinc-200 dark:border-zinc-800">
+      <div class="font-bold text-zinc-900 dark:text-zinc-50 tracking-tighter text-2xl">Inkdesk</div>
+      <p class="font-medium text-sm Newsreader text-zinc-500 dark:text-zinc-400">© 2024 Inkdesk. All rights reserved.</p>
+      <div class="flex gap-10">
+        <a class="font-medium text-sm Newsreader text-zinc-500 dark:text-zinc-400 hover:underline decoration-teal-500" href="#">Inkdesk 首页</a>
+        <a class="font-medium text-sm Newsreader text-zinc-500 dark:text-zinc-400 hover:underline decoration-teal-500" href="#">Privacy Policy</a>
+        <a class="font-medium text-sm Newsreader text-zinc-500 dark:text-zinc-400 hover:underline decoration-teal-500" href="#">Terms of Service</a>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>

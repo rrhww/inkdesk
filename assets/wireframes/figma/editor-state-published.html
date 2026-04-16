@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html class="light" lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+  <title>Inkdesk 编辑页 - 已发布</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = { theme: { extend: { colors: { surface:"#f8f9fa","surface-low":"#f3f4f5","surface-card":"#ffffff",text:"#191c1d",muted:"#687573",primary:"#00685f",outline:"#bcc9c6" }, fontFamily:{ headline:["Manrope","PingFang SC","sans-serif"], body:["Newsreader","Source Han Serif SC","serif"], label:["Inter","PingFang SC","sans-serif"] }, boxShadow:{ paper:"0 18px 40px rgba(25,28,29,.06)" } } } };
+  </script>
+  <style>
+    .material-symbols-outlined{font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24;vertical-align:middle}
+    body{font-family:'Inter','PingFang SC',sans-serif;-webkit-font-smoothing:antialiased;background:radial-gradient(circle at top left,rgba(107,216,203,.10),transparent 28%),linear-gradient(180deg,#fbfcfc 0%,#f4f6f6 100%)}
+    .ui{font-family:'Manrope','PingFang SC',sans-serif}
+    .reading{font-family:'Newsreader','Source Han Serif SC',serif}
+  </style>
+  <link href="./inkdesk-unified.css" rel="stylesheet" />
+</head>
+<body class="min-h-screen bg-surface text-text">
+  <div class="grid min-h-screen xl:grid-cols-[220px_minmax(0,1fr)_280px]">
+    <aside class="bg-surface-low px-6 py-8">
+      <div class="flex items-center gap-3">
+        <div class="flex h-9 w-9 items-center justify-center rounded-sm bg-primary text-white"><span class="material-symbols-outlined text-sm">edit_note</span></div>
+        <div><div class="ui text-lg font-extrabold text-primary">静谧笔谈</div><div class="ui text-[10px] uppercase tracking-[.22em] text-muted">Digital Curator</div></div>
+      </div>
+      <nav class="mt-10 space-y-2 text-sm">
+        <div class="rounded-sm bg-white px-4 py-3 text-primary shadow-paper">当前文稿</div>
+        <div class="px-4 py-3 text-muted">相关笔记</div>
+        <div class="px-4 py-3 text-muted">引用素材</div>
+      </nav>
+    </aside>
+    <main class="bg-surface-card px-8 py-10 md:px-12 lg:px-16">
+      <div class="flex flex-wrap items-center gap-3 text-[11px] uppercase tracking-[.2em] text-muted">
+        <span>2026.03.23</span><span class="h-1 w-1 rounded-full bg-outline"></span><span>策展主题：艺术与代码</span><span class="h-1 w-1 rounded-full bg-outline"></span><span class="text-primary">已发布并同步</span>
+      </div>
+      <h1 class="ui mt-8 max-w-4xl text-5xl font-extrabold leading-[1.03] tracking-tight md:text-6xl">数字时代的静谧表达：从纸质排版到代码逻辑</h1>
+      <div class="reading mt-10 max-w-3xl space-y-8 text-[1.35rem] leading-[1.85] text-[#313738]">
+        <p>在信息过载的时代，真正稀缺的不是内容，而是让内容被安静阅读的空间。编辑器不该像操作面板，它更像一张被精心摆放在桌面的纸。</p>
+        <blockquote class="border-l-4 border-primary bg-surface-low px-6 py-5 text-[1.55rem] italic text-text">每一像素的克制，都是对读者专注力的尊重。</blockquote>
+        <p>因此，保存状态、发布状态与元信息都应退到文字之后，只在必要时以克制但明确的方式出现。</p>
+      </div>
+    </main>
+    <aside class="bg-surface-low px-6 py-8">
+      <div class="rounded-sm bg-white px-5 py-5">
+        <div class="ui text-xs uppercase tracking-[.18em] text-primary">状态</div>
+        <div class="mt-2 flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-primary"></span><span class="text-sm text-text">已发布</span></div>
+        <p class="mt-4 text-sm leading-6 text-muted">公开页已更新，读者可见版本与当前内容一致。</p>
+      </div>
+      <div class="mt-5 rounded-sm bg-white px-5 py-5 text-sm">
+        <div class="flex justify-between gap-4"><span class="text-muted">字数</span><span>1,248</span></div>
+        <div class="mt-3 flex justify-between gap-4"><span class="text-muted">阅读时长</span><span>6 分钟</span></div>
+        <div class="mt-3 flex justify-between gap-4"><span class="text-muted">更新时间</span><span>17:08</span></div>
+      </div>
+      <div class="mt-5 flex flex-col gap-3">
+        <button class="rounded-sm bg-primary px-4 py-3 ui text-sm font-semibold text-white">更新发布</button>
+        <button class="rounded-sm bg-white px-4 py-3 ui text-sm font-semibold text-text">查看公开页</button>
+      </div>
+    </aside>
+  </div>
+</body>
+</html>

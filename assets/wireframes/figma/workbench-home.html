@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+  <title>Inkdesk - 工作台首页</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=Inter:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "surface-container-high": "#e7e8e9",
+            "tertiary": "#924628",
+            "on-surface": "#191c1d",
+            "secondary-fixed-dim": "#bdc7db",
+            "on-secondary": "#ffffff",
+            "surface-container": "#edeeef",
+            "on-background": "#191c1d",
+            "surface-dim": "#d9dadb",
+            "error": "#ba1a1a",
+            "on-surface-variant": "#3d4947",
+            "surface-container-highest": "#e1e3e4",
+            "outline": "#6d7a77",
+            "primary-fixed-dim": "#6bd8cb",
+            "inverse-primary": "#6bd8cb",
+            "surface-variant": "#e1e3e4",
+            "secondary-fixed": "#d9e3f7",
+            "surface": "#f8f9fa",
+            "inverse-surface": "#2e3132",
+            "outline-variant": "#bcc9c6",
+            "secondary-container": "#d6e0f4",
+            "secondary": "#555f70",
+            "primary-fixed": "#89f5e7",
+            "inverse-on-surface": "#f0f1f2",
+            "tertiary-container": "#b05e3d",
+            "background": "#f8f9fa",
+            "on-primary": "#ffffff",
+            "surface-container-low": "#f3f4f5",
+            "primary": "#00685f",
+            "surface-bright": "#f8f9fa",
+            "surface-tint": "#006a61",
+            "primary-container": "#008378",
+            "surface-container-lowest": "#ffffff"
+          },
+          fontFamily: {
+            "headline": ["Manrope", "PingFang SC", "sans-serif"],
+            "body": ["Newsreader", "Source Han Serif SC", "serif"],
+            "label": ["Inter", "PingFang SC", "sans-serif"]
+          },
+          borderRadius: {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+      font-size: 20px;
+    }
+
+    body {
+      background-color: #f8f9fa;
+      color: #191c1d;
+      -webkit-font-smoothing: antialiased;
+    }
+  </style>
+  <link href="./inkdesk-unified.css" rel="stylesheet" />
+</head>
+<body class="font-label antialiased">
+  <aside class="fixed bottom-0 left-0 top-0 z-50 flex h-screen w-64 flex-col bg-[#f3f4f5]">
+    <div class="mb-8 px-6 pt-4">
+      <div class="mb-1 flex items-center gap-2">
+        <span class="font-headline text-2xl font-extrabold tracking-tighter text-[#00685f]">Inkdesk</span>
+      </div>
+      <p class="font-headline text-[0.75rem] uppercase tracking-widest text-[#444746] opacity-60">工作台</p>
+    </div>
+
+    <nav class="flex-1 px-3">
+      <button class="mb-6 flex w-full items-center justify-center gap-2 rounded-sm bg-primary py-3 font-headline text-sm font-semibold text-on-primary transition-all hover:opacity-90 active:scale-95">
+        <span class="material-symbols-outlined" style="font-variation-settings: 'wght' 500;">add</span>
+        新建笔记
+      </button>
+
+      <a class="my-1 flex items-center gap-3 rounded-sm bg-white px-4 py-2 font-bold text-[#00685f] transition-all duration-300" href="#">
+        <span class="material-symbols-outlined">space_dashboard</span>
+        <span class="font-headline text-[0.9rem]">工作台</span>
+      </a>
+      <a class="my-1 flex items-center gap-3 rounded-sm px-4 py-2 text-[#444746] transition-all duration-300 hover:bg-[#e7e8e9] hover:text-[#00685f]" href="#">
+        <span class="material-symbols-outlined">book_5</span>
+        <span class="font-headline text-[0.9rem]">个人知识库</span>
+      </a>
+      <a class="my-1 flex items-center gap-3 rounded-sm px-4 py-2 text-[#444746] transition-all duration-300 hover:bg-[#e7e8e9] hover:text-[#00685f]" href="#">
+        <span class="material-symbols-outlined">star</span>
+        <span class="font-headline text-[0.9rem]">收藏</span>
+      </a>
+      <a class="my-1 flex items-center gap-3 rounded-sm px-4 py-2 text-[#444746] transition-all duration-300 hover:bg-[#e7e8e9] hover:text-[#00685f]" href="#">
+        <span class="material-symbols-outlined">edit_note</span>
+        <span class="font-headline text-[0.9rem]">草稿</span>
+      </a>
+      <a class="my-1 flex items-center gap-3 rounded-sm px-4 py-2 text-[#444746] transition-all duration-300 hover:bg-[#e7e8e9] hover:text-[#00685f]" href="#">
+        <span class="material-symbols-outlined">publish</span>
+        <span class="font-headline text-[0.9rem]">发布管理</span>
+      </a>
+      <a class="my-1 flex items-center gap-3 rounded-sm px-4 py-2 text-[#444746] transition-all duration-300 hover:bg-[#e7e8e9] hover:text-[#00685f]" href="#">
+        <span class="material-symbols-outlined">archive</span>
+        <span class="font-headline text-[0.9rem]">归档</span>
+      </a>
+    </nav>
+
+    <div class="border-t border-outline-variant/10 p-6">
+      <div class="flex items-center gap-3">
+        <img alt="User Profile" class="h-8 w-8 rounded-full" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDIGiz6EcvzhWCFudx4hSsZ0BWNCCN3exrOpcev54GEiTUuYeKaxdNF8A6H5CXUlJ7KL3YyXaaRpZ2oFk8k8SnquXLrpC18e-c5ThnlrjvTkRRPTa5BHZiokl_c3nmVFZVLwYILIT7vII-igr824n5pEvU_fucvcOgoMFL9hRMWgs-MSlwmR4d5XequuMiuIetywH-u6XErrUs7laU3Xm78MNFDNQV-P8dYQCHyaQDrOQxIg0Ith77PX6iXAScJCFIa7g-zBqtnjtIG" />
+        <div class="overflow-hidden">
+          <p class="font-headline text-sm font-semibold truncate">策展人</p>
+          <p class="font-label text-xs truncate text-outline">个人工作区</p>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="ml-64 flex min-h-screen flex-col">
+    <header class="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-[#e7e8e9] bg-white px-8">
+      <div class="flex max-w-xl flex-1 items-center">
+        <div class="group relative w-full">
+          <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline opacity-60">search</span>
+          <input class="w-full rounded-sm border-none bg-surface-container-low py-1.5 pl-10 pr-4 font-headline text-sm transition-all focus:ring-1 focus:ring-primary/20" placeholder="搜索最近工作、笔记标题或标签..." type="text" />
+        </div>
+      </div>
+
+      <div class="flex items-center gap-6">
+        <div class="flex items-center gap-4 text-outline">
+          <span class="material-symbols-outlined cursor-pointer transition-colors hover:text-primary">cloud_done</span>
+          <span class="material-symbols-outlined cursor-pointer transition-colors hover:text-primary">notifications</span>
+          <span class="material-symbols-outlined cursor-pointer transition-colors hover:text-primary">settings</span>
+        </div>
+        <div class="mx-2 h-6 w-[1px] bg-outline-variant/30"></div>
+        <div class="group flex cursor-pointer items-center gap-2">
+          <span class="font-headline text-sm font-medium text-on-surface">工作区设置</span>
+          <span class="material-symbols-outlined text-outline transition-transform group-hover:translate-x-1">chevron_right</span>
+        </div>
+      </div>
+    </header>
+
+    <section class="mx-auto w-full max-w-6xl p-12">
+      <div class="mb-14">
+        <h1 class="mb-3 font-body text-4xl italic text-on-surface">午安，策展人。</h1>
+        <p class="font-headline text-sm tracking-wide text-on-surface-variant opacity-70">
+          这里是你的工作台首页。继续未完成的写作，查看最近的编辑动态，并快速回到今天最重要的内容。
+        </p>
+      </div>
+
+      <div class="mb-14 grid grid-cols-12 gap-8">
+        <div class="col-span-8">
+          <div class="relative group">
+            <div class="absolute -inset-0.5 rounded-lg bg-primary/5 opacity-25 blur transition duration-1000 group-hover:opacity-50"></div>
+            <div class="relative flex items-center justify-between rounded-sm border-l-4 border-primary bg-surface-container-lowest p-8">
+              <div>
+                <span class="mb-2 block font-label text-[0.7rem] font-bold uppercase tracking-widest text-primary">继续写作</span>
+                <h2 class="mb-2 font-body text-2xl font-medium text-on-surface">静谧笔谈：论数字化时代的写作哲学</h2>
+                <p class="font-headline text-sm text-outline">最后编辑于 2 小时前 · 已完成 65% · 位于 思想实验室</p>
+              </div>
+              <button class="flex items-center gap-3 rounded-sm bg-primary px-8 py-3 font-headline text-on-primary transition-all hover:shadow-lg active:scale-95">
+                继续写作
+                <span class="material-symbols-outlined">edit</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-span-4 rounded-sm bg-surface-container-low p-6">
+          <div class="mb-5 flex items-center justify-between">
+            <h3 class="font-headline text-sm font-bold uppercase tracking-widest text-outline">快捷入口</h3>
+          </div>
+          <div class="space-y-3">
+            <a class="flex items-center justify-between rounded-sm bg-white px-4 py-3 transition-colors hover:bg-surface-container-highest" href="#">
+              <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-primary">add_notes</span>
+                <span class="font-headline text-sm font-medium">新建笔记</span>
+              </div>
+              <span class="material-symbols-outlined text-outline">chevron_right</span>
+            </a>
+            <a class="flex items-center justify-between rounded-sm bg-white px-4 py-3 transition-colors hover:bg-surface-container-highest" href="#">
+              <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-primary">book_5</span>
+                <span class="font-headline text-sm font-medium">进入个人知识库</span>
+              </div>
+              <span class="material-symbols-outlined text-outline">chevron_right</span>
+            </a>
+            <a class="flex items-center justify-between rounded-sm bg-white px-4 py-3 transition-colors hover:bg-surface-container-highest" href="#">
+              <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-primary">publish</span>
+                <span class="font-headline text-sm font-medium">管理发布内容</span>
+              </div>
+              <span class="material-symbols-outlined text-outline">chevron_right</span>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-12 gap-12">
+        <div class="col-span-7">
+          <div class="mb-8 flex items-center justify-between">
+            <h3 class="font-headline text-lg font-bold tracking-tight">最近工作</h3>
+            <a class="font-headline text-sm text-primary hover:underline" href="#">查看全部</a>
+          </div>
+
+          <div class="space-y-4">
+            <div class="group flex items-start gap-5 rounded-sm p-4 transition-colors duration-200 hover:bg-surface-container-low">
+              <div class="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-sm bg-surface-container-high">
+                <span class="material-symbols-outlined text-outline">edit_document</span>
+              </div>
+              <div class="flex-1">
+                <div class="mb-1 flex items-center justify-between gap-6">
+                  <h4 class="font-headline font-semibold text-on-surface transition-colors group-hover:text-primary">策展人的审美直觉：从排版到留白</h4>
+                  <span class="font-label text-xs text-outline">12:45 PM</span>
+                </div>
+                <p class="mb-2 font-headline text-sm text-on-surface-variant">继续完善结构，已补充第二章节大纲。</p>
+                <div class="flex items-center gap-4">
+                  <span class="rounded-sm bg-surface-container-high px-2 py-0.5 font-headline text-xs text-on-surface-variant">设计随笔</span>
+                  <span class="flex items-center gap-1 font-headline text-xs text-outline">
+                    <span class="material-symbols-outlined text-[14px]">folder</span>
+                    思想实验室
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div class="group flex items-start gap-5 rounded-sm p-4 transition-colors duration-200 hover:bg-surface-container-low">
+              <div class="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-sm bg-surface-container-high">
+                <span class="material-symbols-outlined text-outline">stylus_note</span>
+              </div>
+              <div class="flex-1">
+                <div class="mb-1 flex items-center justify-between gap-6">
+                  <h4 class="font-headline font-semibold text-on-surface transition-colors group-hover:text-primary">关于“寂静”的修辞学研究</h4>
+                  <span class="font-label text-xs text-outline">昨天</span>
+                </div>
+                <p class="mb-2 font-headline text-sm text-on-surface-variant">草稿页新增引用段落，待补参考资料。</p>
+                <div class="flex items-center gap-4">
+                  <span class="rounded-sm bg-surface-container-high px-2 py-0.5 font-headline text-xs text-on-surface-variant">草稿</span>
+                  <span class="flex items-center gap-1 font-headline text-xs text-outline">
+                    <span class="material-symbols-outlined text-[14px]">schedule</span>
+                    最近打开
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div class="group flex items-start gap-5 rounded-sm p-4 transition-colors duration-200 hover:bg-surface-container-low">
+              <div class="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-sm bg-surface-container-high">
+                <span class="material-symbols-outlined text-outline">article</span>
+              </div>
+              <div class="flex-1">
+                <div class="mb-1 flex items-center justify-between gap-6">
+                  <h4 class="font-headline font-semibold text-on-surface transition-colors group-hover:text-primary">数字极简主义与写作流</h4>
+                  <span class="font-label text-xs text-outline">3 天前</span>
+                </div>
+                <p class="mb-2 font-headline text-sm text-on-surface-variant">完成最终校对，准备移入发布管理。</p>
+                <div class="flex items-center gap-4">
+                  <span class="rounded-sm bg-surface-container-high px-2 py-0.5 font-headline text-xs text-on-surface-variant">待发布</span>
+                  <span class="flex items-center gap-1 font-headline text-xs text-outline">
+                    <span class="material-symbols-outlined text-[14px]">publish</span>
+                    可发布
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-span-5 space-y-10">
+          <div class="rounded-sm bg-surface-container-low p-6">
+            <div class="mb-6 flex items-center justify-between">
+              <h3 class="font-headline text-sm font-bold uppercase tracking-widest text-outline">草稿箱</h3>
+              <span class="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">12</span>
+            </div>
+            <div class="space-y-4">
+              <div class="cursor-pointer group">
+                <p class="mb-1 font-headline text-sm font-medium transition-colors group-hover:text-primary">未命名的灵感片段 #04</p>
+                <p class="font-label text-[11px] text-outline">修改于 4 小时前</p>
+              </div>
+              <div class="cursor-pointer group">
+                <p class="mb-1 font-headline text-sm font-medium transition-colors group-hover:text-primary">关于“寂静”的修辞学研究</p>
+                <p class="font-label text-[11px] text-outline">修改于 昨天</p>
+              </div>
+              <div class="cursor-pointer group">
+                <p class="mb-1 font-headline text-sm font-medium transition-colors group-hover:text-primary">写作系统的最小闭环</p>
+                <p class="font-label text-[11px] text-outline">修改于 3 天前</p>
+              </div>
+            </div>
+            <button class="mt-6 w-full border border-outline/20 py-2 font-headline text-xs text-on-surface transition-colors hover:bg-white">
+              进入草稿列表
+            </button>
+          </div>
+
+          <div>
+            <h3 class="mb-6 font-headline text-sm font-bold uppercase tracking-widest text-outline">发布管理</h3>
+            <div class="space-y-4">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <span class="h-2 w-2 rounded-full bg-primary"></span>
+                  <span class="font-headline text-sm">已发布文章</span>
+                </div>
+                <span class="font-body text-lg italic">48</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <span class="h-2 w-2 rounded-full bg-tertiary"></span>
+                  <span class="font-headline text-sm">待发布内容</span>
+                </div>
+                <span class="font-body text-lg italic">5</span>
+              </div>
+              <div class="mt-2 border-t border-outline-variant/20 pt-4">
+                <a class="flex items-center gap-1 font-headline text-xs text-outline transition-colors hover:text-primary" href="#">
+                  <span class="material-symbols-outlined text-[14px]">history</span>
+                  查看发布历史记录
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <div class="border-t border-outline-variant/20 pt-8">
+            <blockquote class="border-l-4 border-primary bg-surface-container-low pl-6 py-3">
+              <p class="font-body text-lg italic leading-relaxed text-on-surface-variant">
+                “写作不是为了被看见，而是为了在黑暗中建立秩序。”
+              </p>
+              <cite class="mt-4 block font-headline text-xs not-italic text-outline">— Inkdesk 策展人指南</cite>
+            </blockquote>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

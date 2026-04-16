@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html class="light" lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+  <title>Inkdesk Note Editor States</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            background: "#f8f9fa",
+            surface: "#f8f9fa",
+            "surface-low": "#f3f4f5",
+            "surface-high": "#e7e8e9",
+            "surface-card": "#ffffff",
+            outline: "#bcc9c6",
+            text: "#191c1d",
+            muted: "#687573",
+            primary: "#00685f",
+            "primary-soft": "#e8f6f4",
+            tertiary: "#924628",
+            "error-soft": "#ffdad6",
+            "error-text": "#93000a"
+          },
+          fontFamily: {
+            headline: ["Manrope", "PingFang SC", "sans-serif"],
+            body: ["Newsreader", "Source Han Serif SC", "serif"],
+            label: ["Inter", "PingFang SC", "sans-serif"]
+          },
+          boxShadow: {
+            paper: "0 18px 40px rgba(25, 28, 29, 0.06)"
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      vertical-align: middle;
+    }
+
+    body {
+      font-family: 'Inter', 'PingFang SC', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      background:
+        radial-gradient(circle at top left, rgba(107, 216, 203, 0.10), transparent 28%),
+        linear-gradient(180deg, #fbfcfc 0%, #f4f6f6 100%);
+    }
+
+    .reading {
+      font-family: 'Newsreader', 'Source Han Serif SC', serif;
+    }
+
+    .ui {
+      font-family: 'Manrope', 'PingFang SC', sans-serif;
+    }
+
+    .paper-grain::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.04;
+      background-image:
+        linear-gradient(rgba(25, 28, 29, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(25, 28, 29, 0.03) 1px, transparent 1px);
+      background-size: 22px 22px;
+      mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.6), transparent 92%);
+    }
+
+    .state-chip {
+      letter-spacing: 0.18em;
+    }
+
+    .skeleton {
+      background: linear-gradient(90deg, #edf0f0 25%, #f9fbfb 50%, #edf0f0 75%);
+      background-size: 200% 100%;
+      animation: shimmer 2.2s linear infinite;
+    }
+
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+  </style>
+  <link href="./inkdesk-unified.css" rel="stylesheet" />
+</head>
+<body class="min-h-screen text-text">
+  <div class="flex min-h-screen">
+    <aside class="hidden w-64 flex-col bg-surface-low px-4 py-8 lg:flex">
+      <div class="mb-10 flex items-center gap-3 px-2">
+        <div class="flex h-9 w-9 items-center justify-center rounded-sm bg-primary text-white">
+          <span class="material-symbols-outlined text-sm">edit_note</span>
+        </div>
+        <div>
+          <div class="ui text-lg font-extrabold tracking-tight text-primary">静谧笔谈</div>
+          <div class="ui text-[10px] uppercase tracking-[0.22em] text-muted">Digital Curator</div>
+        </div>
+      </div>
+      <nav class="space-y-1 px-2">
+        <a class="flex items-center gap-4 rounded-sm bg-surface-card px-3 py-3 text-primary shadow-paper/30" href="#state-published">
+          <span class="material-symbols-outlined">edit_note</span>
+          <span class="ui text-xs font-semibold uppercase tracking-[0.18em]">写作</span>
+        </a>
+        <a class="flex items-center gap-4 rounded-sm px-3 py-3 text-muted hover:bg-white/70" href="#state-loading">
+          <span class="material-symbols-outlined">hourglass_top</span>
+          <span class="ui text-xs uppercase tracking-[0.18em]">加载</span>
+        </a>
+        <a class="flex items-center gap-4 rounded-sm px-3 py-3 text-muted hover:bg-white/70" href="#state-draft">
+          <span class="material-symbols-outlined">draft</span>
+          <span class="ui text-xs uppercase tracking-[0.18em]">草稿</span>
+        </a>
+        <a class="flex items-center gap-4 rounded-sm px-3 py-3 text-muted hover:bg-white/70" href="#state-saving">
+          <span class="material-symbols-outlined">cloud_upload</span>
+          <span class="ui text-xs uppercase tracking-[0.18em]">保存中</span>
+        </a>
+        <a class="flex items-center gap-4 rounded-sm px-3 py-3 text-muted hover:bg-white/70" href="#state-error">
+          <span class="material-symbols-outlined">cloud_off</span>
+          <span class="ui text-xs uppercase tracking-[0.18em]">保存失败</span>
+        </a>
+        <a class="flex items-center gap-4 rounded-sm px-3 py-3 text-muted hover:bg-white/70" href="#state-blank">
+          <span class="material-symbols-outlined">add</span>
+          <span class="ui text-xs uppercase tracking-[0.18em]">空白新建</span>
+        </a>
+      </nav>
+      <div class="mt-auto px-2 pt-8">
+        <div class="rounded-sm bg-white/65 px-4 py-4">
+          <div class="ui text-[10px] uppercase tracking-[0.22em] text-muted">整理原则</div>
+          <p class="mt-3 text-sm leading-6 text-muted">
+            统一左侧导航、居中写作纸面和右侧信息栏。状态变化只修改必要反馈，不改变整体版式。
+          </p>
+        </div>
+      </div>
+    </aside>
+
+    <main class="min-w-0 flex-1">
+      <header class="sticky top-0 z-20 border-b border-black/5 bg-white/80 px-6 py-4 backdrop-blur-lg lg:px-10">
+        <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <div class="ui text-xl font-extrabold tracking-tight">Inkdesk 笔记编辑页整理稿</div>
+            <p class="mt-1 text-sm text-muted">将“空白新建 / 未发布 / 保存中 / 保存失败 / 加载中 / 已发布”统一为一套编辑状态系统。</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-3 text-xs text-muted">
+            <span class="rounded-full bg-primary-soft px-3 py-1 state-chip ui font-semibold text-primary">统一布局</span>
+            <span class="rounded-full bg-white px-3 py-1 state-chip ui font-semibold">编辑主画布优先</span>
+            <span class="rounded-full bg-white px-3 py-1 state-chip ui font-semibold">弱化工具噪音</span>
+          </div>
+        </div>
+      </header>
+
+      <div class="space-y-10 px-4 py-8 md:px-8 lg:px-10">
+        <section id="state-published" class="paper-grain relative overflow-hidden rounded-[28px] bg-surface-card shadow-paper">
+          <div class="grid gap-0 xl:grid-cols-[220px_minmax(0,1fr)_280px]">
+            <div class="bg-surface-low px-6 py-7">
+              <div class="ui text-[10px] uppercase tracking-[0.22em] text-muted">Workspace</div>
+              <div class="mt-6 space-y-2">
+                <div class="rounded-sm bg-white px-4 py-3 text-primary">当前文稿</div>
+                <div class="px-4 py-3 text-muted">相关笔记</div>
+                <div class="px-4 py-3 text-muted">引用素材</div>
+              </div>
+            </div>
+            <article class="bg-surface-card px-8 py-10 md:px-12 lg:px-16">
+              <div class="mb-8 flex flex-wrap items-center gap-3 text-[11px] uppercase tracking-[0.2em] text-muted">
+                <span>2026.03.23</span>
+                <span class="h-1 w-1 rounded-full bg-outline"></span>
+                <span>策展主题：艺术与代码</span>
+                <span class="h-1 w-1 rounded-full bg-outline"></span>
+                <span class="text-primary">已发布并同步</span>
+              </div>
+              <h2 class="ui max-w-4xl text-5xl font-extrabold leading-[1.03] tracking-tight md:text-6xl">数字时代的静谧表达：从纸质排版到代码逻辑</h2>
+              <div class="reading mt-10 max-w-3xl space-y-8 text-[1.35rem] leading-[1.85] text-[#313738]">
+                <p>在信息过载的时代，真正稀缺的不是内容，而是让内容被安静阅读的空间。编辑器不该像操作面板，它更像一张被精心摆放在桌面的纸。</p>
+                <div class="overflow-hidden rounded-sm bg-surface-low">
+                  <img alt="编辑器示意图" class="h-auto w-full grayscale" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDSrxiDuet2aiUxxSXbS1j89ivef_fsYi5pg-YywdOFroXGLimOw7CjmvWkD4xwms4aYSahpdW57UVQAo6lDZdQofalmAG54kSbJV6IveZsDyrvip4YXXso0rmLoB2zyqQmV7TFH1_5DZftyXd1B9x3zLyRGz65doesvbnWJQGdm4yJIAdR78noWr5LVx3bWn2GlOE-6PLXl3Rb50XHQ1OvTDCDodewO-cSeGqP82km0nxoyRbpk-tGkJkK_yAezg2dwvEkzaT0dUa0" />
+                  <p class="ui px-6 py-4 text-center text-[10px] uppercase tracking-[0.18em] text-muted">图 01 编辑主画布应成为唯一焦点</p>
+                </div>
+                <blockquote class="border-l-4 border-primary bg-surface-low px-6 py-5 text-[1.55rem] italic text-text">
+                  每一像素的克制，都是对读者专注力的尊重。
+                </blockquote>
+                <p>因此，保存状态、发布状态与元信息都应退到文字之后，只在必要时以克制但明确的方式出现。编辑流程的高级感，来自秩序，而不是来自更多按钮。</p>
+              </div>
+            </article>
+            <aside class="bg-surface-low px-6 py-8">
+              <div class="ui text-[10px] uppercase tracking-[0.22em] text-muted">Publish Rail</div>
+              <div class="mt-6 rounded-sm bg-white px-5 py-5">
+                <div class="ui text-xs uppercase tracking-[0.18em] text-primary">状态</div>
+                <div class="mt-2 flex items-center gap-2">
+                  <span class="h-2 w-2 rounded-full bg-primary"></span>
+                  <span class="text-sm text-text">已发布</span>
+                </div>
+                <p class="mt-4 text-sm leading-6 text-muted">公开页已更新，读者可见版本与当前内容一致。</p>
+              </div>
+              <div class="mt-5 rounded-sm bg-white px-5 py-5">
+                <div class="ui text-xs uppercase tracking-[0.18em] text-muted">发布信息</div>
+                <dl class="mt-4 space-y-3 text-sm">
+                  <div class="flex justify-between gap-4"><dt class="text-muted">字数</dt><dd>1,248</dd></div>
+                  <div class="flex justify-between gap-4"><dt class="text-muted">阅读时长</dt><dd>6 分钟</dd></div>
+                  <div class="flex justify-between gap-4"><dt class="text-muted">更新时间</dt><dd>17:08</dd></div>
+                </dl>
+              </div>
+              <div class="mt-5 flex flex-col gap-3">
+                <button class="rounded-sm bg-primary px-4 py-3 ui text-sm font-semibold text-white">更新发布</button>
+                <button class="rounded-sm bg-white px-4 py-3 ui text-sm font-semibold text-text">查看公开页</button>
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        <section id="state-loading" class="overflow-hidden rounded-[28px] bg-surface-card shadow-paper">
+          <div class="grid xl:grid-cols-[220px_minmax(0,1fr)_280px]">
+            <div class="bg-surface-low px-6 py-7">
+              <div class="ui text-[10px] uppercase tracking-[0.22em] text-muted">Workspace</div>
+              <div class="mt-6 space-y-2 text-muted">
+                <div class="rounded-sm bg-white px-4 py-3">当前文稿</div>
+                <div class="px-4 py-3">相关笔记</div>
+                <div class="px-4 py-3">历史版本</div>
+              </div>
+            </div>
+            <article class="px-8 py-10 md:px-12 lg:px-16">
+              <div class="mb-8 flex items-center gap-3 text-[11px] uppercase tracking-[0.2em] text-muted">
+                <span class="rounded-full bg-primary-soft px-3 py-1 ui font-semibold text-primary">正在检索草稿内容</span>
+              </div>
+              <div class="skeleton h-5 w-52 rounded-sm"></div>
+              <div class="mt-5 space-y-3">
+                <div class="skeleton h-16 w-full rounded-sm"></div>
+                <div class="skeleton h-16 w-3/4 rounded-sm"></div>
+              </div>
+              <div class="mt-12 space-y-5">
+                <div class="skeleton h-4 w-full rounded-sm"></div>
+                <div class="skeleton h-4 w-full rounded-sm"></div>
+                <div class="skeleton h-4 w-5/6 rounded-sm"></div>
+                <div class="skeleton mt-10 h-40 w-full rounded-sm"></div>
+                <div class="skeleton h-4 w-full rounded-sm"></div>
+                <div class="skeleton h-4 w-4/5 rounded-sm"></div>
+              </div>
+            </article>
+            <aside class="bg-surface-low px-6 py-8">
+              <div class="rounded-sm bg-white px-5 py-5">
+                <div class="ui text-xs uppercase tracking-[0.18em] text-muted">系统提示</div>
+                <p class="mt-4 text-sm leading-6 text-muted">只显示轻量加载信号，不在主画布中堆叠多余的“空卡片”。版式保持稳定，防止阅读节奏被打断。</p>
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        <section id="state-draft" class="overflow-hidden rounded-[28px] bg-surface-card shadow-paper">
+          <div class="grid xl:grid-cols-[220px_minmax(0,1fr)_280px]">
+            <div class="bg-surface-low px-6 py-7">
+              <div class="ui text-[10px] uppercase tracking-[0.22em] text-muted">Workspace</div>
+              <div class="mt-6 space-y-2">
+                <div class="rounded-sm bg-white px-4 py-3 text-primary">当前文稿</div>
+                <div class="px-4 py-3 text-muted">待发布清单</div>
+              </div>
+            </div>
+            <article class="px-8 py-10 md:px-12 lg:px-16">
+              <div class="mb-8 flex flex-wrap items-center gap-3 text-[11px] uppercase tracking-[0.2em] text-muted">
+                <span class="rounded-full bg-[#fff1ea] px-3 py-1 ui font-semibold text-tertiary">未发布</span>
+                <span>上次编辑：2 小时前</span>
+              </div>
+              <h2 class="ui text-5xl font-extrabold leading-[1.04] tracking-tight md:text-6xl">沉默的几何：如何在极简中寻找叙事感</h2>
+              <div class="reading mt-10 max-w-3xl space-y-8 text-[1.35rem] leading-[1.85] text-[#313738]">
+                <p>草稿状态不该显得“没完成”，而应该显得“正在酝酿”。因此它需要完整的写作纸面，只在右侧轻声提醒尚未发布。</p>
+                <blockquote class="border-l-4 border-primary bg-surface-low px-6 py-5 text-[1.55rem] italic text-text">设计不是为了增加什么，而是当没有任何东西可以被减去时，它才达到了完美。</blockquote>
+                <p>在这个状态中，编辑器依旧应保持完整的章节节奏、引文样式和插图区域，避免因为“草稿”而回退成粗糙的后台表单。</p>
+              </div>
+            </article>
+            <aside class="bg-surface-low px-6 py-8">
+              <div class="rounded-sm bg-white px-5 py-5">
+                <div class="ui text-xs uppercase tracking-[0.18em] text-muted">发布准备</div>
+                <ul class="mt-4 space-y-3 text-sm text-muted">
+                  <li>摘要待补充</li>
+                  <li>标签待确认</li>
+                  <li>公开页说明待填写</li>
+                </ul>
+              </div>
+              <button class="mt-5 w-full rounded-sm bg-primary px-4 py-3 ui text-sm font-semibold text-white">发布</button>
+            </aside>
+          </div>
+        </section>
+
+        <section id="state-saving" class="overflow-hidden rounded-[28px] bg-surface-card shadow-paper">
+          <div class="grid xl:grid-cols-[220px_minmax(0,1fr)_280px]">
+            <div class="bg-surface-low px-6 py-7">
+              <div class="ui text-[10px] uppercase tracking-[0.22em] text-muted">Workspace</div>
+            </div>
+            <article class="px-8 py-10 md:px-12 lg:px-16">
+              <div class="mb-8 flex items-center gap-3 text-[11px] uppercase tracking-[0.2em] text-muted">
+                <span class="flex items-center gap-2 rounded-full bg-primary-soft px-3 py-1 ui font-semibold text-primary">
+                  <span class="material-symbols-outlined animate-pulse text-sm">cloud_upload</span>
+                  保存中
+                </span>
+                <span>内容已局部同步</span>
+              </div>
+              <h2 class="ui text-5xl font-extrabold leading-[1.04] tracking-tight md:text-6xl">重塑留白的哲学：从纸张到像素的跨越</h2>
+              <div class="reading mt-10 max-w-3xl space-y-8 text-[1.35rem] leading-[1.85] text-[#313738]">
+                <p>保存中的状态不应该冻结页面，也不应该弹出刺耳的提示框。最好的反馈是仍旧允许用户继续写作，同时让顶部状态保持可感知但不抢戏。</p>
+                <p>因此，这里只保留一条轻量状态带和稳定的版式，不新增浮层，也不改变主画布结构。</p>
+              </div>
+            </article>
+            <aside class="bg-surface-low px-6 py-8">
+              <div class="rounded-sm bg-white px-5 py-5">
+                <div class="ui text-xs uppercase tracking-[0.18em] text-muted">同步状态</div>
+                <p class="mt-4 text-sm leading-6 text-muted">最近一次修改已进入队列。写作可以继续，保存完成后会自动恢复“已保存”。</p>
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        <section id="state-error" class="overflow-hidden rounded-[28px] bg-surface-card shadow-paper">
+          <div class="border-b border-[#f2b8b5] bg-error-soft px-6 py-4 text-error-text">
+            <div class="mx-auto flex max-w-[1400px] items-center gap-3">
+              <span class="material-symbols-outlined">cloud_off</span>
+              <span class="ui text-sm font-semibold">自动保存失败，请检查网络后重试。当前内容仍保留在本地。</span>
+              <button class="ml-auto rounded-sm bg-[#93000a] px-4 py-2 ui text-xs font-semibold uppercase tracking-[0.16em] text-white">立即重试</button>
+            </div>
+          </div>
+          <div class="grid xl:grid-cols-[220px_minmax(0,1fr)_280px]">
+            <div class="bg-surface-low px-6 py-7"></div>
+            <article class="px-8 py-10 md:px-12 lg:px-16">
+              <div class="mb-8 flex items-center gap-3 text-[11px] uppercase tracking-[0.2em] text-muted">
+                <span class="rounded-full bg-[#fff1ea] px-3 py-1 ui font-semibold text-tertiary">草稿未同步</span>
+              </div>
+              <h2 class="ui text-5xl font-extrabold leading-[1.04] tracking-tight md:text-6xl">数字时代的视觉秩序：论留白的哲学</h2>
+              <div class="reading mt-10 max-w-3xl space-y-8 text-[1.35rem] leading-[1.85] text-[#313738]">
+                <p>错误状态的目标不是制造紧张，而是给出明确的控制感。用户需要知道写下的内容没有丢失，也知道下一步该做什么。</p>
+                <blockquote class="border-l-4 border-primary bg-surface-low px-6 py-5 text-[1.55rem] italic text-text">当系统短暂失序时，界面更应表现出冷静。</blockquote>
+              </div>
+            </article>
+            <aside class="bg-surface-low px-6 py-8">
+              <div class="rounded-sm bg-white px-5 py-5">
+                <div class="ui text-xs uppercase tracking-[0.18em] text-muted">恢复选项</div>
+                <div class="mt-4 flex flex-col gap-3">
+                  <button class="rounded-sm bg-[#93000a] px-4 py-3 ui text-sm font-semibold text-white">重新同步</button>
+                  <button class="rounded-sm bg-surface-low px-4 py-3 ui text-sm font-semibold text-text">导出本地副本</button>
+                </div>
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        <section id="state-blank" class="overflow-hidden rounded-[28px] bg-surface-card shadow-paper">
+          <div class="grid xl:grid-cols-[220px_minmax(0,1fr)_280px]">
+            <div class="bg-surface-low px-6 py-7">
+              <div class="ui text-[10px] uppercase tracking-[0.22em] text-muted">Workspace</div>
+            </div>
+            <article class="px-8 py-10 md:px-12 lg:px-16">
+              <div class="mb-8 flex items-center gap-3 text-[11px] uppercase tracking-[0.2em] text-muted">
+                <span class="rounded-full bg-white px-3 py-1 ui font-semibold">新建笔记</span>
+                <span>草稿已创建</span>
+              </div>
+              <div class="max-w-3xl">
+                <div class="ui text-[10px] uppercase tracking-[0.24em] text-muted">新建笔记</div>
+                <h2 class="mt-5 ui text-5xl font-extrabold leading-[1.04] tracking-tight text-[#b8c0be] md:text-6xl">输入标题...</h2>
+                <div class="mt-8 h-[2px] w-20 bg-primary/20"></div>
+                <p class="reading mt-12 text-[1.45rem] italic leading-[1.9] text-[#a2acab]">开始记录你的思考，先写下一句你最确定的话。</p>
+              </div>
+            </article>
+            <aside class="bg-surface-low px-6 py-8">
+              <div class="rounded-sm bg-white px-5 py-5">
+                <div class="ui text-xs uppercase tracking-[0.18em] text-muted">起步建议</div>
+                <ul class="mt-4 space-y-3 text-sm text-muted">
+                  <li>先写标题，再写一句核心判断</li>
+                  <li>为文章选择一个策展主题</li>
+                  <li>需要时再添加标签与封面</li>
+                </ul>
+              </div>
+            </aside>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

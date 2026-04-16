@@ -1,0 +1,74 @@
+html {
+  color-scheme: light;
+}
+
+body {
+  background:
+    radial-gradient(circle at top left, rgba(107, 216, 203, 0.08), transparent 26%),
+    linear-gradient(180deg, #fbfcfc 0%, #f4f6f6 100%);
+  color: #191c1d;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+aside[class*="w-64"] {
+  width: 15rem !important;
+}
+
+aside.fixed[class*="w-20"] {
+  background: #f3f4f5;
+}
+
+header[class*="h-16"] {
+  min-height: 4rem;
+  backdrop-filter: blur(12px);
+}
+
+main[class*="ml-64"],
+div[class*="ml-64"] {
+  margin-left: 15rem !important;
+}
+
+main[class*="ml-60"],
+div[class*="ml-60"] {
+  margin-left: 15rem !important;
+}
+
+[class*="max-w-[800px]"] {
+  max-width: 52rem !important;
+}
+
+[class*="max-w-[980px]"] {
+  max-width: 72rem !important;
+}
+
+[class*="max-w-[1280px]"] {
+  max-width: 72rem !important;
+}
+
+.shadow-sm,
+.shadow-lg,
+.shadow-xl,
+.shadow-2xl,
+[class*="shadow-"] {
+  box-shadow: 0 18px 40px rgba(25, 28, 29, 0.06);
+}
+
+blockquote {
+  border-left-color: #00685f !important;
+}
+
+button,
+a,
+input,
+textarea {
+  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid rgba(0, 104, 95, 0.22);
+  outline-offset: 2px;
+}

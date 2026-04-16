@@ -1,0 +1,41 @@
+{
+  "name": "inkdesk-web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "test:smoke": "node --import tsx --test tests/owner-session.test.ts tests/repositioning.test.tsx tests/knowledge-api.test.ts tests/knowledge-pages.test.tsx tests/home-api.test.tsx tests/publish-api.test.ts tests/publish-pages.test.tsx tests/search-api.test.tsx tests/plans-api.test.tsx",
+    "unit": "vitest run",
+    "test": "npm run test:smoke && npm run unit",
+    "e2e": "playwright test",
+    "e2e:fullstack": "node scripts/run-fullstack-e2e.mjs"
+  },
+  "dependencies": {
+    "next": "15.3.1",
+    "react": "19.1.0",
+    "react-dom": "19.1.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.59.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/node": "22.15.21",
+    "@types/react": "19.1.2",
+    "@types/react-dom": "19.1.2",
+    "@vitejs/plugin-react": "^6.0.1",
+    "autoprefixer": "10.4.21",
+    "eslint": "^9.39.4",
+    "eslint-config-next": "^16.2.3",
+    "jsdom": "^29.0.2",
+    "postcss": "8.5.3",
+    "tailwindcss": "3.4.17",
+    "tsx": "^4.21.0",
+    "typescript": "5.8.3",
+    "vitest": "^4.1.4"
+  }
+}

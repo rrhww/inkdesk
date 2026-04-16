@@ -1,0 +1,10 @@
+DELETE FROM plan_notes;
+DELETE FROM plans;
+DELETE FROM note_tags;
+DELETE FROM publications;
+DELETE FROM tags;
+DELETE FROM note_documents;
+DELETE FROM content_nodes;
+DELETE FROM workspace_settings;
+DELETE FROM workspaces;
+DELETE FROM users;

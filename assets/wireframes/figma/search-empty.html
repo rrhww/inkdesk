@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+  <title>Inkdesk - 搜索空状态</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;400;500;600;700;800&family=Newsreader:ital,opsz,wght@0,6..72,200;0,6..72,400;1,6..72,400&family=Inter:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "on-tertiary": "#ffffff",
+            "secondary-container": "#d6e0f4",
+            "surface-container-highest": "#e1e3e4",
+            "on-secondary-fixed-variant": "#3d4757",
+            "on-secondary": "#ffffff",
+            "surface": "#f8f9fa",
+            "primary-fixed-dim": "#6bd8cb",
+            "tertiary-container": "#b05e3d",
+            "tertiary-fixed": "#ffdbce",
+            "outline": "#6d7a77",
+            "on-error": "#ffffff",
+            "error-container": "#ffdad6",
+            "inverse-surface": "#2e3132",
+            "inverse-primary": "#6bd8cb",
+            "secondary-fixed-dim": "#bdc7db",
+            "surface-container-low": "#f3f4f5",
+            "on-surface-variant": "#3d4947",
+            "secondary-fixed": "#d9e3f7",
+            "on-primary-container": "#f4fffc",
+            "surface-variant": "#e1e3e4",
+            "outline-variant": "#bcc9c6",
+            "inverse-on-surface": "#f0f1f2",
+            "on-surface": "#191c1d",
+            "surface-tint": "#006a61",
+            "on-tertiary-container": "#fffbff",
+            "on-primary-fixed": "#00201d",
+            "primary": "#00685f",
+            "surface-bright": "#f8f9fa",
+            "secondary": "#555f70",
+            "surface-container-lowest": "#ffffff",
+            "primary-fixed": "#89f5e7",
+            "on-primary-fixed-variant": "#005049",
+            "on-primary": "#ffffff",
+            "on-tertiary-fixed": "#370e00",
+            "on-secondary-container": "#596374",
+            "tertiary": "#924628",
+            "surface-dim": "#d9dadb",
+            "on-tertiary-fixed-variant": "#773215",
+            "error": "#ba1a1a",
+            "on-secondary-fixed": "#121c2a",
+            "background": "#f8f9fa",
+            "surface-container-high": "#e7e8e9",
+            "on-background": "#191c1d",
+            "tertiary-fixed-dim": "#ffb59a",
+            "surface-container": "#edeeef",
+            "on-error-container": "#93000a",
+            "primary-container": "#008378"
+          },
+          fontFamily: {
+            "headline": ["Manrope", "PingFang SC", "sans-serif"],
+            "body": ["Newsreader", "Source Han Serif SC", "serif"],
+            "label": ["Inter", "PingFang SC", "sans-serif"]
+          },
+          borderRadius: {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+    }
+    body { background-color: #f8f9fa; -webkit-font-smoothing: antialiased; }
+  </style>
+  <link href="./inkdesk-unified.css" rel="stylesheet" />
+</head>
+<body class="flex min-h-screen bg-surface text-on-surface">
+  <aside class="fixed left-0 top-0 z-20 flex h-screen w-64 flex-col bg-slate-50 p-4 font-headline text-sm">
+    <div class="mb-8 px-2">
+      <h1 class="text-lg font-semibold text-slate-900">Inkdesk</h1>
+      <p class="text-xs text-slate-500">搜索与检索</p>
+    </div>
+    <nav class="flex-1 space-y-1">
+      <a class="flex items-center gap-3 rounded-sm px-3 py-2 text-slate-600 transition-colors duration-300 hover:bg-slate-200/50 hover:text-teal-600" href="#">
+        <span class="material-symbols-outlined">description</span>
+        <span>所有笔记</span>
+      </a>
+      <a class="flex items-center gap-3 rounded-sm bg-white px-3 py-2 font-medium text-primary" href="#">
+        <span class="material-symbols-outlined">search</span>
+        <span>搜索</span>
+      </a>
+      <a class="flex items-center gap-3 rounded-sm px-3 py-2 text-slate-600 transition-colors duration-300 hover:bg-slate-200/50 hover:text-teal-600" href="#">
+        <span class="material-symbols-outlined">history</span>
+        <span>最近编辑</span>
+      </a>
+      <a class="flex items-center gap-3 rounded-sm px-3 py-2 text-slate-600 transition-colors duration-300 hover:bg-slate-200/50 hover:text-teal-600" href="#">
+        <span class="material-symbols-outlined">star</span>
+        <span>收藏夹</span>
+      </a>
+      <a class="flex items-center gap-3 rounded-sm px-3 py-2 text-slate-600 transition-colors duration-300 hover:bg-slate-200/50 hover:text-teal-600" href="#">
+        <span class="material-symbols-outlined">label</span>
+        <span>标签云</span>
+      </a>
+    </nav>
+    <button class="mt-auto flex items-center justify-center gap-2 rounded-sm bg-primary py-2.5 font-medium text-on-primary transition-all hover:opacity-90 active:scale-95">
+      <span class="material-symbols-outlined text-sm">add</span>
+      <span>新建笔记</span>
+    </button>
+  </aside>
+
+  <main class="ml-64 flex min-h-screen flex-1 flex-col">
+    <header class="sticky top-0 z-10 flex w-full items-center justify-between bg-white px-6 py-3 font-headline tracking-tight">
+      <div class="flex max-w-2xl flex-1 items-center gap-4">
+        <div class="relative w-full">
+          <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-lg text-slate-400">search</span>
+          <input class="w-full rounded-sm border-none bg-surface-container-high py-2 pl-10 pr-4 font-label text-sm transition-all focus:ring-1 focus:ring-primary/20" placeholder="搜索您的思想碎片..." type="text" />
+        </div>
+      </div>
+      <div class="ml-8 flex items-center gap-6">
+        <div class="flex gap-4">
+          <button class="rounded-full p-2 text-slate-500 transition-colors hover:bg-slate-50" title="Settings">
+            <span class="material-symbols-outlined">settings</span>
+          </button>
+          <button class="rounded-full p-2 text-slate-500 transition-colors hover:bg-slate-50" title="Account">
+            <span class="material-symbols-outlined">account_circle</span>
+          </button>
+        </div>
+        <div class="text-xl font-bold uppercase tracking-widest text-teal-800">Inkdesk</div>
+      </div>
+    </header>
+
+    <div class="flex flex-1 flex-col gap-16 overflow-y-auto p-12 md:flex-row">
+      <div class="flex w-full flex-col justify-center md:w-3/5">
+        <div class="mb-12">
+          <h2 class="font-headline text-6xl font-extrabold leading-tight tracking-tighter text-on-surface">
+            寻找<br />
+            <span class="text-primary">遗忘的灵感</span>
+          </h2>
+          <p class="mt-6 max-w-lg text-xl leading-relaxed text-on-surface-variant">
+            在 Inkdesk 的静谧角落里，每一条搜索都是一次对过去思考的唤醒。
+          </p>
+        </div>
+
+        <div class="grid max-w-xl grid-cols-2 gap-4">
+          <div class="cursor-pointer bg-surface-container-lowest p-6 transition-colors hover:bg-surface-container-high">
+            <span class="material-symbols-outlined mb-4 text-primary">history</span>
+            <h4 class="font-headline text-sm font-bold">设计趋势 2024</h4>
+            <p class="mt-1 text-xs text-slate-400">上次搜索于 2 小时前</p>
+          </div>
+          <div class="cursor-pointer bg-surface-container-lowest p-6 transition-colors hover:bg-surface-container-high">
+            <span class="material-symbols-outlined mb-4 text-primary">history</span>
+            <h4 class="font-headline text-sm font-bold">哲学随笔</h4>
+            <p class="mt-1 text-xs text-slate-400">上次搜索于 昨天</p>
+          </div>
+          <div class="cursor-pointer bg-surface-container-lowest p-6 transition-colors hover:bg-surface-container-high">
+            <span class="material-symbols-outlined mb-4 text-primary">history</span>
+            <h4 class="font-headline text-sm font-bold">项目路线图</h4>
+            <p class="mt-1 text-xs text-slate-400">上次搜索于 3 天前</p>
+          </div>
+          <div class="flex cursor-pointer items-center justify-center border-2 border-dashed border-outline-variant/20 bg-surface-container-lowest p-6 transition-colors hover:bg-surface-container-high">
+            <span class="text-xs text-slate-400">清除检索历史</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex w-full flex-col justify-center border-l border-outline-variant/10 pl-16 md:w-2/5">
+        <div class="mb-10">
+          <h3 class="mb-6 font-headline text-xs uppercase tracking-widest text-slate-400">热门标签</h3>
+          <div class="flex flex-wrap gap-2">
+            <span class="cursor-pointer rounded-sm bg-surface-container-low px-3 py-1 font-label text-sm text-on-surface-variant transition-all hover:bg-primary hover:text-white">#数字策展</span>
+            <span class="cursor-pointer rounded-sm bg-surface-container-low px-3 py-1 font-label text-sm text-on-surface-variant transition-all hover:bg-primary hover:text-white">#心理学</span>
+            <span class="cursor-pointer rounded-sm bg-surface-container-low px-3 py-1 font-label text-sm text-on-surface-variant transition-all hover:bg-primary hover:text-white">#架构设计</span>
+            <span class="cursor-pointer rounded-sm bg-surface-container-low px-3 py-1 font-label text-sm text-on-surface-variant transition-all hover:bg-primary hover:text-white">#旅行笔记</span>
+            <span class="cursor-pointer rounded-sm bg-surface-container-low px-3 py-1 font-label text-sm text-on-surface-variant transition-all hover:bg-primary hover:text-white">#读书心得</span>
+          </div>
+        </div>
+
+        <div class="group relative aspect-square w-full max-w-xs overflow-hidden bg-surface-container-low p-1">
+          <img alt="Abstract quiet desk" class="h-full w-full object-cover opacity-40 grayscale mix-blend-multiply transition-transform duration-700 group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDjQqh0WBJAtuzV9djGK29kJ75ljP67sK8igp3H8LZhFLAmRakohB6vNsugnh-wLiGj9qRdaI4d4lg0kUF9ewTms267VemgE-aORondj9sUIMJKqT25kRj-UEDHFsL7JjYH5L1bTt25z6X5zmFlPuadwXd5Sq7PAdFdDPzCH2vfijslXXMWV778tfAmDjoq1AaxJEVCPwp1SLEtAXeEB9-RbtUOUEcQ-pKT4z5FRPM7ndAuYVozIpETLI8yMpw3dEbYpOfFyxXohLDD" />
+          <div class="absolute bottom-6 left-6 right-6">
+            <p class="text-sm italic leading-relaxed text-on-surface-variant">
+              "文字是思考的标本，而搜索是复活它的仪式。"
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ml-64 hidden items-center justify-center bg-surface p-12 text-center"></div>
+  </main>
+</body>
+</html>

@@ -1,0 +1,10 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/inkdesk
+    username: inkdesk
+    password: inkdesk
+
+inkdesk:
+  auth:
+    secret: change-me-to-a-long-random-string
+    session-duration: PT8H

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html class="light" lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+  <title>Inkdesk 编辑页 - 保存失败</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+  <script>tailwind.config={theme:{extend:{colors:{surface:"#f8f9fa","surface-low":"#f3f4f5","surface-card":"#ffffff",text:"#191c1d",muted:"#687573",primary:"#00685f","error-soft":"#ffdad6","error-text":"#93000a",tertiary:"#924628"},fontFamily:{headline:["Manrope","PingFang SC","sans-serif"],body:["Newsreader","Source Han Serif SC","serif"],label:["Inter","PingFang SC","sans-serif"]},boxShadow:{paper:"0 18px 40px rgba(25,28,29,.06)"}}}};</script>
+  <style>.material-symbols-outlined{font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24;vertical-align:middle}body{font-family:'Inter','PingFang SC',sans-serif;background:linear-gradient(180deg,#fbfcfc 0%,#f4f6f6 100%)}.ui{font-family:'Manrope','PingFang SC',sans-serif}.reading{font-family:'Newsreader','Source Han Serif SC',serif}</style>
+  <link href="./inkdesk-unified.css" rel="stylesheet" />
+</head>
+<body class="min-h-screen bg-surface text-text">
+  <div class="border-b border-[#f2b8b5] bg-error-soft px-6 py-4 text-error-text">
+    <div class="mx-auto flex max-w-[1400px] items-center gap-3"><span class="material-symbols-outlined">cloud_off</span><span class="ui text-sm font-semibold">自动保存失败，请检查网络后重试。当前内容仍保留在本地。</span><button class="ml-auto rounded-sm bg-[#93000a] px-4 py-2 ui text-xs font-semibold uppercase tracking-[.16em] text-white">立即重试</button></div>
+  </div>
+  <div class="grid min-h-[calc(100vh-73px)] xl:grid-cols-[220px_minmax(0,1fr)_280px]">
+    <aside class="bg-surface-low px-6 py-8"></aside>
+    <main class="bg-surface-card px-8 py-10 md:px-12 lg:px-16">
+      <div class="text-[11px] uppercase tracking-[.2em] text-muted"><span class="rounded-full bg-[#fff1ea] px-3 py-1 ui font-semibold text-tertiary">草稿未同步</span></div>
+      <h1 class="ui mt-8 text-5xl font-extrabold leading-[1.04] tracking-tight md:text-6xl">数字时代的视觉秩序：论留白的哲学</h1>
+      <div class="reading mt-10 max-w-3xl space-y-8 text-[1.35rem] leading-[1.85] text-[#313738]">
+        <p>错误状态的目标不是制造紧张，而是给出明确的控制感。用户需要知道写下的内容没有丢失，也知道下一步该做什么。</p>
+        <blockquote class="border-l-4 border-primary bg-surface-low px-6 py-5 text-[1.55rem] italic text-text">当系统短暂失序时，界面更应表现出冷静。</blockquote>
+      </div>
+    </main>
+    <aside class="bg-surface-low px-6 py-8"><div class="rounded-sm bg-white px-5 py-5 shadow-paper"><div class="ui text-xs uppercase tracking-[.18em] text-muted">恢复选项</div><div class="mt-4 flex flex-col gap-3"><button class="rounded-sm bg-[#93000a] px-4 py-3 ui text-sm font-semibold text-white">重新同步</button><button class="rounded-sm bg-surface-low px-4 py-3 ui text-sm font-semibold text-text">导出本地副本</button></div></div></aside>
+  </div>
+</body>
+</html>

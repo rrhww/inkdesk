@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html class="light" lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+  <title>Inkdesk - 工作区视图</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=Inter:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "surface-dim": "#d9dadb",
+            "outline-variant": "#bcc9c6",
+            "on-secondary-fixed-variant": "#3d4757",
+            "surface-container-highest": "#e1e3e4",
+            "on-background": "#191c1d",
+            "surface-container": "#edeeef",
+            "on-tertiary-container": "#fffbff",
+            "primary": "#00685f",
+            "on-primary": "#ffffff",
+            "on-surface-variant": "#3d4947",
+            "surface-tint": "#006a61",
+            "surface-container-high": "#e7e8e9",
+            "on-secondary-container": "#596374",
+            "on-tertiary": "#ffffff",
+            "tertiary-fixed-dim": "#ffb59a",
+            "tertiary-fixed": "#ffdbce",
+            "inverse-surface": "#2e3132",
+            "surface-container-low": "#f3f4f5",
+            "primary-fixed-dim": "#6bd8cb",
+            "on-tertiary-fixed": "#370e00",
+            "secondary": "#555f70",
+            "primary-fixed": "#89f5e7",
+            "on-error-container": "#93000a",
+            "inverse-primary": "#6bd8cb",
+            "on-primary-fixed": "#00201d",
+            "on-secondary-fixed": "#121c2a",
+            "tertiary-container": "#b05e3d",
+            "surface-variant": "#e1e3e4",
+            "secondary-container": "#d6e0f4",
+            "on-secondary": "#ffffff",
+            "on-primary-fixed-variant": "#005049",
+            "on-tertiary-fixed-variant": "#773215",
+            "surface": "#f8f9fa",
+            "on-primary-container": "#f4fffc",
+            "surface-container-lowest": "#ffffff",
+            "surface-bright": "#f8f9fa",
+            "tertiary": "#924628",
+            "outline": "#6d7a77",
+            "inverse-on-surface": "#f0f1f2",
+            "error-container": "#ffdad6",
+            "on-error": "#ffffff",
+            "secondary-fixed": "#d9e3f7",
+            "background": "#f8f9fa",
+            "on-surface": "#191c1d",
+            "error": "#ba1a1a",
+            "secondary-fixed-dim": "#bdc7db",
+            "primary-container": "#008378"
+          },
+          fontFamily: {
+            "headline": ["Manrope", "PingFang SC", "sans-serif"],
+            "body": ["Inter", "PingFang SC", "sans-serif"],
+            "reading": ["Newsreader", "Source Han Serif SC", "serif"],
+            "label": ["Inter", "PingFang SC", "sans-serif"]
+          },
+          borderRadius: {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      vertical-align: middle;
+    }
+
+    body {
+      background-color: #f8f9fa;
+      color: #191c1d;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .hide-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .hide-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+  <link href="./inkdesk-unified.css" rel="stylesheet" />
+</head>
+<body class="font-body selection:bg-primary-fixed-dim selection:text-on-primary-fixed overflow-hidden">
+  <nav class="fixed left-0 top-0 z-40 flex h-screen w-56 flex-col gap-2 border-r border-black/5 bg-[#f3f4f5]/95 p-4 font-headline text-sm font-medium tracking-tight backdrop-blur-sm">
+    <div class="mb-7 mt-2 flex items-center gap-3 px-1">
+      <div class="flex h-8 w-8 items-center justify-center rounded-sm bg-primary text-on-primary">
+        <span class="material-symbols-outlined text-[20px]">edit_square</span>
+      </div>
+      <div>
+        <h2 class="text-base font-bold leading-tight text-slate-900">Inkdesk</h2>
+        <p class="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500">工作区视图</p>
+      </div>
+    </div>
+
+    <button class="mb-5 flex items-center justify-center gap-2 rounded-sm bg-primary py-2 text-sm font-semibold text-on-primary shadow-sm transition-all hover:opacity-90 active:scale-[0.99]">
+      <span class="material-symbols-outlined text-[18px]">add</span>
+      新建笔记
+    </button>
+
+    <div class="mb-3 px-3 text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">导航</div>
+
+    <div class="hide-scrollbar flex flex-grow flex-col gap-1 overflow-y-auto">
+      <a class="flex items-center gap-3 rounded-sm bg-white px-3 py-2 text-primary shadow-sm transition-all" href="#">
+        <span class="material-symbols-outlined text-[20px]">database</span>
+        <span>个人知识库</span>
+      </a>
+      <a class="flex items-center gap-3 rounded-sm px-3 py-2 text-slate-600 transition-all hover:bg-slate-200/50 hover:text-slate-900" href="#">
+        <span class="material-symbols-outlined text-[20px]">star</span>
+        <span>收藏</span>
+      </a>
+      <a class="flex items-center gap-3 rounded-sm px-3 py-2 text-slate-600 transition-all hover:bg-slate-200/50 hover:text-slate-900" href="#">
+        <span class="material-symbols-outlined text-[20px]">history_edu</span>
+        <span>最近编辑</span>
+      </a>
+      <a class="flex items-center gap-3 rounded-sm px-3 py-2 text-slate-600 transition-all hover:bg-slate-200/50 hover:text-slate-900" href="#">
+        <span class="material-symbols-outlined text-[20px]">edit_note</span>
+        <span>草稿</span>
+      </a>
+      <a class="flex items-center gap-3 rounded-sm px-3 py-2 text-slate-600 transition-all hover:bg-slate-200/50 hover:text-slate-900" href="#">
+        <span class="material-symbols-outlined text-[20px]">archive</span>
+        <span>归档</span>
+      </a>
+    </div>
+
+    <div class="mt-auto flex flex-col gap-1 border-t border-black/5 pt-4">
+      <a class="flex items-center gap-3 rounded-sm px-3 py-2 text-slate-600 transition-all hover:bg-slate-200/50 hover:text-slate-900" href="#">
+        <span class="material-symbols-outlined text-[20px]">help_outline</span>
+          <span>帮助</span>
+      </a>
+      <a class="flex items-center gap-3 rounded-sm px-3 py-2 text-slate-600 transition-all hover:bg-slate-200/50 hover:text-slate-900" href="#">
+        <span class="material-symbols-outlined text-[20px]">settings</span>
+        <span>设置</span>
+      </a>
+    </div>
+  </nav>
+
+  <header class="fixed right-0 top-0 z-50 w-[calc(100%-14rem)] bg-[#f8f9fa]/96 font-headline text-sm tracking-wide backdrop-blur-sm">
+    <div class="flex h-14 w-full items-center justify-between px-7">
+      <div class="flex flex-1 items-center gap-4">
+        <div class="relative w-full max-w-sm">
+          <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-slate-400">search</span>
+          <input class="w-full rounded-sm border-none bg-surface-container-low py-2 pl-10 pr-4 text-sm focus:ring-1 focus:ring-primary/20" placeholder="搜索知识库..." type="text" />
+        </div>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <span class="flex items-center gap-2 text-[11px] text-slate-400">
+          <span class="material-symbols-outlined text-[14px]">cloud_done</span>
+          已保存
+        </span>
+        <button class="rounded-sm p-2 text-slate-500 transition-colors duration-200 hover:bg-[#f3f4f5]">
+          <span class="material-symbols-outlined">more_horiz</span>
+        </button>
+        <button class="ml-1 rounded-sm bg-primary px-5 py-1.5 font-semibold text-on-primary shadow-sm transition-all active:opacity-80">
+          发布
+        </button>
+        <div class="h-8 w-8 overflow-hidden rounded-full border border-black/5 bg-surface-container-high">
+          <img class="h-full w-full object-cover" alt="User Avatar Profile Image" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC2XafrXKO7IFdpBspiqUNpX4Mnos5WWzsKo0OrGzsTbTghNjWnruel1aOli7sXtPF-_CSXli-GeFO3IVsuuCFmeyixaM2ktXrm6x8B8hsk_tzmRLXc35-uyE0oQVKTZe1niCk96k7Ixw9mIOcssddMy_cy2sr4KyFs8Atzozjn-vOinP3uwLknoSeOkEXrR9-RY7by5eo864BxpDNaXJhieGPjNj7HECBq2rV9cJdz4JXAOm4Woy0SGd5V47kRelTy-hv0lHO0VJvS" />
+        </div>
+      </div>
+    </div>
+    <div class="mx-7 h-px bg-black/5"></div>
+  </header>
+
+  <main class="ml-56 h-screen overflow-y-auto bg-surface pt-14">
+    <div class="mx-auto max-w-[920px] px-8 py-16">
+      <div class="mb-8 flex items-center gap-2 text-[10px] font-label font-medium uppercase tracking-[0.18em] text-slate-400">
+        <span>个人知识库</span>
+        <span class="material-symbols-outlined text-[10px]">chevron_right</span>
+        <span>核心理念</span>
+        <span class="material-symbols-outlined text-[10px]">chevron_right</span>
+        <span class="text-primary">当前编辑</span>
+      </div>
+
+      <div class="mb-10 flex items-start justify-between gap-8 border-b border-black/5 pb-8">
+        <div class="min-w-0 flex-1">
+          <h1 class="mb-6 font-headline text-[3.2rem] font-extrabold leading-[1.08] tracking-tighter text-on-background">
+            静谧笔谈：数字时代的沉浸式写作实验
+          </h1>
+          <p class="max-w-[760px] text-[1.08rem] leading-[1.85] text-on-surface-variant">
+            在当今碎片化信息横行的时代，深度思考与系统化表达已成为一种稀缺的奢侈品。Inkdesk 致力于通过极其简化的界面语言，为创作者重建一座通往专注的桥梁。
+          </p>
+        </div>
+
+        <div class="hidden shrink-0 rounded-sm bg-surface-container-low px-4 py-3 text-right xl:block">
+          <div class="text-[10px] font-label font-bold uppercase tracking-[0.18em] text-slate-400">文档状态</div>
+          <div class="mt-2 text-sm font-semibold text-slate-700">草稿已同步</div>
+          <div class="mt-1 text-xs text-slate-500">5 分钟前自动保存</div>
+        </div>
+      </div>
+
+      <article class="max-w-none">
+        <h2 class="mb-6 mt-16 font-headline text-2xl font-bold tracking-tight text-on-background">
+          一、设计的核心哲学
+        </h2>
+        <p class="mb-8 text-[1.08rem] leading-[1.85] text-on-surface-variant">
+          我们坚信“排版即视觉”。所有的交互动效应如翻阅高档纸张般丝滑，而非弹跳或闪烁。以下是我们构建该系统时遵循的三大支柱：
+        </p>
+        <ol class="mb-12 list-none space-y-6 p-0">
+          <li class="flex items-start gap-4 text-[1.08rem] leading-[1.85] text-on-surface-variant">
+            <span class="font-headline text-2xl font-extrabold leading-none text-primary">01.</span>
+            <span><strong>有意的留白：</strong> 负空间不是浪费，它是信息的呼吸室，让读者的视线能够精准聚焦。</span>
+          </li>
+          <li class="flex items-start gap-4 text-[1.08rem] leading-[1.85] text-on-surface-variant">
+            <span class="font-headline text-2xl font-extrabold leading-none text-primary">02.</span>
+            <span><strong>排版的绝对权威：</strong> 通过 Manrope 与 Newsreader 字体的共生，建立严谨的层级。</span>
+          </li>
+          <li class="flex items-start gap-4 text-[1.08rem] leading-[1.85] text-on-surface-variant">
+            <span class="font-headline text-2xl font-extrabold leading-none text-primary">03.</span>
+            <span><strong>无线条规则：</strong> 拒绝 1px 灰色实线，利用微妙的色调偏移界定空间。</span>
+          </li>
+        </ol>
+
+        <blockquote class="my-12 border-l-4 border-primary bg-surface-container-low px-8 py-6 font-reading text-[1.35rem] italic text-primary/85">
+          “写作不仅是记录，它是对混乱思想的策展。好的工具应该在灵感迸发时自动隐形。”
+        </blockquote>
+
+        <h2 class="mb-6 mt-16 font-headline text-2xl font-bold tracking-tight text-on-background">
+          二、技术实现的简洁性
+        </h2>
+        <p class="mb-6 text-[1.08rem] leading-[1.85] text-on-surface-variant">
+          为了保证加载速度与代码的纯粹性，我们采用了最精简的 Tailwind 配置，同时让编辑画布对长时间输入更友好。
+        </p>
+
+        <div class="group relative my-10">
+          <div class="absolute right-4 top-4 opacity-0 transition-opacity group-hover:opacity-100">
+            <button class="p-2 text-slate-400 hover:text-white">
+              <span class="material-symbols-outlined text-[18px]">content_copy</span>
+            </button>
+          </div>
+          <pre class="overflow-x-auto rounded-sm bg-[#1e1e1e] p-6 font-mono text-sm leading-relaxed text-slate-300"><code class="block">/* Inkdesk 核心样式变量 */
+:root {
+  --primary-accent: #00685f;
+  --surface-paper: #f8f9fa;
+  --typography-headline: 'Manrope', sans-serif;
+  --typography-body: 'Inter', sans-serif;
+}
+
+.editor-canvas {
+  max-width: 920px;
+  margin: 0 auto;
+  line-height: 1.8;
+}</code></pre>
+        </div>
+
+        <p class="mb-20 text-[1.08rem] leading-[1.85] text-on-surface-variant">
+          在这个充满噪音的世界里，请允许 Inkdesk 成为你的数字避难所。每一行代码、每一处间距，都只为一个目的而存在：让你重新爱上深度表达。
+        </p>
+      </article>
+
+      <div class="h-28"></div>
+    </div>
+  </main>
+</body>
+</html>

@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+  <title>Inkdesk - 个人知识库</title>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Inter:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "surface-container-highest": "#e1e3e4",
+            "on-tertiary-fixed": "#370e00",
+            "tertiary-container": "#b05e3d",
+            "on-secondary-container": "#596374",
+            "secondary-fixed": "#d9e3f7",
+            "outline": "#6d7a77",
+            "on-tertiary": "#ffffff",
+            "inverse-surface": "#2e3132",
+            "surface-variant": "#e1e3e4",
+            "primary-container": "#008378",
+            "background": "#f8f9fa",
+            "outline-variant": "#bcc9c6",
+            "surface-container-high": "#e7e8e9",
+            "surface-bright": "#f8f9fa",
+            "surface-container-lowest": "#ffffff",
+            "secondary-fixed-dim": "#bdc7db",
+            "on-surface-variant": "#3d4947",
+            "on-primary-fixed-variant": "#005049",
+            "error-container": "#ffdad6",
+            "surface-container": "#edeeef",
+            "primary": "#00685f",
+            "surface-tint": "#006a61",
+            "on-primary-fixed": "#00201d",
+            "on-secondary-fixed-variant": "#3d4757",
+            "on-surface": "#191c1d",
+            "inverse-on-surface": "#f0f1f2",
+            "inverse-primary": "#6bd8cb",
+            "surface-dim": "#d9dadb",
+            "primary-fixed-dim": "#6bd8cb",
+            "on-error": "#ffffff",
+            "error": "#ba1a1a",
+            "surface": "#f8f9fa",
+            "on-tertiary-fixed-variant": "#773215",
+            "secondary": "#555f70",
+            "tertiary-fixed-dim": "#ffb59a",
+            "surface-container-low": "#f3f4f5",
+            "on-primary": "#ffffff",
+            "secondary-container": "#d6e0f4",
+            "on-error-container": "#93000a",
+            "primary-fixed": "#89f5e7",
+            "on-tertiary-container": "#fffbff",
+            "tertiary-fixed": "#ffdbce",
+            "on-primary-container": "#f4fffc",
+            "on-background": "#191c1d",
+            "on-secondary-fixed": "#121c2a",
+            "tertiary": "#924628",
+            "on-secondary": "#ffffff"
+          },
+          fontFamily: {
+            "headline": ["Manrope", "PingFang SC", "sans-serif"],
+            "body": ["Newsreader", "Source Han Serif SC", "serif"],
+            "label": ["Inter", "PingFang SC", "sans-serif"]
+          },
+          borderRadius: {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'Inter', 'PingFang SC', sans-serif; -webkit-font-smoothing: antialiased; }
+    .font-headline { font-family: 'Manrope', 'PingFang SC', sans-serif; }
+    .font-body { font-family: 'Newsreader', 'Source Han Serif SC', serif; }
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      vertical-align: middle;
+    }
+  </style>
+  <link href="./inkdesk-unified.css" rel="stylesheet" />
+</head>
+<body class="overflow-hidden bg-surface text-on-surface">
+  <aside class="fixed left-0 top-0 z-50 flex h-screen w-64 flex-col border-r border-neutral-100 bg-neutral-50 p-6">
+    <div class="mb-12">
+      <h1 class="font-headline text-lg font-black tracking-tight text-teal-900">Inkdesk</h1>
+      <p class="mt-1 text-xs tracking-[0.18em] text-neutral-500">个人策展空间</p>
+    </div>
+
+    <nav class="flex-grow space-y-2">
+      <a class="flex items-center gap-3 rounded-sm bg-white px-3 py-2.5 font-headline text-sm font-bold tracking-wide text-teal-700" href="#">
+        <span class="material-symbols-outlined text-[20px]">database</span>
+        个人知识库
+      </a>
+      <a class="flex items-center gap-3 px-3 py-2.5 font-headline text-sm tracking-wide text-neutral-600 transition-all hover:text-teal-600" href="#">
+        <span class="material-symbols-outlined text-[20px]">star</span>
+        收藏
+      </a>
+      <a class="flex items-center gap-3 px-3 py-2.5 font-headline text-sm tracking-wide text-neutral-600 transition-all hover:text-teal-600" href="#">
+        <span class="material-symbols-outlined text-[20px]">edit_note</span>
+        草稿
+      </a>
+      <a class="flex items-center gap-3 px-3 py-2.5 font-headline text-sm tracking-wide text-neutral-600 transition-all hover:text-teal-600" href="#">
+        <span class="material-symbols-outlined text-[20px]">archive</span>
+        归档
+      </a>
+    </nav>
+
+    <div class="mt-auto space-y-2 pt-6">
+      <button class="mb-6 w-full rounded-sm bg-primary py-3 font-headline text-sm font-bold tracking-tight text-on-primary transition-colors hover:bg-primary-container">
+        新建合集
+      </button>
+      <a class="flex items-center gap-3 px-3 py-2 font-headline text-xs uppercase tracking-widest text-neutral-600 transition-all hover:text-teal-600" href="#">
+        <span class="material-symbols-outlined text-[18px]">help_outline</span>
+        帮助
+      </a>
+      <a class="flex items-center gap-3 px-3 py-2 font-headline text-xs uppercase tracking-widest text-neutral-600 transition-all hover:text-teal-600" href="#">
+        <span class="material-symbols-outlined text-[18px]">settings</span>
+        设置
+      </a>
+    </div>
+  </aside>
+
+  <main class="ml-64 flex min-h-screen flex-col overflow-y-auto bg-surface">
+    <header class="sticky top-0 z-40 flex items-center justify-between border-b border-neutral-100 bg-white px-8 py-4">
+      <div class="flex items-center gap-6">
+        <div class="flex items-center text-xs uppercase tracking-widest text-neutral-400">
+          <span>个人知识库</span>
+          <span class="mx-2">/</span>
+          <span class="font-semibold text-on-surface">全部文档</span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-8">
+        <div class="hidden items-center gap-6 font-headline text-sm lg:flex">
+          <a class="border-b-2 border-teal-700 pb-1 font-semibold text-teal-700" href="#">文档</a>
+          <a class="px-2 py-1 text-neutral-500 transition-colors duration-200 hover:bg-neutral-50" href="#">共享</a>
+          <a class="px-2 py-1 text-neutral-500 transition-colors duration-200 hover:bg-neutral-50" href="#">最近</a>
+        </div>
+
+        <div class="flex items-center gap-4">
+          <div class="group relative">
+            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-lg text-neutral-400">search</span>
+            <input class="w-64 rounded-sm border-none bg-surface-container-low py-1.5 pl-10 pr-4 text-sm focus:ring-1 focus:ring-primary" placeholder="搜索标题或标签..." type="text" />
+          </div>
+          <button class="rounded-sm bg-primary px-4 py-1.5 font-headline text-sm font-bold tracking-tight text-on-primary transition-transform hover:scale-[0.99]">
+            新建笔记
+          </button>
+          <div class="ml-2 flex items-center gap-2 border-l border-neutral-100 pl-4">
+            <button class="rounded-full p-2 text-neutral-500 transition-colors hover:bg-neutral-50">
+              <span class="material-symbols-outlined">notifications</span>
+            </button>
+            <div class="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-surface-container-high">
+              <img alt="User Profile" class="h-full w-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBNmswZJWqYHk95HhmXZhUjROF9Fs3qFhmCfcJBvnnhGWDPbbV_WOnyXmeNox24CqB5QjJcgXs-dcpkQ4MuhgnJtadLsJB2I-hWst6dnH8rugiinMupQTIubMLE8Rk2UukJ3ZXwPwNL6FZbybJbP6U9hKcdW_v7DoHjalIaPrtK0qWIbppU0zPmh0AknmkANVfj3Owsg6LeU28WStF-qmLUEuxCEkbBSY8UR5YJ5WJpNJ53JkLu3MUCaV6MyhsaH71K6sq_rzSJXfvH" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <section class="mx-auto w-full max-w-6xl px-12 py-14">
+      <div class="mb-12 grid grid-cols-12 items-end gap-8">
+        <div class="col-span-8">
+          <div class="mb-3 flex items-center gap-3">
+            <span class="rounded-sm bg-surface-container-low px-2 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-neutral-500">知识库总览</span>
+            <span class="text-xs text-neutral-400">共 3 篇文档，最近 7 天更新 2 篇</span>
+          </div>
+          <h2 class="font-headline text-6xl font-extrabold tracking-tighter text-on-surface">
+            全部文档
+          </h2>
+          <p class="mt-4 max-w-xl font-body text-xl leading-relaxed text-secondary">
+            这里收纳被持续整理的想法、笔记与资料，以便长期检索、引用与沉淀。
+          </p>
+        </div>
+
+        <div class="col-span-4 flex justify-end gap-3 pb-2">
+          <button class="flex items-center gap-2 bg-surface-container-low px-4 py-2 font-headline text-xs font-bold uppercase tracking-widest text-on-surface-variant transition-colors hover:bg-surface-container-high">
+            <span class="material-symbols-outlined text-[16px]">sort</span>
+            最近更新
+          </button>
+          <button class="flex items-center gap-2 bg-surface-container-low px-3 py-2 text-on-surface-variant transition-colors hover:bg-surface-container-high">
+            <span class="material-symbols-outlined text-[18px]">grid_view</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="mb-10 rounded-sm bg-surface-container-low p-4">
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="mr-4 text-xs uppercase tracking-[0.2em] text-neutral-400">筛选:</span>
+          <button class="rounded-sm bg-primary px-4 py-1.5 font-headline text-xs font-bold text-on-primary">全部</button>
+          <button class="rounded-sm bg-white px-4 py-1.5 font-headline text-xs font-bold text-on-surface-variant transition-colors hover:bg-surface-container-high">Philosophy</button>
+          <button class="rounded-sm bg-white px-4 py-1.5 font-headline text-xs font-bold text-on-surface-variant transition-colors hover:bg-surface-container-high">设计</button>
+          <button class="rounded-sm bg-white px-4 py-1.5 font-headline text-xs font-bold text-on-surface-variant transition-colors hover:bg-surface-container-high">工程</button>
+          <button class="rounded-sm bg-white px-4 py-1.5 font-headline text-xs font-bold text-on-surface-variant transition-colors hover:bg-surface-container-high">笔记</button>
+          <button class="rounded-sm bg-white px-4 py-1.5 font-headline text-xs font-bold text-on-surface-variant transition-colors hover:bg-surface-container-high">归档</button>
+        </div>
+      </div>
+
+      <div class="space-y-4">
+        <div class="grid grid-cols-12 px-6 py-2 text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-400">
+          <div class="col-span-6">文档标题</div>
+          <div class="col-span-2">标签</div>
+          <div class="col-span-2">最近更新</div>
+          <div class="col-span-2 text-right">指标</div>
+        </div>
+
+        <div class="group grid grid-cols-12 items-center border-l-4 border-transparent bg-surface-container-lowest px-6 py-7 transition-all duration-300 hover:border-primary hover:bg-surface-container-low">
+          <div class="col-span-6 pr-8">
+            <div class="mb-2 flex items-center gap-3">
+              <span class="rounded-sm bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-primary">已发布</span>
+            </div>
+            <h3 class="font-body text-[1.9rem] font-semibold text-on-surface transition-colors group-hover:text-primary">
+              静谧笔谈：论数字化时代的写作哲学
+            </h3>
+            <p class="mt-2 line-clamp-1 font-body text-sm italic text-neutral-400">
+              在一个充满噪音的世界里，文字是最后的避难所...
+            </p>
+          </div>
+          <div class="col-span-2 flex flex-wrap gap-2">
+            <span class="bg-secondary-container px-2 py-0.5 text-[10px] font-bold uppercase tracking-tight text-on-secondary-container">哲学</span>
+            <span class="bg-secondary-container px-2 py-0.5 text-[10px] font-bold uppercase tracking-tight text-on-secondary-container">写作</span>
+          </div>
+          <div class="col-span-2 text-sm text-on-surface-variant">Oct 24, 2023</div>
+          <div class="col-span-2 text-right">
+            <div class="flex items-center justify-end gap-4">
+              <span class="text-[10px] text-neutral-400">1,240 字</span>
+              <div class="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                <span class="material-symbols-outlined text-xl text-primary">edit</span>
+                <span class="material-symbols-outlined text-xl text-neutral-400">more_vert</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="group grid grid-cols-12 items-center border-l-4 border-transparent bg-surface-container-lowest px-6 py-7 transition-all duration-300 hover:border-primary hover:bg-surface-container-low">
+          <div class="col-span-6 pr-8">
+            <div class="mb-2 flex items-center gap-3">
+              <span class="rounded-sm bg-surface-container-high px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-on-surface-variant">Draft</span>
+            </div>
+            <h3 class="font-body text-[1.9rem] font-semibold text-on-surface transition-colors group-hover:text-primary">
+              Tailwind CSS 与视觉层级的平衡
+            </h3>
+            <p class="mt-2 line-clamp-1 font-body text-sm italic text-neutral-400">
+              效能与美学的博弈，如何通过原子化类构建深度的视觉秩序...
+            </p>
+          </div>
+          <div class="col-span-2 flex flex-wrap gap-2">
+            <span class="bg-secondary-container px-2 py-0.5 text-[10px] font-bold uppercase tracking-tight text-on-secondary-container">前端</span>
+            <span class="bg-secondary-container px-2 py-0.5 text-[10px] font-bold uppercase tracking-tight text-on-secondary-container">设计</span>
+          </div>
+          <div class="col-span-2 text-sm text-on-surface-variant">Mar 08, 2024</div>
+          <div class="col-span-2 text-right">
+            <div class="flex items-center justify-end gap-4">
+              <span class="text-[10px] text-neutral-400">3,150 字</span>
+              <div class="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                <span class="material-symbols-outlined text-xl text-primary">edit</span>
+                <span class="material-symbols-outlined text-xl text-neutral-400">more_vert</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="group grid grid-cols-12 items-center border-l-4 border-transparent bg-surface-container-lowest px-6 py-7 transition-all duration-300 hover:border-primary hover:bg-surface-container-low">
+          <div class="col-span-6 pr-8">
+            <div class="mb-2 flex items-center gap-3">
+              <span class="rounded-sm bg-surface-container-high px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-on-surface-variant">Note</span>
+            </div>
+            <h3 class="font-body text-[1.9rem] font-semibold text-on-surface transition-colors group-hover:text-primary">
+              设计心理学再读：认知负担与直觉反馈
+            </h3>
+            <p class="mt-2 line-clamp-1 font-body text-sm italic text-neutral-400">
+              Don Norman 的理论在 AI 驱动交互时代的现代演变...
+            </p>
+          </div>
+          <div class="col-span-2 flex flex-wrap gap-2">
+            <span class="bg-secondary-container px-2 py-0.5 text-[10px] font-bold uppercase tracking-tight text-on-secondary-container">读书笔记</span>
+          </div>
+          <div class="col-span-2 text-sm text-on-surface-variant">Feb 22, 2024</div>
+          <div class="col-span-2 text-right">
+            <div class="flex items-center justify-end gap-4">
+              <span class="text-[10px] text-neutral-400">890 字</span>
+              <div class="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                <span class="material-symbols-outlined text-xl text-primary">edit</span>
+                <span class="material-symbols-outlined text-xl text-neutral-400">more_vert</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex flex-col items-center justify-center py-12 opacity-30">
+          <div class="mb-6 h-[1px] w-16 bg-neutral-400"></div>
+          <p class="text-xs uppercase tracking-widest">知识库到底部了</p>
+        </div>
+      </div>
+    </section>
+
+    <footer class="mt-auto flex items-center justify-between border-t border-neutral-100 bg-surface-container-low px-12 py-8 text-[10px] uppercase tracking-widest text-neutral-400">
+      <div>找到 3 篇文档</div>
+      <div class="flex gap-4">
+        <button class="transition-colors hover:text-primary">Previous Page</button>
+        <span class="text-neutral-300">|</span>
+        <button class="font-bold text-on-surface">1</button>
+        <span class="text-neutral-300">|</span>
+        <button class="transition-colors hover:text-primary">Next Page</button>
+      </div>
+    </footer>
+  </main>
+</body>
+</html>
