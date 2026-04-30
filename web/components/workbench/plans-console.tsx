@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { type FormEvent, useTransition } from "react";
 
 import type { KnowledgeNoteSummary, PlanDetail, PlanWorkbenchData } from "@/lib/types";
 
@@ -9,6 +12,9 @@ type PlansConsoleProps = {
   createAction?: (formData: FormData) => Promise<void>;
   updateAction?: (formData: FormData) => Promise<void>;
 };
+
+type PlanAction = (formData: FormData) => Promise<void>;
+type SubmitAction = (action?: PlanAction) => (event: FormEvent<HTMLFormElement>) => void;
 
 type EditablePlanShape = Pick<
   PlanDetail,
@@ -42,9 +48,26 @@ const createDefaults: EditablePlanShape = {
 };
 
 export function PlansConsole({ workbench, linkedKnowledge, allKnowledge, createAction, updateAction }: PlansConsoleProps) {
+  const [isPending, startTransition] = useTransition();
   const todayPlan = workbench.lanes.find((lane) => lane.key === "today")?.plans[0] ?? workbench.lanes[0]?.plans[0];
   const plans = workbench.lanes.flatMap((lane) => lane.plans);
   const agentReadyPlans = plans.filter((plan) => plan.status !== "done");
+
+  function submitAction(action?: PlanAction) {
+    return (event: FormEvent<HTMLFormElement>) => {
+      if (!action) {
+        return;
+      }
+
+      event.preventDefault();
+      const formData = new FormData(event.currentTarget);
+
+      startTransition(async () => {
+        await action(formData);
+        window.location.reload();
+      });
+    };
+  }
 
   return (
     <main className="mx-auto max-w-shell px-6 py-10 lg:px-8">
@@ -116,8 +139,8 @@ export function PlansConsole({ workbench, linkedKnowledge, allKnowledge, createA
         </div>
 
         {createAction ? (
-          <form action={createAction} className="mt-6">
-            <PlanEditorFields allKnowledge={allKnowledge} submitLabel="创建计划" values={createDefaults} />
+          <form className="mt-6" onSubmit={submitAction(createAction)}>
+            <PlanEditorFields allKnowledge={allKnowledge} isPending={isPending} submitLabel="创建计划" values={createDefaults} />
           </form>
         ) : null}
       </section>
@@ -154,6 +177,8 @@ export function PlansConsole({ workbench, linkedKnowledge, allKnowledge, createA
                       plan={plan}
                       planNotes={planNotes}
                       searchTerm={searchTerm}
+                      submitAction={submitAction}
+                      isPending={isPending}
                       updateAction={updateAction}
                     />
                   );
@@ -213,12 +238,16 @@ function PlanCard({
   planNotes,
   searchTerm,
   allKnowledge,
+  isPending,
+  submitAction,
   updateAction
 }: {
   plan: PlanDetail;
   planNotes: KnowledgeNoteSummary[];
   searchTerm: string;
   allKnowledge: KnowledgeNoteSummary[];
+  isPending: boolean;
+  submitAction: SubmitAction;
   updateAction?: (formData: FormData) => Promise<void>;
 }) {
   return (
@@ -287,9 +316,9 @@ function PlanCard({
       {updateAction ? (
         <details className="mt-5 rounded-[24px] bg-white px-5 py-5">
           <summary className="cursor-pointer text-sm font-semibold text-ink-text">编辑计划</summary>
-          <form action={updateAction} className="mt-5">
+          <form className="mt-5" onSubmit={submitAction(updateAction)}>
             <input name="planId" type="hidden" value={plan.id} />
-            <PlanEditorFields allKnowledge={allKnowledge} submitLabel="保存计划变更" values={plan} />
+            <PlanEditorFields allKnowledge={allKnowledge} isPending={isPending} submitLabel="保存计划变更" values={plan} />
           </form>
         </details>
       ) : null}
@@ -300,10 +329,12 @@ function PlanCard({
 function PlanEditorFields({
   values,
   allKnowledge,
+  isPending,
   submitLabel
 }: {
   values: EditablePlanShape;
   allKnowledge: KnowledgeNoteSummary[];
+  isPending: boolean;
   submitLabel: string;
 }) {
   return (
@@ -378,8 +409,8 @@ function PlanEditorFields({
         </div>
       </div>
 
-      <button className="rounded-sm bg-ink-primary px-4 py-3 text-sm font-semibold text-white" type="submit">
-        {submitLabel}
+      <button className="rounded-sm bg-ink-primary px-4 py-3 text-sm font-semibold text-white" disabled={isPending} type="submit">
+        {isPending ? "处理中..." : submitLabel}
       </button>
     </div>
   );

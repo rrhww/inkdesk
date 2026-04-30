@@ -20,6 +20,11 @@ describe("fullstack preflight helpers", () => {
     });
 
     expect(diagnostics.isLocal).toBe(true);
+
+    if (!diagnostics.isLocal) {
+      throw new Error("Expected local diagnostics");
+    }
+
     expect(diagnostics.backendPort).toBe(8080);
     expect(diagnostics.backendReachable).toBe(false);
     expect(diagnostics.postgresReachable).toBe(true);

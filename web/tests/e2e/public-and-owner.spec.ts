@@ -3,9 +3,11 @@ import { expect, test } from "@playwright/test";
 test("public home stays public-only", async ({ page }) => {
   await page.goto("/");
 
-  await expect(page.getByRole("heading", { name: /公开输出与长期项目分享/ })).toBeVisible();
-  await expect(page.getByText("公开统计")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "构建超级个人工作台的人" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "我长期在追的问题" })).toBeVisible();
+  await expect(page.getByText("最近文章")).toBeVisible();
   await expect(page.getByText("进入主系统")).toHaveCount(0);
+  await expect(page.getByText("登录")).toHaveCount(0);
 });
 
 test("unauthenticated access to /app redirects to /login", async ({ page }) => {

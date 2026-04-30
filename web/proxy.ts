@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 
 import { OWNER_SESSION_COOKIE, resolveProtectedAppRedirect } from "./lib/owner-session";
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const redirectTarget = resolveProtectedAppRedirect(
     request.nextUrl.pathname,
     request.cookies.get(OWNER_SESSION_COOKIE)?.value

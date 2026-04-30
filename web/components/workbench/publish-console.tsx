@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { type FormEvent, useTransition } from "react";
 
 import { SectionHeading } from "@/components/ui/section-heading";
 import { StatCard } from "@/components/ui/stat-card";
@@ -12,6 +15,24 @@ type PublishConsoleProps = {
 };
 
 export function PublishConsole({ dashboard, publishAction, unpublishAction }: PublishConsoleProps) {
+  const [isPending, startTransition] = useTransition();
+
+  function submitAction(action?: (formData: FormData) => Promise<void>) {
+    return (event: FormEvent<HTMLFormElement>) => {
+      if (!action) {
+        return;
+      }
+
+      event.preventDefault();
+      const formData = new FormData(event.currentTarget);
+
+      startTransition(async () => {
+        await action(formData);
+        window.location.reload();
+      });
+    };
+  }
+
   return (
     <main className="mx-auto max-w-shell px-6 py-10 lg:px-8">
       <section className="mb-8">
@@ -52,10 +73,10 @@ export function PublishConsole({ dashboard, publishAction, unpublishAction }: Pu
                     回到知识资产
                   </Link>
                   {unpublishAction ? (
-                    <form action={unpublishAction}>
+                    <form onSubmit={submitAction(unpublishAction)}>
                       <input name="noteId" type="hidden" value={entry.noteId} />
-                      <button className="rounded-sm bg-white px-4 py-3 text-sm font-semibold text-ink-text" type="submit">
-                        撤回到主系统
+                      <button className="rounded-sm bg-white px-4 py-3 text-sm font-semibold text-ink-text" disabled={isPending} type="submit">
+                        {isPending ? "处理中..." : "撤回到主系统"}
                       </button>
                     </form>
                   ) : (
@@ -83,10 +104,10 @@ export function PublishConsole({ dashboard, publishAction, unpublishAction }: Pu
                 <div className="mt-4 rounded-[20px] bg-white px-4 py-4 text-sm text-ink-muted">来源知识资产：{entry.noteId}</div>
                 <div className="mt-5 flex flex-wrap gap-3">
                   {publishAction ? (
-                    <form action={publishAction}>
+                    <form onSubmit={submitAction(publishAction)}>
                       <input name="noteId" type="hidden" value={entry.noteId} />
-                      <button className="rounded-sm bg-ink-primary px-4 py-3 text-sm font-semibold text-white" type="submit">
-                        发布到公开输出
+                      <button className="rounded-sm bg-ink-primary px-4 py-3 text-sm font-semibold text-white" disabled={isPending} type="submit">
+                        {isPending ? "处理中..." : "发布到公开输出"}
                       </button>
                     </form>
                   ) : null}
