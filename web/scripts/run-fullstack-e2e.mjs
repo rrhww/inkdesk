@@ -1,5 +1,6 @@
 import { spawn } from "node:child_process";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import { resolveApiBaseUrl, waitForBackendReady } from "./fullstack-preflight.mjs";
 
 export function buildPlaywrightCommand({
@@ -52,7 +53,9 @@ async function main() {
   });
 }
 
-main().catch((error) => {
-  console.error(`[inkdesk:e2e:fullstack] ${error instanceof Error ? error.message : String(error)}`);
-  process.exit(1);
-});
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main().catch((error) => {
+    console.error(`[inkdesk:e2e:fullstack] ${error instanceof Error ? error.message : String(error)}`);
+    process.exit(1);
+  });
+}
