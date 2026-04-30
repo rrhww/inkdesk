@@ -8,9 +8,11 @@ Inkdesk 的 Spring Boot 后端应用。
 - `Flyway + PostgreSQL`
 - `Actuator health`
 - 真实 owner 登录 / 登出 / 会话校验
+- 主系统首页聚合接口
 - 设置持久化接口
 - 知识资产创建 / 编辑 / 发布 / 撤回接口
-- 计划创建 / 更新接口
+- 计划读取 / 创建 / 更新接口
+- 搜索召回接口
 - 公开文章列表与详情接口
 
 ## 本地运行
@@ -32,7 +34,7 @@ docker compose --env-file ..\infra\.env -f ..\infra\docker-compose.yml up -d
 .\mvnw.cmd spring-boot:run -Dspring-boot.run.profiles=local
 ```
 
-`local` profile 会在数据库中不存在 owner 数据时自动写入：
+`local` profile 会在数据库里缺少 owner 或演示数据时自动回补：
 
 - owner 邮箱：`owner@inkdesk.local`
 - owner 密码：`inkdesk-owner`
@@ -61,6 +63,7 @@ $env:INKDESK_AUTH_SESSION_DURATION='PT8H'
 - `POST /api/auth/logout`
 - `GET /api/auth/me`
 - `GET /actuator/health`
+- `GET /api/admin/home`
 - `GET /api/admin/settings`
 - `PATCH /api/admin/settings`
 - `GET /api/admin/notes/tree`
@@ -72,6 +75,7 @@ $env:INKDESK_AUTH_SESSION_DURATION='PT8H'
 - `GET /api/admin/plans`
 - `POST /api/admin/plans`
 - `PATCH /api/admin/plans/{id}`
+- `GET /api/admin/search`
 - `GET /api/public/articles`
 - `GET /api/public/articles/{slug}`
 

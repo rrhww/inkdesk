@@ -1,6 +1,7 @@
 package com.inkdesk.server.plans;
 
 import com.inkdesk.server.knowledge.persistence.ContentNodeRepository;
+import com.inkdesk.server.knowledge.persistence.WorkspaceEntity;
 import com.inkdesk.server.knowledge.persistence.WorkspaceRepository;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
@@ -35,16 +36,12 @@ public class LocalPlanSeedLoader implements ApplicationRunner {
     @Override
     @Transactional
     public void run(ApplicationArguments args) {
-        if (planRepository.count() > 0) {
-            return;
-        }
-
         var workspace = workspaceRepository.findBySlug("inkdesk").orElse(null);
         if (workspace == null) {
             return;
         }
 
-        planRepository.save(buildPlan(
+        ensurePlan(buildPlan(
                 workspace,
                 "plan-001",
                 "重构公共面与主系统的双面入口",
@@ -62,7 +59,7 @@ public class LocalPlanSeedLoader implements ApplicationRunner {
                 Set.of("note-003", "note-001")
         ));
 
-        planRepository.save(buildPlan(
+        ensurePlan(buildPlan(
                 workspace,
                 "plan-002",
                 "补齐 Agent 控制台的核心模块",
@@ -80,7 +77,7 @@ public class LocalPlanSeedLoader implements ApplicationRunner {
                 Set.of("note-001", "note-002")
         ));
 
-        planRepository.save(buildPlan(
+        ensurePlan(buildPlan(
                 workspace,
                 "plan-003",
                 "让发布模块退到次级位置",
@@ -99,8 +96,16 @@ public class LocalPlanSeedLoader implements ApplicationRunner {
         ));
     }
 
+    private void ensurePlan(PlanEntity plan) {
+        if (planRepository.existsById(plan.getId())) {
+            return;
+        }
+
+        planRepository.save(plan);
+    }
+
     private PlanEntity buildPlan(
-            com.inkdesk.server.knowledge.persistence.WorkspaceEntity workspace,
+            WorkspaceEntity workspace,
             String id,
             String title,
             String summary,

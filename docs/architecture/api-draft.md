@@ -41,6 +41,10 @@
 
 - 目标：获取笔记与知识库结构
 
+### `GET /api/admin/notes/{id}`
+
+- 目标：获取单篇知识资产详情
+
 ### `POST /api/admin/notes`
 
 - 目标：创建知识资产
@@ -48,10 +52,6 @@
 ### `PATCH /api/admin/notes/{id}`
 
 - 目标：更新知识资产
-
-### `POST /api/admin/notes/{id}/snapshot`
-
-- 目标：创建快照
 
 ## 四、任务 / 计划接口
 
@@ -73,7 +73,17 @@
 
 - 目标：跨知识资产做关键词召回
 
-## 六、发布接口
+## 六、设置接口
+
+### `GET /api/admin/settings`
+
+- 目标：获取当前工作区设置
+
+### `PATCH /api/admin/settings`
+
+- 目标：更新当前工作区设置
+
+## 七、发布接口
 
 ### `POST /api/admin/notes/{id}/publish`
 
@@ -83,7 +93,7 @@
 
 - 目标：从公开输出层撤回
 
-## 七、公开输出接口
+## 八、公开输出接口
 
 ### `GET /api/public/articles`
 
@@ -98,3 +108,4 @@
 - 当前不做访客登录
 - 当前不做公开全文搜索
 - 当前不做复杂 Agent 调用接口，首页 Agent 内容先由规则模板聚合接口承接
+- 当前不做 `POST /api/admin/notes/{id}/snapshot`

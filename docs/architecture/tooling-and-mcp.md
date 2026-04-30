@@ -11,7 +11,7 @@
 - `Git`
 - `Node.js LTS`
 - `pnpm`
-- `JDK 21`
+- `JDK 17`
 - `Maven 3.9+`
 - `Docker Desktop`
 - `PostgreSQL`
