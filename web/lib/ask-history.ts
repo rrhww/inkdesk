@@ -7,13 +7,14 @@ export function readAskHistory(): ResearchAskHistoryEntry[] {
     return [];
   }
 
-  const raw = window.localStorage.getItem(ASK_HISTORY_STORAGE_KEY);
-  if (!raw) {
-    return [];
-  }
-
   try {
-    return JSON.parse(raw) as ResearchAskHistoryEntry[];
+    const raw = window.localStorage.getItem(ASK_HISTORY_STORAGE_KEY);
+    if (!raw) {
+      return [];
+    }
+
+    const parsed = JSON.parse(raw);
+    return isResearchAskHistoryEntryArray(parsed) ? parsed : [];
   } catch {
     return [];
   }
@@ -24,7 +25,11 @@ export function writeAskHistory(entries: ResearchAskHistoryEntry[]) {
     return;
   }
 
-  window.localStorage.setItem(ASK_HISTORY_STORAGE_KEY, JSON.stringify(entries));
+  try {
+    window.localStorage.setItem(ASK_HISTORY_STORAGE_KEY, JSON.stringify(entries));
+  } catch {
+    return;
+  }
 }
 
 export function mergeAskHistoryEntry(
@@ -33,4 +38,24 @@ export function mergeAskHistoryEntry(
 ): ResearchAskHistoryEntry[] {
   const deduped = current.filter((item) => item.id !== next.id && item.href !== next.href);
   return [next, ...deduped].slice(0, 12);
+}
+
+function isResearchAskHistoryEntryArray(value: unknown): value is ResearchAskHistoryEntry[] {
+  return Array.isArray(value) && value.every(isResearchAskHistoryEntry);
+}
+
+function isResearchAskHistoryEntry(value: unknown): value is ResearchAskHistoryEntry {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const entry = value as Record<string, unknown>;
+  return (
+    typeof entry.id === "string" &&
+    typeof entry.title === "string" &&
+    typeof entry.href === "string" &&
+    (typeof entry.topicTitle === "string" || entry.topicTitle === null || entry.topicTitle === undefined) &&
+    typeof entry.preview === "string" &&
+    typeof entry.updatedAt === "string"
+  );
 }
