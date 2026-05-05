@@ -20,7 +20,7 @@ function getHistoryItems(snapshot: ResearchDashboard) {
 
   if (snapshot.pendingReviews[0]) {
     items.push({
-      href: "/app/review",
+      href: "/app/ingest",
       title: "待审阅",
       preview: snapshot.pendingReviews[0].title
     });

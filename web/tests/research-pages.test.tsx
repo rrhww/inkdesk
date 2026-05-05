@@ -3,6 +3,7 @@ import test from "node:test";
 
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+import { researchDashboardFixture } from "../lib/mock/research-fixtures";
 
 function compact(html: string) {
   return html.replace(/\s+/g, " ");
@@ -45,14 +46,13 @@ test("today vault panel becomes the authenticated home experience", async () => 
   assert.doesNotMatch(html, /待发布内容/);
 });
 
-test("sidebar prioritizes raw, ingest, wiki, and ask in that order", async () => {
+test("sidebar becomes a history-first research rail", async () => {
   const { AppSidebarContent } = await import("../components/app-sidebar");
-  const html = compact(renderToStaticMarkup(AppSidebarContent({ pathname: "/app/ingest" })));
+  const html = compact(renderToStaticMarkup(AppSidebarContent({ pathname: "/app/ingest", snapshot: researchDashboardFixture })));
   const markers = [
-    'href="/app/raw"',
+    'href="/app"',
     'href="/app/ingest"',
-    'href="/app/wiki"',
-    'href="/app/ask"'
+    'href="/app/raw"'
   ];
   const positions = markers.map((marker) => html.indexOf(marker));
 
@@ -65,17 +65,15 @@ test("sidebar prioritizes raw, ingest, wiki, and ask in that order", async () =>
   }
 
   assert.match(html, /LLM Wiki/);
-  assert.match(html, /Raw/);
-  assert.match(html, /Ingest/);
-  assert.match(html, /Wiki/);
+  assert.match(html, /最近对话/);
+  assert.match(html, /新建对话/);
+  assert.match(html, /当前主题/);
+  assert.match(html, /待审阅/);
+  assert.match(html, /最新资料/);
   assert.doesNotMatch(html, /任务与计划/);
   assert.doesNotMatch(html, /发布/);
   assert.doesNotMatch(html, /标签/);
   assert.doesNotMatch(html, /设置/);
-  assert.doesNotMatch(html, /Inbox/);
-  assert.doesNotMatch(html, /Review/);
-  assert.doesNotMatch(html, /Topics/);
-  assert.doesNotMatch(html, /Sources/);
   assert.match(html, /aria-current="page"/);
 });
 

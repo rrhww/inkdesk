@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 const topTabs = [
   { href: "/app", label: "问答", matchers: ["/app", "/app/ask"] },
   { href: "/app/raw", label: "资料", matchers: ["/app/raw", "/app/inbox", "/app/sources"] },
-  { href: "/app/review", label: "审阅", matchers: ["/app/ingest", "/app/review"] },
+  { href: "/app/ingest", label: "审阅", matchers: ["/app/ingest", "/app/review"] },
   { href: "/app/wiki", label: "知识库", matchers: ["/app/wiki", "/app/topics"] }
 ];
 
