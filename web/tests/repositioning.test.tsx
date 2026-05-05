@@ -17,15 +17,18 @@ function compact(html: string) {
 
 test("mock data exposes author, project, agent, and planning content for the repositioned product", () => {
   assert.ok("authorProfile" in mockData, "expected author profile data");
-  assert.ok("projects" in mockData, "expected project showcase data");
-  assert.ok("publicResearchTopics" in mockData, "expected curated public research topics");
+  assert.ok("publicProjects" in mockData, "expected curated public project data");
+  assert.ok("publicKnowledgeBuckets" in mockData, "expected curated public knowledge buckets");
+  assert.ok("publicUpdates" in mockData, "expected mixed public update stream");
   assert.ok("agentSuggestions" in mockData, "expected agent suggestion data");
   assert.ok("plans" in mockData, "expected task and planning data");
   assert.ok("workbenchSummary" in mockData, "expected workbench summary data");
   assert.equal(mockData.workbenchSummary.activePlans, 2);
   assert.equal(mockData.workbenchSummary.privateNotes, 1);
   assert.equal(mockData.workbenchSummary.publishedNotes, 2);
-  assert.equal(mockData.publicResearchTopics.length > 0, true);
+  assert.equal(mockData.publicKnowledgeBuckets.length, 4);
+  assert.equal(mockData.publicProjects.length >= 2, true);
+  assert.equal(mockData.publicUpdates.some((item) => item.type === "project"), true);
 });
 
 test("mock data source exposes split domain access for public, workbench, tags, and settings", async () => {
@@ -36,8 +39,12 @@ test("mock data source exposes split domain access for public, workbench, tags, 
   const tags = source.getTagRecords();
   const settings = source.getSettingsRecord();
 
-  assert.ok("researchTopics" in publicHome, "expected public home data to include research topics");
-  assert.equal(publicHome.researchTopics.length > 0, true);
+  assert.ok("knowledgeBuckets" in publicHome, "expected public home data to include knowledge buckets");
+  assert.equal(publicHome.knowledgeBuckets.length, 4);
+  assert.ok("featuredProjects" in publicHome, "expected public home data to include featured projects");
+  assert.equal(publicHome.featuredProjects.length > 0, true);
+  assert.ok("recentUpdates" in publicHome, "expected public home data to include recent updates");
+  assert.equal(publicHome.recentUpdates.some((item) => item.type === "article"), true);
   assert.ok("focusPlan" in workbench, "expected workbench snapshot to include a focus plan");
   assert.ok("quickActions" in workbench, "expected workbench snapshot to include quick actions");
   assert.ok(tags.length > 0, "expected tag records");
@@ -51,11 +58,18 @@ test("public data helper returns undefined for a missing article slug", async ()
   assert.equal(article, undefined);
 });
 
-test("public data helper returns undefined for a missing research slug", async () => {
+test("public data helper returns undefined for a missing topic slug", async () => {
   const module = await import("../lib/public");
-  const topic = await module.getPublicResearchTopicBySlug("missing-topic");
+  const topic = await module.getPublicKnowledgeBucketBySlug("missing-topic");
 
   assert.equal(topic, undefined);
+});
+
+test("public data helper returns undefined for a missing project slug", async () => {
+  const module = await import("../lib/public");
+  const project = await module.getPublicProjectBySlug("missing-project");
+
+  assert.equal(project, undefined);
 });
 
 test("knowledge workflow mock data exposes visibility metadata and retrieval helpers", () => {
@@ -135,36 +149,61 @@ test("public home view presents the author portal without exposing a system logi
   const module = await import("../components/public-home-view");
   const html = compact(renderToStaticMarkup(await module.PublicHomeView()));
 
-  assert.match(html, /构建超级个人工作台的人/);
-  assert.match(html, /研究主题/);
-  assert.match(html, /最近文章/);
-  assert.match(html, /方法背景/);
+  assert.match(html, /开发技术/);
+  assert.match(html, /计算机基础/);
+  assert.match(html, /项目实践/);
+  assert.match(html, /方法与思考/);
+  assert.match(html, /精选项目/);
+  assert.match(html, /最近更新/);
   assert.match(html, /保持联系/);
-  assert.match(html, /\/research\/personal-knowledge-systems/);
-  assert.doesNotMatch(html, /精选文章/);
+  assert.match(html, /\/topics\/development-tech/);
+  assert.match(html, /\/projects\/inkdesk-main-system/);
+  assert.doesNotMatch(html, /研究主题/);
   assert.doesNotMatch(html, /公开统计/);
   assert.doesNotMatch(html, /登录/);
   assert.doesNotMatch(html, /进入工作区/);
 });
 
-test("public research page presents curated topic context, related writing, and cross-topic navigation", async () => {
-  const module = await import("../app/research/[slug]/page");
+test("public topic page presents curated category context, related writing, and cross-category navigation", async () => {
+  const module = await import("../app/topics/[slug]/page");
   const element = await module.default({
     params: Promise.resolve({
-      slug: "personal-knowledge-systems"
+      slug: "development-tech"
     })
   });
   const html = compact(renderToStaticMarkup(element));
 
-  assert.match(html, /研究主题/);
-  assert.match(html, /个人知识系统/);
+  assert.match(html, /开发技术/);
+  assert.match(html, /Java/);
+  assert.match(html, /前端/);
+  assert.match(html, /数据库/);
   assert.match(html, /代表文章/);
   assert.match(html, /相关文章/);
   assert.match(html, /相关项目/);
-  assert.match(html, /其他研究主题/);
-  assert.match(html, /把 Inkdesk 从知识库改造成超级个人工作台/);
+  assert.match(html, /其他分类/);
+  assert.match(html, /给中后台页面做一次真正可维护的前端分层/);
   assert.match(html, /Inkdesk 主系统/);
-  assert.match(html, /\/research\/agent-assisted-workflows/);
+  assert.match(html, /\/topics\/computer-fundamentals/);
+  assert.match(html, /\/projects\/inkdesk-main-system/);
+});
+
+test("public project page presents project status, highlights, related writing, and category links", async () => {
+  const module = await import("../app/projects/[slug]/page");
+  const element = await module.default({
+    params: Promise.resolve({
+      slug: "inkdesk-main-system"
+    })
+  });
+  const html = compact(renderToStaticMarkup(element));
+
+  assert.match(html, /项目/);
+  assert.match(html, /Inkdesk 主系统/);
+  assert.match(html, /当前阶段/);
+  assert.match(html, /亮点与方法/);
+  assert.match(html, /相关笔记/);
+  assert.match(html, /相关分类/);
+  assert.match(html, /\/topics\/project-practice/);
+  assert.match(html, /\/articles\/super-personal-workbench-reframe/);
 });
 
 test("plans page works as an execution console tied to knowledge and agent context", async () => {
@@ -309,11 +348,14 @@ test("public article page keeps public-only provenance and related reading", asy
 
   assert.match(html, /公开文章/);
   assert.match(html, /这篇文章来自 Inkdesk 主系统中的长期知识资产/);
-  assert.match(html, /继续探索此研究方向/);
-  assert.match(html, /个人知识系统/);
-  assert.match(html, /\/research\/personal-knowledge-systems/);
+  assert.match(html, /相关分类/);
+  assert.match(html, /相关项目/);
+  assert.match(html, /\/topics\/project-practice/);
+  assert.match(html, /\/projects\/inkdesk-main-system/);
   assert.match(html, /继续阅读/);
   assert.match(html, /返回公开输出/);
+  assert.doesNotMatch(html, /继续探索此研究方向/);
+  assert.doesNotMatch(html, /\/research\//);
   assert.doesNotMatch(html, /登录/);
   assert.doesNotMatch(html, /\/login/);
 });

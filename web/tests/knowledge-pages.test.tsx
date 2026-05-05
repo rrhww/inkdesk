@@ -54,11 +54,11 @@ test("public home view can render backend-provided article data", async () => {
     if (url === "http://localhost:8080/api/public/articles") {
       return createJsonResponse([
         {
-          id: "note-001",
+          id: "note-backend-home",
           title: "来自后端的首页文章",
           excerpt: "后端首页摘要",
           slug: "backend-home-article",
-          updatedAt: "2026-04-12T08:10:00Z",
+          updatedAt: "2026-04-20T08:10:00Z",
           tags: ["定位"]
         }
       ]);
@@ -70,10 +70,12 @@ test("public home view can render backend-provided article data", async () => {
     const html = compact(renderToStaticMarkup(await module.PublicHomeView()));
 
     assert.match(html, /来自后端的首页文章/);
-    assert.match(html, /研究主题/);
-    assert.match(html, /方法背景/);
+    assert.match(html, /开发技术/);
+    assert.match(html, /精选项目/);
+    assert.match(html, /最近更新/);
+    assert.match(html, /保持联系/);
     assert.doesNotMatch(html, /公开统计/);
-    assert.doesNotMatch(html, /精选文章/);
+    assert.doesNotMatch(html, /研究主题/);
   });
 
   delete process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -110,11 +112,11 @@ test("public article page renders backend article detail instead of the mock art
           tags: ["定位", "Agent"]
         },
         {
-          id: "note-003",
+          id: "note-backend-related",
           title: "继续阅读文章",
           excerpt: "继续阅读摘要",
           slug: "other-article",
-          updatedAt: "2026-04-12T06:58:00Z",
+          updatedAt: "2026-04-20T06:58:00Z",
           tags: ["公开输出"]
         }
       ]);

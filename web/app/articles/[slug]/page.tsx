@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 
 import { PanelCard } from "@/components/ui/panel-card";
 import { SectionHeading } from "@/components/ui/section-heading";
-import { getOtherPublicArticleSummaries, getPublicArticleBySlug, getPublicArticleParams, getPublicResearchTopicsForArticleSlug } from "@/lib/public";
+import { getOtherPublicArticleSummaries, getPublicArticleBySlug, getPublicArticleParams, getPublicRelationsForArticleSlug } from "@/lib/public";
 
 type ArticlePageProps = {
   params: Promise<{
@@ -49,7 +49,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
   }
 
   const otherArticles = await getOtherPublicArticleSummaries(slug);
-  const relatedTopics = await getPublicResearchTopicsForArticleSlug(slug);
+  const relations = await getPublicRelationsForArticleSlug(slug);
 
   return (
     <main className="mx-auto max-w-reading px-6 py-14 md:px-0">
@@ -84,21 +84,41 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
 
       <section className="mt-16 grid gap-6 border-t border-black/5 pt-8 md:grid-cols-[minmax(0,1fr)_320px]">
         <div>
-          <SectionHeading
-            eyebrow="继续探索此研究方向"
-            title={relatedTopics[0]?.title ?? "继续探索相关研究主题"}
-            description={relatedTopics[0]?.summary ?? "这篇文章属于正在持续整理中的长期研究脉络，你可以继续沿着主题页查看相关写作与项目背景。"}
-          />
-          {relatedTopics.length > 0 ? (
-            <div className="mt-5 space-y-3">
-              {relatedTopics.map((topic) => (
-                <Link key={topic.slug} href={`/research/${topic.slug}`} className="block rounded-[22px] border border-black/5 bg-white/70 px-5 py-4">
-                  <div className="text-[11px] uppercase tracking-[0.2em] text-ink-muted">研究主题</div>
-                  <div className="mt-2 font-headline text-xl font-bold tracking-tight text-ink-text">{topic.title}</div>
-                  <p className="mt-3 text-sm leading-7 text-ink-muted">{topic.purpose}</p>
-                </Link>
-              ))}
-            </div>
+          {(relations.relatedBuckets.length > 0 || relations.relatedProjects.length > 0) ? (
+            <>
+              <SectionHeading eyebrow="相关分类与项目" title="继续沿着这条线索展开" description="如果你想从文章回到更大的内容结构，可以继续进入相关分类或对应项目页。" />
+              <div className="mt-5 space-y-6">
+                {relations.relatedBuckets.length > 0 ? (
+                  <div>
+                    <div className="text-[11px] uppercase tracking-[0.2em] text-ink-muted">相关分类</div>
+                    <div className="mt-3 space-y-3">
+                      {relations.relatedBuckets.map((bucket) => (
+                        <Link key={bucket.slug} href={`/topics/${bucket.slug}`} className="block rounded-[22px] border border-black/5 bg-white/70 px-5 py-4">
+                          <div className="text-[11px] uppercase tracking-[0.2em] text-ink-muted">知识分类</div>
+                          <div className="mt-2 font-headline text-xl font-bold tracking-tight text-ink-text">{bucket.title}</div>
+                          <p className="mt-3 text-sm leading-7 text-ink-muted">{bucket.summary}</p>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+
+                {relations.relatedProjects.length > 0 ? (
+                  <div>
+                    <div className="text-[11px] uppercase tracking-[0.2em] text-ink-muted">相关项目</div>
+                    <div className="mt-3 space-y-3">
+                      {relations.relatedProjects.map((project) => (
+                        <Link key={project.slug} href={`/projects/${project.slug}`} className="block rounded-[22px] border border-black/5 bg-white/70 px-5 py-4">
+                          <div className="text-[11px] uppercase tracking-[0.2em] text-ink-muted">{project.statusLabel}</div>
+                          <div className="mt-2 font-headline text-xl font-bold tracking-tight text-ink-text">{project.title}</div>
+                          <p className="mt-3 text-sm leading-7 text-ink-muted">{project.summary}</p>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            </>
           ) : null}
         </div>
 

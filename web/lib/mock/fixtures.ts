@@ -3,8 +3,10 @@ import type {
   AuthorProfile,
   KnowledgeNoteDetail,
   PlanDetail,
-  PublicResearchTopic,
-  ProjectLink,
+  PublicArticleDetail,
+  PublicKnowledgeBucket,
+  PublicProject,
+  PublicUpdateItem,
   QuickAction,
   SettingsRecord,
   TagRecord
@@ -12,69 +14,289 @@ import type {
 
 export const authorProfileFixture: AuthorProfile = {
   name: "R",
-  title: "构建超级个人工作台的人",
-  summary: "这里公开我的长期写作、正在搭建的系统，以及我如何把笔记、Agent 与任务计划组织成一个持续运转的个人主系统。",
-  intro: "我在把 Inkdesk 打造成一个长期使用的超级个人工作台。它的核心是围绕长期项目运转的个人主系统，而公开输出层负责把已经成熟的判断、文章和项目分享出去。",
+  title: "做项目，也整理开发学习笔记的人",
+  summary: "这里公开我正在推进的项目、分门别类的开发学习笔记，以及那些最后沉淀成方法的工作判断。",
+  intro: "我把公开侧当成一张长期维护的知识地图。它既展示我正在构建的项目，也整理我在开发技术、计算机基础、项目实践和方法思考上的笔记索引。",
   manifesto: "我相信个人系统不该只是存文档，而应该帮助人持续思考、推进项目、组织行动。",
-  focusAreas: ["超级个人工作台", "个人知识系统", "Agent 协同", "长期项目"],
+  focusAreas: ["开发技术", "计算机基础", "项目实践", "方法与思考"],
   researchStatement:
-    "我把公开侧当成一份长期研究索引。这里不追求频繁更新，而是整理那些经过反复工作后仍值得保留的判断、方法和项目痕迹。",
-  workingNote: "Inkdesk 是这些工作的底层方法与载体：一个把笔记、Agent 与任务计划编织在一起的私人主系统。",
+    "这里不追求高频更新，而是持续整理那些值得反复返回的项目经验、学习记录与方法线索。",
+  workingNote: "我更在意内容之间能不能互相指路，而不是把页面做成一次性看完的作品集。",
   contactLinks: [
     { label: "Email", href: "mailto:r@inkdesk.local" },
     { label: "GitHub", href: "https://github.com/inkdesk" },
-    { label: "Notes", href: "/articles/super-personal-workbench-reframe" }
+    { label: "最近文章", href: "/articles/super-personal-workbench-reframe" }
   ]
 };
 
-export const projectsFixture: ProjectLink[] = [
+export const publicProjectsFixture: PublicProject[] = [
   {
-    name: "Inkdesk 主系统",
-    href: "#inkdesk-system",
-    description: "一个由 Agent、笔记系统和任务计划构成的长期个人主系统。",
-    kind: "核心项目"
+    slug: "inkdesk-main-system",
+    title: "Inkdesk 主系统",
+    summary: "把笔记、任务与 Agent 编排到同一工作台里，让公开输出和私有工作都能长期运转。",
+    kind: "精选项目",
+    status: "active",
+    statusLabel: "持续构建中",
+    updatedAt: "2026-04-15 21:10",
+    primaryHref: "https://github.com/inkdesk",
+    repoHref: "https://github.com/inkdesk",
+    stack: ["Next.js", "TypeScript", "Agent Workflow", "Content System"],
+    highlights: [
+      "把公开展示层与主系统工作台明确拆开",
+      "让笔记、任务计划与检索入口围绕真实工作组织",
+      "持续把方法沉淀成可公开浏览的文章与索引"
+    ],
+    relatedArticleSlugs: ["super-personal-workbench-reframe", "public-home-as-knowledge-map"],
+    relatedBucketSlugs: ["project-practice", "methods-thinking"]
   },
   {
-    name: "公开写作实验",
-    href: "#public-writing",
-    description: "持续整理对产品、系统设计和个人工作方法的公开写作。",
-    kind: "写作"
+    slug: "developer-notes-atlas",
+    title: "开发笔记图谱",
+    summary: "把技术学习和项目复盘做成一张可持续扩展的公开索引，而不是散落的文章流。",
+    kind: "在建索引",
+    status: "building",
+    statusLabel: "正在搭架子",
+    updatedAt: "2026-04-14 19:40",
+    primaryHref: "https://github.com/inkdesk",
+    repoHref: "https://github.com/inkdesk",
+    stack: ["Taxonomy", "Writing Workflow", "Curation"],
+    highlights: [
+      "一级宽分类配合二级专题，兼顾清晰与扩展性",
+      "让文章、项目与方法相互关联，而不是孤立陈列",
+      "优先为长期浏览设计，而不是短期更新频率设计"
+    ],
+    relatedArticleSlugs: ["frontend-layering-for-backoffice", "study-notes-need-a-maintained-index"],
+    relatedBucketSlugs: ["development-tech", "methods-thinking"]
   },
   {
-    name: "个人系统链接集",
-    href: "#links",
-    description: "放置长期项目、思考入口和未来对外开放的导航节点。",
-    kind: "链接"
+    slug: "systems-thinking-notebook",
+    title: "系统化学习手册",
+    summary: "把计网、操作系统、数据库这些基础知识整理成能回看、能串联项目的问题地图。",
+    kind: "长期积累",
+    status: "stable",
+    statusLabel: "持续整理",
+    updatedAt: "2026-04-13 22:00",
+    primaryHref: "https://github.com/inkdesk",
+    repoHref: "https://github.com/inkdesk",
+    stack: ["Networking", "OS", "Database", "Learning Notes"],
+    highlights: [
+      "围绕真实问题组织基础知识，而不是只记概念",
+      "把底层原理和工程判断连接起来",
+      "给后续项目实践提供稳定的知识回路"
+    ],
+    relatedArticleSlugs: ["one-request-through-network-stack", "why-indexes-change-query-cost"],
+    relatedBucketSlugs: ["computer-fundamentals", "project-practice"]
   }
 ];
 
-export const publicResearchTopicsFixture: PublicResearchTopic[] = [
+export const publicArticleFixtures: PublicArticleDetail[] = [
   {
-    slug: "personal-knowledge-systems",
-    title: "个人知识系统",
-    summary: "我关心知识如何持续积累、回到当前工作，并成为长期项目的判断基础。",
-    purpose: "这个主题讨论笔记、结构与长期记忆如何从“存档”变成“持续可调用的工作材料”。",
-    featuredArticleSlug: "super-personal-workbench-reframe",
-    relatedArticleSlugs: ["public-blog-author-portal"],
-    relatedProjectNames: ["Inkdesk 主系统", "个人系统链接集"]
+    id: "pub-001",
+    slug: "frontend-layering-for-backoffice",
+    title: "给中后台页面做一次真正可维护的前端分层",
+    excerpt: "从模块边界、状态职责和页面骨架入手，把“能跑”变成“能持续维护”。",
+    folder: "开发技术",
+    updatedAt: "2026-04-15 18:30",
+    readingMinutes: 6,
+    tags: ["前端", "分层", "工程化"],
+    sourceNoteId: "note-001",
+    body: [
+      "很多中后台页面的问题不在于功能太多，而在于功能都黏在同一层里。组件、数据请求和页面状态一旦长在一起，后续任何修改都会牵一片。",
+      "我现在更倾向于先拆出页面骨架、领域块和共享状态，再决定哪些逻辑真的值得抽离。这样做的好处不是优雅，而是每次迭代都更容易找到落点。",
+      "当页面开始服务长期项目时，可维护性本身就是体验的一部分。"
+    ],
+    provenance: "这篇文章来自 Inkdesk 主系统中的长期知识资产，经整理后发布到公开输出层，用于分享成熟判断与项目进展。",
+    relatedNoteIds: ["note-001", "note-003"]
   },
   {
-    slug: "agent-assisted-workflows",
-    title: "Agent 协同",
-    summary: "我在研究 Agent 如何参与整理上下文、压缩判断，并帮助推进真实工作。",
-    purpose: "这里关注 Agent 在个人系统中的角色边界：它如何协助人，而不是抢走人的判断与节奏。",
-    featuredArticleSlug: "super-personal-workbench-reframe",
-    relatedArticleSlugs: ["public-blog-author-portal"],
-    relatedProjectNames: ["Inkdesk 主系统"]
+    id: "pub-002",
+    slug: "one-request-through-network-stack",
+    title: "从一次请求回看网络栈到底发生了什么",
+    excerpt: "把 DNS、TCP、HTTP 和浏览器处理链路放回同一个时间轴里看，很多模糊点会突然清楚。",
+    folder: "计算机基础",
+    updatedAt: "2026-04-15 09:20",
+    readingMinutes: 7,
+    tags: ["计网", "HTTP", "TCP"],
+    sourceNoteId: "note-003",
+    body: [
+      "如果只分别去背 DNS、TCP、HTTP，它们会一直像三门独立课程。但当我把它们放回一次真实请求里，就能看到每一步到底在为后面哪一步服务。",
+      "网络基础最容易变成碎片化记忆，所以我更喜欢用“发生顺序”来重建它。这样在排查问题或读接口日志时，会更容易想到系统真正卡在哪里。",
+      "理解顺序，比记住术语更能帮我在项目里做判断。"
+    ],
+    provenance: "这篇文章来自 Inkdesk 主系统中的长期知识资产，经整理后发布到公开输出层，用于分享成熟判断与项目进展。",
+    relatedNoteIds: ["note-003"]
   },
   {
-    slug: "long-term-projects",
-    title: "长期项目",
-    summary: "我更关心如何让系统陪伴一个人持续几年地思考、记录和推进，而不是只完成短期任务。",
-    purpose: "这个主题聚焦长期项目中的节奏、方法和公开输出方式，以及系统如何让项目保持连续性。",
-    featuredArticleSlug: "public-blog-author-portal",
-    relatedArticleSlugs: ["super-personal-workbench-reframe"],
-    relatedProjectNames: ["公开写作实验", "个人系统链接集"]
+    id: "pub-003",
+    slug: "super-personal-workbench-reframe",
+    title: "把 Inkdesk 从知识库改造成真正的个人工作台",
+    excerpt: "这次重构的关键不是多做一个模块，而是重新安排“知识、行动、公开展示”三者的关系。",
+    folder: "项目实践",
+    updatedAt: "2026-04-15 21:00",
+    readingMinutes: 5,
+    tags: ["项目实践", "系统设计", "Inkdesk"],
+    sourceNoteId: "note-001",
+    body: [
+      "我不再把 Inkdesk 理解成一个单纯的知识库，而是一个围绕长期项目运转的个人工作台。公开展示层负责被别人浏览，私有工作台负责帮我继续推进。",
+      "真正的变化不是功能增减，而是信息架构被重新排过。项目、笔记、Agent 和计划不再平铺并列，而是围绕“下一步要推进什么”来组织。",
+      "当公开输出也开始服务项目而不是只服务发布，展示页本身就会更有生命力。"
+    ],
+    provenance: "这篇文章来自 Inkdesk 主系统中的长期知识资产，经整理后发布到公开输出层，用于分享成熟判断与项目进展。",
+    relatedNoteIds: ["note-001", "note-002", "note-003"]
+  },
+  {
+    id: "pub-004",
+    slug: "study-notes-need-a-maintained-index",
+    title: "学习笔记需要的不是更多，而是一张可维护的索引",
+    excerpt: "当笔记开始跨主题生长时，分类方式本身就变成了一种长期维护工作。",
+    folder: "方法与思考",
+    updatedAt: "2026-04-14 22:10",
+    readingMinutes: 4,
+    tags: ["学习方法", "索引", "知识管理"],
+    sourceNoteId: "note-003",
+    body: [
+      "笔记越多，越不能只靠搜索和时间顺序。真正有用的是一张能不断修订的索引，让你知道这份内容应该从哪里重新进入。",
+      "所以我现在更喜欢宽分类加专题标签，而不是一开始就做非常细的层级。这样既能承接新内容，也不会让旧内容失去位置。",
+      "一份好的笔记索引，不只是目录，也是重新开始学习时的入口。"
+    ],
+    provenance: "这篇文章来自 Inkdesk 主系统中的长期知识资产，经整理后发布到公开输出层，用于分享成熟判断与项目进展。",
+    relatedNoteIds: ["note-003"]
+  },
+  {
+    id: "pub-005",
+    slug: "why-indexes-change-query-cost",
+    title: "为什么索引会直接改变一次查询的体感成本",
+    excerpt: "理解数据库索引最好的方式，不是背定义，而是回到“为什么这条查询突然慢了”。",
+    folder: "开发技术",
+    updatedAt: "2026-04-13 20:30",
+    readingMinutes: 6,
+    tags: ["数据库", "索引", "查询优化"],
+    sourceNoteId: "note-001",
+    body: [
+      "当一条查询慢下来时，索引就不再是抽象概念，而是你能不能继续推进功能的现实问题。",
+      "我更喜欢从执行计划、扫描范围和排序代价去理解索引。这样每次设计表结构时，就不只是“按经验加索引”，而是知道自己在换什么。",
+      "数据库里的很多判断，本质上都是在时间、空间和写入成本之间取一个平衡。"
+    ],
+    provenance: "这篇文章来自 Inkdesk 主系统中的长期知识资产，经整理后发布到公开输出层，用于分享成熟判断与项目进展。",
+    relatedNoteIds: ["note-001"]
+  },
+  {
+    id: "pub-006",
+    slug: "public-home-as-knowledge-map",
+    title: "把公开首页做成知识地图，而不是时间流",
+    excerpt: "展示页真正吸引人停留的，不只是视觉，而是让人一眼看懂这里有哪些内容值得继续逛。",
+    folder: "方法与思考",
+    updatedAt: "2026-04-13 17:50",
+    readingMinutes: 5,
+    tags: ["展示设计", "信息架构", "公开输出"],
+    sourceNoteId: "note-003",
+    body: [
+      "如果首页只是最新文章列表，访客会默认自己在看一个普通博客。但如果首页先是一张知识地图，人会更愿意沿着分类和项目继续往下走。",
+      "我开始更重视首页的指路能力，而不是只把它当成最新内容的容器。项目、笔记和方法之间的关系，被看清楚之后，页面才会更像一个被认真编排的公开空间。",
+      "好的展示不是更吵，而是更有层次。"
+    ],
+    provenance: "这篇文章来自 Inkdesk 主系统中的长期知识资产，经整理后发布到公开输出层，用于分享成熟判断与项目进展。",
+    relatedNoteIds: ["note-003"]
+  }
+];
+
+export const publicKnowledgeBucketsFixture: PublicKnowledgeBucket[] = [
+  {
+    slug: "development-tech",
+    title: "开发技术",
+    summary: "整理 Java、前端和数据库里的工程笔记，让技术判断能回到真实项目里继续使用。",
+    intro: "这里收的是那些会不断被项目重新调用的技术笔记。我更关心它们如何帮助我拆模块、看链路、做性能判断，而不只是停留在概念层。",
+    subtopics: ["Java", "前端", "数据库"],
+    featuredArticleSlug: "frontend-layering-for-backoffice",
+    relatedArticleSlugs: ["why-indexes-change-query-cost"],
+    relatedProjectSlugs: ["inkdesk-main-system", "developer-notes-atlas"]
+  },
+  {
+    slug: "computer-fundamentals",
+    title: "计算机基础",
+    summary: "把计网、OS 和基础原理重新压回问题现场，避免基础知识只停留在零散记忆里。",
+    intro: "我不太喜欢把基础学科当成孤立题库，所以这里会把它们重新放回一次请求、一段系统行为和一次性能判断里去理解。",
+    subtopics: ["计网", "OS", "基础原理"],
+    featuredArticleSlug: "one-request-through-network-stack",
+    relatedArticleSlugs: [],
+    relatedProjectSlugs: ["systems-thinking-notebook"]
+  },
+  {
+    slug: "project-practice",
+    title: "项目实践",
+    summary: "关注项目复盘、工程化和系统设计，记录一个系统是如何被持续改造出来的。",
+    intro: "项目实践这部分更像公开工作台。我会把架构取舍、页面重构和系统边界调整都放在这里，方便从结果回看过程。",
+    subtopics: ["项目复盘", "工程化", "系统设计"],
+    featuredArticleSlug: "super-personal-workbench-reframe",
+    relatedArticleSlugs: ["public-home-as-knowledge-map"],
+    relatedProjectSlugs: ["inkdesk-main-system", "systems-thinking-notebook"]
+  },
+  {
+    slug: "methods-thinking",
+    title: "方法与思考",
+    summary: "收纳学习方法、开发方法和个人思考，让项目和笔记背后的工作方式也能被看见。",
+    intro: "这一类内容不直接对应某个技术栈，但它们决定了我如何整理笔记、如何构建展示页，以及怎样让项目长期可持续。",
+    subtopics: ["学习方法", "开发方法", "个人思考"],
+    featuredArticleSlug: "study-notes-need-a-maintained-index",
+    relatedArticleSlugs: ["public-home-as-knowledge-map"],
+    relatedProjectSlugs: ["developer-notes-atlas", "inkdesk-main-system"]
+  }
+];
+
+export const publicUpdatesFixture: PublicUpdateItem[] = [
+  {
+    id: "update-project-inkdesk",
+    type: "project",
+    title: "Inkdesk 主系统",
+    summary: "公开展示层与私有工作台完成拆分，首页开始转向知识地图式浏览。",
+    href: "/projects/inkdesk-main-system",
+    updatedAt: "2026-04-15 21:10",
+    label: "项目更新"
+  },
+  {
+    id: "update-article-workbench",
+    type: "article",
+    title: "把 Inkdesk 从知识库改造成真正的个人工作台",
+    summary: "重新整理了知识、行动和公开展示的边界。",
+    href: "/articles/super-personal-workbench-reframe",
+    updatedAt: "2026-04-15 21:00",
+    label: "新文章"
+  },
+  {
+    id: "update-article-frontend",
+    type: "article",
+    title: "给中后台页面做一次真正可维护的前端分层",
+    summary: "从页面骨架、领域块和共享状态三层重新收束前端复杂度。",
+    href: "/articles/frontend-layering-for-backoffice",
+    updatedAt: "2026-04-15 18:30",
+    label: "分类代表"
+  },
+  {
+    id: "update-article-network",
+    type: "article",
+    title: "从一次请求回看网络栈到底发生了什么",
+    summary: "把计网基础重新放回真实链路里理解。",
+    href: "/articles/one-request-through-network-stack",
+    updatedAt: "2026-04-15 09:20",
+    label: "新文章"
+  },
+  {
+    id: "update-project-atlas",
+    type: "project",
+    title: "开发笔记图谱",
+    summary: "一级宽分类和二级专题结构已经定下来，开始补充代表内容。",
+    href: "/projects/developer-notes-atlas",
+    updatedAt: "2026-04-14 19:40",
+    label: "项目更新"
+  },
+  {
+    id: "update-article-index",
+    type: "article",
+    title: "学习笔记需要的不是更多，而是一张可维护的索引",
+    summary: "把分类方式本身当成长期维护工作来设计。",
+    href: "/articles/study-notes-need-a-maintained-index",
+    updatedAt: "2026-04-14 22:10",
+    label: "方法笔记"
   }
 ];
 

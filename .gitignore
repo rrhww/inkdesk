@@ -32,6 +32,8 @@ web-dev-*.err
 
 # Local tooling
 .superpowers/
+.playwright-mcp/
+.workbuddy/
 .worktrees/
 publish-flow-cookies.txt
 

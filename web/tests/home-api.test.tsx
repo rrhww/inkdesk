@@ -321,7 +321,7 @@ test("home page falls back to the mock snapshot when the configured backend is u
   delete process.env.NEXT_PUBLIC_API_BASE_URL;
 });
 
-test("public home helper keeps curated research topics while adapting backend articles", async () => {
+test("public home helper keeps curated knowledge buckets and projects while adapting backend articles", async () => {
   process.env.NEXT_PUBLIC_API_BASE_URL = "http://localhost:8080";
 
   await withMockedFetch(async (input) => {
@@ -331,19 +331,19 @@ test("public home helper keeps curated research topics while adapting backend ar
       return createJsonResponse([
         {
           id: "note-001",
-          title: "把 Inkdesk 从知识库改造成超级个人工作台",
+          title: "把 Inkdesk 从知识库改造成真正的个人工作台",
           excerpt: "来自后端的公开文章摘要",
           slug: "super-personal-workbench-reframe",
           updatedAt: "2026-04-15T09:30:00Z",
-          tags: ["定位", "个人知识系统"]
+          tags: ["项目实践", "系统设计"]
         },
         {
           id: "note-003",
-          title: "公开输出页作为分享层的结构草案",
+          title: "给中后台页面做一次真正可维护的前端分层",
           excerpt: "来自后端的第二篇文章摘要",
-          slug: "public-blog-author-portal",
+          slug: "frontend-layering-for-backoffice",
           updatedAt: "2026-04-14T09:30:00Z",
-          tags: ["公开输出"]
+          tags: ["前端", "开发技术"]
         }
       ]);
     }
@@ -352,13 +352,20 @@ test("public home helper keeps curated research topics while adapting backend ar
   }, async () => {
     const module = await import("../lib/public");
     const home = await module.getPublicHomeData();
-    const topic = await module.getPublicResearchTopicBySlug("personal-knowledge-systems");
+    const bucket = await module.getPublicKnowledgeBucketBySlug("project-practice");
+    const project = await module.getPublicProjectBySlug("inkdesk-main-system");
+    const relations = await module.getPublicRelationsForArticleSlug("super-personal-workbench-reframe");
 
-    assert.equal(home.articles[0]?.slug, "super-personal-workbench-reframe");
-    assert.equal(home.researchTopics.length > 0, true);
-    assert.equal(home.researchTopics[0]?.slug.length > 0, true);
-    assert.equal(topic?.featuredArticle?.slug, "super-personal-workbench-reframe");
-    assert.equal(topic?.relatedProjects.some((project) => project.name === "Inkdesk 主系统"), true);
+    assert.equal(home.articles.some((article) => article.slug === "super-personal-workbench-reframe"), true);
+    assert.equal(home.articles.some((article) => article.slug === "one-request-through-network-stack"), true);
+    assert.equal(home.knowledgeBuckets.length, 4);
+    assert.equal(home.featuredProjects.length > 0, true);
+    assert.equal(home.recentUpdates.some((item) => item.type === "article"), true);
+    assert.equal(home.recentUpdates.some((item) => item.type === "project"), true);
+    assert.equal(bucket?.featuredArticle?.slug, "super-personal-workbench-reframe");
+    assert.equal(project?.relatedArticles.some((article) => article.slug === "super-personal-workbench-reframe"), true);
+    assert.equal(relations.relatedBuckets.some((entry) => entry.slug === "project-practice"), true);
+    assert.equal(relations.relatedProjects.some((entry) => entry.slug === "inkdesk-main-system"), true);
   });
 
   delete process.env.NEXT_PUBLIC_API_BASE_URL;

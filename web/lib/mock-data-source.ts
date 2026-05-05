@@ -3,8 +3,10 @@ import {
   authorProfileFixture,
   notesFixture,
   plansFixture,
-  publicResearchTopicsFixture,
-  projectsFixture,
+  publicArticleFixtures,
+  publicKnowledgeBucketsFixture,
+  publicProjectsFixture,
+  publicUpdatesFixture,
   quickActionsFixture,
   settingsFixture,
   tagsFixture
@@ -18,6 +20,10 @@ import type {
   PublicArticleDetail,
   PublicArticleSummary,
   PublicHomeData,
+  PublicKnowledgeBucket,
+  PublicKnowledgeBucketDetail,
+  PublicProject,
+  PublicProjectDetail,
   PublishDashboard,
   PublishEntry,
   SearchQuery,
@@ -55,20 +61,17 @@ function toNoteSummary(note: KnowledgeNoteDetail): KnowledgeNoteSummary {
   };
 }
 
-function toArticleDetail(note: KnowledgeNoteDetail): PublicArticleDetail {
+function toArticleSummary(article: PublicArticleDetail): PublicArticleSummary {
   return {
-    id: note.id,
-    slug: note.slug ?? note.id,
-    title: note.title,
-    excerpt: note.excerpt,
-    folder: note.folder,
-    updatedAt: note.updatedAt,
-    readingMinutes: note.readingMinutes,
-    tags: note.tags,
-    sourceNoteId: note.id,
-    body: note.body,
-    provenance: "这篇文章来自 Inkdesk 主系统中的长期知识资产，经整理后发布到公开输出层，用于分享成熟判断与项目进展。",
-    relatedNoteIds: note.relatedPlanIds.flatMap((planId) => getPlanByIdLocal(planId)?.relatedNoteIds ?? [])
+    id: article.id,
+    slug: article.slug,
+    title: article.title,
+    excerpt: article.excerpt,
+    folder: article.folder,
+    updatedAt: article.updatedAt,
+    readingMinutes: article.readingMinutes,
+    tags: article.tags,
+    sourceNoteId: article.sourceNoteId
   };
 }
 
@@ -100,7 +103,48 @@ function getTagByIdLocal(id: string) {
 }
 
 function getPublishedArticlesLocal() {
-  return sortByUpdatedAt(notesFixture.filter((note) => note.published)).map((note) => toArticleDetail(note));
+  return sortByUpdatedAt(publicArticleFixtures);
+}
+
+function getPublicArticleSummariesLocal() {
+  return getPublishedArticlesLocal().map((article) => toArticleSummary(article));
+}
+
+function resolveKnowledgeBucketLocal(
+  bucket: PublicKnowledgeBucket,
+  articles: PublicArticleSummary[],
+  projects: PublicProject[]
+): PublicKnowledgeBucketDetail {
+  const articleBySlug = new Map(articles.map((article) => [article.slug, article]));
+  const featuredArticle = articleBySlug.get(bucket.featuredArticleSlug);
+  const relatedArticles = bucket.relatedArticleSlugs
+    .map((slug) => articleBySlug.get(slug))
+    .filter((article): article is PublicArticleSummary => Boolean(article));
+
+  return {
+    ...bucket,
+    featuredArticle,
+    relatedArticles,
+    relatedProjects: bucket.relatedProjectSlugs
+      .map((slug) => projects.find((project) => project.slug === slug))
+      .filter((project): project is PublicProject => Boolean(project))
+  };
+}
+
+function resolveProjectLocal(
+  project: PublicProject,
+  articles: PublicArticleSummary[],
+  buckets: PublicKnowledgeBucket[]
+): PublicProjectDetail {
+  return {
+    ...project,
+    relatedArticles: project.relatedArticleSlugs
+      .map((slug) => articles.find((article) => article.slug === slug))
+      .filter((article): article is PublicArticleSummary => Boolean(article)),
+    relatedBuckets: project.relatedBucketSlugs
+      .map((slug) => buckets.find((bucket) => bucket.slug === slug))
+      .filter((bucket): bucket is PublicKnowledgeBucket => Boolean(bucket))
+  };
 }
 
 function normalizeKnowledgeFilter(value?: string) {
@@ -306,29 +350,15 @@ function getPublishDashboardLocal(): PublishDashboard {
 }
 
 function getPublicHomeDataLocal(): PublicHomeData {
-  const articles = getPublishedArticlesLocal().map<PublicArticleSummary>((article) => ({
-    id: article.id,
-    slug: article.slug,
-    title: article.title,
-    excerpt: article.excerpt,
-    folder: article.folder,
-    updatedAt: article.updatedAt,
-    readingMinutes: article.readingMinutes,
-    tags: article.tags,
-    sourceNoteId: article.sourceNoteId
-  }));
+  const articles = getPublicArticleSummariesLocal();
 
   return {
     authorProfile: authorProfileFixture,
-    featuredArticle: articles[0],
     articles,
-    projects: projectsFixture,
-    researchTopics: publicResearchTopicsFixture,
-    publicStats: [
-      { label: "公开文章", value: `${articles.length}`, detail: "已稳定发布出去的文章资产" },
-      { label: "长期项目", value: `${projectsFixture.length}`, detail: "持续对外展示的项目或链接入口" },
-      { label: "主系统主题", value: `${authorProfileFixture.focusAreas.length}`, detail: "作者持续推进的长期主题" }
-    ]
+    knowledgeBuckets: publicKnowledgeBucketsFixture,
+    featuredProjects: sortByUpdatedAt(publicProjectsFixture),
+    recentUpdates: sortByUpdatedAt(publicUpdatesFixture).slice(0, 6),
+    contactLinks: authorProfileFixture.contactLinks ?? []
   };
 }
 
@@ -381,6 +411,43 @@ export function getOtherPublicArticles(slug: string) {
 
 export function getPublishedArticles() {
   return getPublishedArticlesLocal();
+}
+
+export function getPublicKnowledgeBucketDetail(slug: string) {
+  const home = getPublicHomeDataLocal();
+  const bucket = home.knowledgeBuckets.find((entry) => entry.slug === slug);
+
+  if (!bucket) {
+    return undefined;
+  }
+
+  return resolveKnowledgeBucketLocal(bucket, home.articles, home.featuredProjects);
+}
+
+export function getPublicProjectDetail(slug: string) {
+  const home = getPublicHomeDataLocal();
+  const project = home.featuredProjects.find((entry) => entry.slug === slug);
+
+  if (!project) {
+    return undefined;
+  }
+
+  return resolveProjectLocal(project, home.articles, home.knowledgeBuckets);
+}
+
+export function getPublicArticleRelations(slug: string) {
+  const home = getPublicHomeDataLocal();
+  const relatedBuckets = home.knowledgeBuckets
+    .filter((bucket) => bucket.featuredArticleSlug === slug || bucket.relatedArticleSlugs.includes(slug))
+    .map((bucket) => resolveKnowledgeBucketLocal(bucket, home.articles, home.featuredProjects));
+  const relatedProjects = home.featuredProjects
+    .filter((project) => project.relatedArticleSlugs.includes(slug))
+    .map((project) => resolveProjectLocal(project, home.articles, home.knowledgeBuckets));
+
+  return {
+    relatedBuckets,
+    relatedProjects
+  };
 }
 
 export function getKnowledgeSummariesByIds(ids: string[]) {

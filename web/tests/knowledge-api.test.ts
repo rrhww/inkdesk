@@ -36,7 +36,7 @@ async function withMockedFetch(
   }
 }
 
-test("public data helpers prefer backend articles when an API base URL is configured", async () => {
+test("public data helpers merge backend articles with curated public writing when an API base URL is configured", async () => {
   process.env.NEXT_PUBLIC_API_BASE_URL = "http://localhost:8080";
 
   await withMockedFetch(async (input) => {
@@ -68,13 +68,73 @@ test("public data helpers prefer backend articles when an API base URL is config
     const module = await import("../lib/public");
     const data = await module.getPublicHomeData();
 
-    assert.equal(data.articles.length, 2);
-    assert.equal(data.articles[0]?.title, "真实文章 A");
-    assert.equal(data.articles[0]?.slug, "real-article-a");
-    assert.equal(data.articles[0]?.sourceNoteId, "note-001");
-    assert.equal(data.publicStats[0]?.value, "2");
+    assert.equal(data.articles.some((article) => article.slug === "real-article-a"), true);
+    assert.equal(data.articles.some((article) => article.slug === "frontend-layering-for-backoffice"), true);
+    assert.equal(data.articles.find((article) => article.slug === "real-article-a")?.title, "真实文章 A");
+    assert.equal(data.articles.find((article) => article.slug === "real-article-a")?.sourceNoteId, "note-001");
+    assert.equal(data.knowledgeBuckets.length, 4);
+    assert.equal(data.featuredProjects.length > 0, true);
+    assert.equal(data.recentUpdates.some((item) => item.type === "article"), true);
     assert.equal(data.authorProfile.name, "R");
     assert.equal(calls[0]?.init?.headers, undefined);
+  });
+
+  delete process.env.NEXT_PUBLIC_API_BASE_URL;
+});
+
+test("public knowledge bucket helper keeps curated article links when backend articles do not cover those slugs", async () => {
+  process.env.NEXT_PUBLIC_API_BASE_URL = "http://localhost:8080";
+
+  await withMockedFetch(async (input) => {
+    const url = String(input);
+
+    if (url === "http://localhost:8080/api/public/articles") {
+      return createJsonResponse([
+        {
+          id: "note-001",
+          title: "真实文章 A",
+          excerpt: "真实摘要 A",
+          slug: "real-article-a",
+          updatedAt: "2026-04-12T08:10:00Z",
+          tags: ["定位", "Agent"]
+        }
+      ]);
+    }
+
+    throw new Error(`Unexpected fetch URL: ${url}`);
+  }, async () => {
+    const module = await import("../lib/public");
+    const bucket = await module.getPublicKnowledgeBucketBySlug("development-tech");
+
+    assert.equal(bucket?.featuredArticle?.slug, "frontend-layering-for-backoffice");
+    assert.match(bucket?.featuredArticle?.title ?? "", /真正可维护的前端分层/);
+    assert.deepEqual(
+      bucket?.relatedArticles.map((article) => article.slug),
+      ["why-indexes-change-query-cost"]
+    );
+  });
+
+  delete process.env.NEXT_PUBLIC_API_BASE_URL;
+});
+
+test("public article helper falls back to curated article detail when backend does not know that slug", async () => {
+  process.env.NEXT_PUBLIC_API_BASE_URL = "http://localhost:8080";
+
+  await withMockedFetch(async (input) => {
+    const url = String(input);
+
+    if (url === "http://localhost:8080/api/public/articles/frontend-layering-for-backoffice") {
+      return createJsonResponse({ message: "not found" }, 404);
+    }
+
+    throw new Error(`Unexpected fetch URL: ${url}`);
+  }, async () => {
+    const module = await import("../lib/public");
+    const article = await module.getPublicArticleBySlug("frontend-layering-for-backoffice");
+
+    assert.equal(article?.slug, "frontend-layering-for-backoffice");
+    assert.match(article?.title ?? "", /真正可维护的前端分层/);
+    assert.equal(article?.body.length > 0, true);
   });
 
   delete process.env.NEXT_PUBLIC_API_BASE_URL;

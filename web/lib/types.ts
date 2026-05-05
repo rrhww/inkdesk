@@ -31,17 +31,31 @@ export type AuthorProfile = {
   }>;
 };
 
-export type ProjectLink = {
-  name: string;
-  href: string;
-  description: string;
-  kind: string;
+export type PublicKnowledgeBucket = {
+  slug: string;
+  title: string;
+  summary: string;
+  intro: string;
+  subtopics: string[];
+  featuredArticleSlug: string;
+  relatedArticleSlugs: string[];
+  relatedProjectSlugs: string[];
 };
 
-export type PublicStat = {
-  label: string;
-  value: string;
-  detail: string;
+export type PublicProject = {
+  slug: string;
+  title: string;
+  summary: string;
+  kind: string;
+  status: "active" | "building" | "stable";
+  statusLabel: string;
+  updatedAt: string;
+  primaryHref: string;
+  repoHref?: string;
+  stack: string[];
+  highlights: string[];
+  relatedArticleSlugs: string[];
+  relatedBucketSlugs: string[];
 };
 
 export type AgentSuggestion = {
@@ -79,20 +93,30 @@ export type PublicArticleDetail = PublicArticleSummary & {
   relatedNoteIds: string[];
 };
 
-export type PublicResearchTopic = {
-  slug: string;
-  title: string;
-  summary: string;
-  purpose: string;
-  featuredArticleSlug: string;
-  relatedArticleSlugs: string[];
-  relatedProjectNames: string[];
-};
-
-export type PublicResearchTopicDetail = PublicResearchTopic & {
+export type PublicKnowledgeBucketDetail = PublicKnowledgeBucket & {
   featuredArticle?: PublicArticleSummary;
   relatedArticles: PublicArticleSummary[];
-  relatedProjects: ProjectLink[];
+  relatedProjects: PublicProject[];
+};
+
+export type PublicProjectDetail = PublicProject & {
+  relatedArticles: PublicArticleSummary[];
+  relatedBuckets: PublicKnowledgeBucket[];
+};
+
+export type PublicUpdateItem = {
+  id: string;
+  type: "article" | "project";
+  title: string;
+  summary: string;
+  href: string;
+  updatedAt: string;
+  label: string;
+};
+
+export type PublicArticleRelations = {
+  relatedBuckets: PublicKnowledgeBucketDetail[];
+  relatedProjects: PublicProjectDetail[];
 };
 
 export type KnowledgeNoteSummary = {
@@ -275,11 +299,14 @@ export type PublishDashboard = {
 
 export type PublicHomeData = {
   authorProfile: AuthorProfile;
-  featuredArticle?: PublicArticleSummary;
   articles: PublicArticleSummary[];
-  projects: ProjectLink[];
-  publicStats: PublicStat[];
-  researchTopics: PublicResearchTopic[];
+  knowledgeBuckets: PublicKnowledgeBucket[];
+  featuredProjects: PublicProject[];
+  recentUpdates: PublicUpdateItem[];
+  contactLinks: Array<{
+    label: string;
+    href: string;
+  }>;
 };
 
 export type InkdeskDataSource = {

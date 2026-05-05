@@ -45,6 +45,17 @@ textarea {
   box-shadow: 0 16px 36px rgba(25, 28, 29, 0.04);
 }
 
+.public-section-label {
+  @apply flex items-center gap-3 text-[11px] uppercase tracking-[0.22em] text-ink-muted;
+}
+
+.public-section-label::before {
+  content: "";
+  width: 2.75rem;
+  height: 1px;
+  background: rgba(0, 104, 95, 0.25);
+}
+
 .public-list-item {
   @apply rounded-[26px] border border-black/5 bg-white/65 px-6 py-6;
   box-shadow: 0 10px 24px rgba(25, 28, 29, 0.03);
@@ -55,15 +66,68 @@ textarea {
   box-shadow: 0 18px 34px rgba(25, 28, 29, 0.05);
 }
 
-.research-card {
-  @apply rounded-[28px] border border-black/5 bg-white px-6 py-6;
-  background-color: rgba(255, 255, 255, 0.72);
-  box-shadow: 0 12px 30px rgba(25, 28, 29, 0.035);
+.public-chip {
+  @apply rounded-full border border-ink-primary/10 bg-white/80 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-ink-muted;
 }
 
-.research-card:hover {
+.bucket-card {
+  @apply rounded-[30px] border border-black/5 px-6 py-6;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.94) 0%, rgba(249, 250, 250, 0.72) 100%),
+    linear-gradient(135deg, rgba(0, 104, 95, 0.05), rgba(255, 255, 255, 0));
+  box-shadow: 0 16px 34px rgba(25, 28, 29, 0.04);
+}
+
+.bucket-card-compact {
+  @apply px-5 py-5;
+}
+
+.bucket-card:hover {
   transform: translateY(-1px);
   box-shadow: 0 18px 34px rgba(25, 28, 29, 0.05);
+}
+
+.project-spotlight {
+  @apply rounded-[34px] border border-black/5 px-7 py-7;
+  background:
+    radial-gradient(circle at top right, rgba(0, 104, 95, 0.08), transparent 32%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.94) 0%, rgba(247, 248, 248, 0.78) 100%);
+  box-shadow: 0 20px 42px rgba(25, 28, 29, 0.05);
+}
+
+.project-status-item {
+  @apply rounded-[26px] border border-black/5 px-5 py-5;
+  background-color: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 12px 28px rgba(25, 28, 29, 0.035);
+}
+
+.project-spotlight:hover,
+.project-status-item:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 18px 34px rgba(25, 28, 29, 0.05);
+}
+
+.update-list-item {
+  @apply rounded-[28px] border border-black/5 bg-white/70 px-6 py-6;
+  box-shadow: 0 14px 30px rgba(25, 28, 29, 0.035);
+}
+
+.update-list-item:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 18px 34px rgba(25, 28, 29, 0.05);
+}
+
+.editorial-quote {
+  @apply rounded-[32px] border border-black/5 bg-white/80 px-8 py-8;
+  box-shadow: 0 14px 30px rgba(25, 28, 29, 0.035);
+}
+
+.editorial-quote blockquote {
+  @apply font-body text-[1.7rem] leading-[1.65] text-ink-text;
+}
+
+.editorial-quote cite {
+  @apply mt-6 block text-sm not-italic text-ink-muted;
 }
 
 .public-soft-rule {
