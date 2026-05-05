@@ -2,7 +2,7 @@
 
 ## 目标
 
-这份文档用于统一记录 Inkdesk 项目开发过程中推荐使用的软件、学生可申请的工具权益、MCP 建议，以及这些工具在开发期和生产期的边界。
+统一记录 Inkvault 当前研发期推荐的软件、MCP 与它们在开发期和生产期的边界。
 
 ## 一、开发软件清单
 
@@ -10,12 +10,11 @@
 
 - `Git`
 - `Node.js LTS`
-- `pnpm`
-- `JDK 17`
-- `Maven 3.9+`
+- `npm`
+- `Python 3.12+`
 - `Docker Desktop`
 - `PostgreSQL`
-- `IntelliJ IDEA` 或 `VS Code`
+- `VS Code`、`PyCharm` 或 `IntelliJ IDEA`
 - `DBeaver`
 - `Figma Desktop`
 
@@ -31,22 +30,15 @@
 
 - PostgreSQL
 - MinIO
-- 可选的 Mailpit
 
 其中：
 
-- PostgreSQL 用于主数据库
-- MinIO 用于模拟生产对象存储
-- Mailpit 可作为后续邮件调试工具预留
+- PostgreSQL 用于主数据库、索引和提案状态
+- MinIO 仅作为对象存储形态占位，当前主路径不依赖附件上传
 
 ## 三、学生权益
 
 ### Figma Education
-
-可申请原因：
-
-- 你是学生
-- 项目需要用 Figma 作为正式设计源
 
 用途：
 
@@ -56,15 +48,11 @@
 
 ### JetBrains Student Pack
 
-可申请原因：
-
-- 你以 Java 为主栈
-- IntelliJ IDEA 对 Spring Boot 开发体验更好
-
 用途：
 
-- 后端开发
-- 调试和数据库工具协作
+- Python 主后端开发
+- 数据库调试
+- 前后端联调
 
 ## 四、MCP 使用建议
 
@@ -88,7 +76,6 @@
 
 - Figma
 - GPT-5
-- Google Stitch
 - GitHub MCP
 - Playwright MCP
 - 本地 IDE
@@ -106,23 +93,22 @@
 
 - MCP 服务
 - Figma
-- Google Stitch
 - GitHub 相关辅助工具
 - 本地开发辅助脚本
 
 生产环境只需要承载：
 
 - 前端应用
-- 后端应用
+- Python 主后端
 - PostgreSQL
 - Nginx
-- COS
+- Vault 存储目录
 
 ## 七、工具链原则
 
-- 优先使用能减少重复劳动的工具
+- 优先选择能服务 `raw -> ingest -> wiki -> ask` 主路径的工具
 - 不把开发辅助工具强行带进生产环境
-- 工具链服务于文档、设计和实现，不反过来绑架架构
+- 工具链服务于产品边界，不反过来绑架架构
 
 ## 后续衔接点
 

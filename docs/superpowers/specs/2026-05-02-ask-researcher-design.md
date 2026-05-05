@@ -1,0 +1,346 @@
+# Inkvault Ask Researcher Design
+
+## Summary
+
+把当前偏“prompt 包装器”的 Ask，升级为一个真正服务 `agent-native 研究记忆系统` 的 **Ask Researcher**。它的核心职责不是单次聊天，而是围绕 `wiki first, raw second, explicit web assist last` 的顺序，完成研究问答、证据缺口判断、显式联网补料，以及可审阅的 writeback 准备。
+
+Ask 不直接改写 wiki，也不会把联网结果静默导入系统。只有在用户明确点下“沉淀到 wiki”后，系统才会把本次回答真正使用到的外部网页落成 `raw`，并生成一条 ingest proposal。
+
+## Confirmed Decisions
+
+- Ask 方向采用单 runtime、多阶段执行，不做多 agent graph
+- Ask 的推荐实现路径是：`检索 vault -> 判断证据是否足够 -> 可选 web assist -> 生成答案 -> 准备 writeback package`
+- `vault` 模式绝不联网
+- `vault_plus_web` 模式只有在 vault 证据不足时才会显式联网补料
+- 联网补到的外部网页不会自动写入 `raw`
+- 只有用户点击“沉淀到 wiki”时，才把本次真正使用到的外部网页写入 `raw`
+- Ask writeback 仍然只生成 ingest proposal，不直接写 wiki
+- Ask 页面保持研究工作台形态，不升级成完整聊天系统
+
+## Goals
+
+- 让 Ask 成为产品第一感知入口，而不是演示性质的问答壳
+- 让“继续追问”真正继承上下文，而不是每次都从零提问
+- 让 Ask 能在证据不足时明确暴露 `knowledge gaps`
+- 让 `vault_plus_web` 成为显式、克制、可控的补料模式
+- 让 Ask 的回答可以无损衔接到 `raw -> ingest -> wiki`
+- 为后续更强 retrieval、provider、job queue 留出稳定边界
+
+## Non-Goals
+
+- 不做多 agent 协作
+- 不做 planner / executor / browser operator
+- 不做自动 accept 或自动写 wiki
+- 不做 Ask 历史页、会话树、聊天侧边栏
+- 不做联网后自动导入 raw
+- 不在本轮引入复杂向量数据库或外部检索基础设施
+
+## Product Behavior
+
+### Ask Modes
+
+- `vault`
+  - 只允许使用已有 `wiki/raw`
+  - 如果证据不足，也正常返回答案与 `knowledgeGaps`
+  - 不触发 web assist
+
+- `vault_plus_web`
+  - 先走 vault 检索
+  - 只有在 vault 证据不足时才进入 web assist
+  - 外部网页仅作为本次回答的临时研究材料
+
+### Follow-Up Behavior
+
+- 每次继续追问都可以继承上一轮 Ask 的上下文
+- 继承内容包括：
+  - 上一次问题
+  - 上一次答案摘要
+  - 上一次使用到的证据集合
+  - 上一次的 knowledge gaps
+- Ask v1 不提供完整聊天历史页，但后端必须能恢复上下文
+
+### Web Assist Behavior
+
+- web assist 不是默认增强，而是 Ask 的显式补料分支
+- web assist 的产物是“本次回答实际使用到的外部来源集合”
+- 这些来源必须在回答中向用户展示，并明确标注“尚未进入 vault”
+
+### Writeback Behavior
+
+- Ask 回答完成时就准备好 writeback package
+- 用户点击“沉淀到 wiki”时：
+  - 先把本次真正使用到的外部网页落为新的 `raw`
+  - 建立对应 `Source` 索引
+  - 再生成 ingest proposal
+- writeback 不重新跑一遍完整研究流程
+- writeback 仍然不是写 wiki，而是把材料送进 ingest
+
+## Target Runtime Architecture
+
+Ask 运行时升级为一个单 LangGraph 图，内部按阶段执行并支持条件跳转。
+
+### Ask Graph Nodes
+
+#### 1. `load_request_context`
+
+- 读取 `question`、`mode`、`topicId`
+- 读取 `continueFromAskTurnId`
+- 如果存在追问上下文，加载最近 AskTurn 的摘要状态
+
+#### 2. `retrieve_vault_context`
+
+- topic-scoped Ask：优先取目标 topic 的 wiki 内容、claims、thread、linked sources
+- global Ask：优先取相关 wiki 页面，再补最近或匹配的 raw/source
+- v1 采用确定性检索：
+  - topic 绑定内容
+  - 最近来源
+  - 简单文本匹配
+
+#### 3. `assess_evidence`
+
+- 判断当前 vault 证据是否足够回答问题
+- 输出：
+  - `isSufficient`
+  - `knowledgeGaps`
+  - `needsWebAssist`
+
+#### 4. `optional_web_assist`
+
+- 仅在 `mode == vault_plus_web` 且 `needsWebAssist == true` 时执行
+- 负责：
+  - 搜索候选网页
+  - 抓取正文
+  - 提炼可用 excerpt
+  - 形成临时 web evidence
+- 不写 DB，不写 vault
+
+#### 5. `compose_answer`
+
+- 基于：
+  - vault evidence
+  - optional web evidence
+  - follow-up context
+- 生成结构化回答：
+  - `answer`
+  - `confidence`
+  - `followUpQuestions`
+  - `knowledgeGaps`
+  - `usedWikiIds`
+  - `usedSourceIds`
+  - `usedWebSources`
+
+#### 6. `build_writeback_package`
+
+- 准备 writeback 所需的中间产物
+- 包含：
+  - 推荐目标 topic 或新 topic 标题
+  - 建议写入的 understanding
+  - 建议写入的 claim
+  - 建议写入的 open question
+  - 本次真正使用到的外部网页
+  - 原有 source/wiki provenance
+
+## Internal Boundaries
+
+### `AskGraphState`
+
+负责承载一次 Ask 的完整中间状态，至少包含：
+
+- request metadata
+- topic context
+- follow-up context
+- vault evidence
+- web evidence
+- final citations
+- answer draft
+- writeback package
+
+### `VaultRetrievalService`
+
+负责：
+
+- topic/wiki/raw 检索
+- vault evidence 打包
+- 简单相关性排序
+
+### `WebAssistService`
+
+负责：
+
+- 搜索候选网页
+- 抓取网页正文
+- 抽取 excerpt
+- 形成 Ask 可用的临时 web source
+
+### `AskWritebackService`
+
+负责：
+
+- 读取 AskTurn 中的 writeback package
+- 将 `usedWebSources` 落成 `raw`
+- 建立 `Source` 记录
+- 生成 ingest proposal
+
+## API Changes
+
+### `POST /api/ask`
+
+请求新增：
+
+- `continueFromAskTurnId?: string`
+
+请求最终形态：
+
+- `topicId?: string`
+- `question: string`
+- `mode: "vault" | "vault_plus_web"`
+- `continueFromAskTurnId?: string`
+
+响应新增：
+
+- `usedWebSources[]`
+- `contextAskTurnIds[]`
+- `canWriteback`
+
+其中 `usedWebSources[]` 至少包含：
+
+- `url`
+- `title`
+- `excerpt`
+- `reasonUsed`
+
+### `POST /api/ask/{id}/writeback`
+
+语义调整为：
+
+- 读取 AskTurn 中已经生成的 writeback package
+- 若包内包含外部网页，则先落 raw/source
+- 再生成 ingest proposal
+- 保持现有返回 `ReviewItem` 的总体方向
+
+## Data Model Changes
+
+### `AskTurn`
+
+从“回答日志”升级为“研究状态快照”，至少新增：
+
+- `mode`
+- `parent_ask_turn_id`
+- `used_wiki_ids`
+- `used_source_ids`
+- `used_web_sources_json`
+- `knowledge_gaps_json`
+- `follow_up_questions_json`
+- `writeback_package_json`
+
+目标是：
+
+- 支持追问上下文恢复
+- 支持 writeback 无损物化
+
+### New Supporting Shapes
+
+- `WebCitation`
+- `AskContextSummary`
+- `AskWritebackPackage`
+- `AskWritebackRawDraft`
+
+这些 shape 可以先以 Pydantic schema + JSON 持久化形态存在，不要求本轮引入新关系表。
+
+## Frontend UX
+
+### Ask Workspace
+
+- 左侧：提问区
+  - 问题输入框
+  - topic 选择
+  - `vault / vault_plus_web` 切换
+- 右侧：回答区
+  - 答案
+  - 证据摘要
+  - knowledge gaps
+  - continue follow-up
+  - writeback action
+
+### Default UX Rules
+
+- 默认使用 `vault`
+- 证据不足时，优先展示 gap，而不是强行联网
+- 联网是一个显式动作，不是静默增强
+
+### Follow-Up UX
+
+- follow-up 链接自动带 `continueFromAskTurnId`
+- 手动编辑后继续提交时，也默认继承当前 AskTurn 上下文
+- 页面应展示轻量上下文提示：
+  - “正在延续上一轮问答”
+
+### Web Evidence UX
+
+- 如果答案使用了外部网页，必须单独展示：
+  - 标题
+  - URL
+  - excerpt
+  - reason used
+- 同时明确提示：
+  - “这些外部资料还没有进入你的 vault”
+
+### Writeback UX
+
+- 普通回答按钮文案：`沉淀到 wiki`
+- 若本次使用了 web evidence，按钮文案变为：
+  - `沉淀到 wiki（会先保存外部来源到 raw）`
+- 点击后跳转 ingest，并说明：
+  - Ask 已生成提案
+  - 若使用外部网页，这些网页已保存为 raw
+
+## Error Handling
+
+- `vault` 证据不足时，正常返回答案与 `knowledgeGaps`
+- `vault_plus_web` 联网失败时：
+  - 回退为 vault-only answer
+  - 追加 gap：外部补料失败，请稍后重试
+- writeback 若 raw 落地失败，则整次提案创建失败
+- 不允许出现“proposal 引用了未落地 web source”的状态
+
+## Idempotency And Deduplication
+
+- 同一个 AskTurn 的 writeback 不能重复创建多条相同 proposal
+- 外部网页落 raw 时按 `url + normalized content hash` 去重
+- writeback package 需要稳定幂等键
+
+## Risks And Mitigations
+
+- Ask 逻辑过重，调试困难
+  - 保持单 runtime，不做多 agent graph
+- web assist 产生噪音来源
+  - 只在证据不足时触发，且不自动入库
+- writeback 结果前后不一致
+  - Ask 完成时即持久化 writeback package，避免重复研究
+- 前端快速膨胀成聊天产品
+  - 刻意不做历史页、聊天树和长对话 UI
+
+## Verification
+
+- `vault` 模式 Ask 只用 wiki/raw，不触发 web assist
+- `vault_plus_web` 只有在证据不足时才触发 web assist
+- `continueFromAskTurnId` 能让追问继承上轮上下文
+- Ask 响应能返回：
+  - `usedWikiIds`
+  - `usedSourceIds`
+  - `usedWebSources`
+  - `contextAskTurnIds`
+- writeback 若使用了 web evidence，会先创建 raw/source，再创建 ingest proposal
+- writeback 不会直接写 wiki
+- 重复点击 writeback 不会产生重复 raw 与重复 proposal
+
+## Success Criteria
+
+- Ask 成为一个真实可用的研究入口，而不是单次 prompt 壳
+- 用户能在 Ask 中自然完成：
+  - 提问
+  - 继续追问
+  - 显式联网补料
+  - 沉淀到 ingest
+- 外部网页在进入系统前始终保持显式、可解释、可控
+- Ask 与 `raw -> ingest -> wiki` 主路径真正连通

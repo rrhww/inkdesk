@@ -3,7 +3,8 @@ import { redirect } from "next/navigation";
 
 import { OwnerLoginForm } from "@/components/workbench/owner-login-form";
 import { loginOwner } from "@/lib/owner-auth";
-import { InkdeskApiError } from "@/lib/server-api";
+import { getRequestOwnerSession } from "@/lib/request-owner-session";
+import { InkvaultApiError } from "@/lib/server-api";
 import { OWNER_SESSION_COOKIE, hasOwnerSession } from "@/lib/owner-session";
 
 async function loginAction(formData: FormData) {
@@ -28,7 +29,7 @@ async function loginAction(formData: FormData) {
     });
     redirect("/app");
   } catch (error) {
-    if (error instanceof InkdeskApiError && error.status === 401) {
+    if (error instanceof InkvaultApiError && error.status === 401) {
       redirect("/login?error=1");
     }
 
@@ -43,10 +44,9 @@ type LoginPageProps = {
 };
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
-  const cookieStore = await cookies();
   const resolved = searchParams ? await searchParams : undefined;
 
-  if (hasOwnerSession(cookieStore.get(OWNER_SESSION_COOKIE)?.value)) {
+  if (hasOwnerSession(await getRequestOwnerSession())) {
     redirect("/app");
   }
 
@@ -54,10 +54,13 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
     <main className="flex min-h-screen items-center justify-center px-6 py-12">
       <div className="grid w-full max-w-5xl overflow-hidden rounded-[28px] bg-white shadow-paper lg:grid-cols-[1.15fr_0.85fr]">
         <section className="bg-ink-low px-8 py-12 md:px-12">
-          <div className="font-headline text-sm uppercase tracking-[0.22em] text-ink-muted">Inkdesk</div>
-          <h1 className="mt-6 font-headline text-5xl font-extrabold tracking-tight">进入主系统</h1>
+          <div className="font-headline text-sm uppercase tracking-[0.22em] text-ink-muted">Inkvault</div>
+          <h1 className="mt-6 font-headline text-5xl font-extrabold tracking-tight">进入私有 LLM Wiki</h1>
           <p className="mt-6 max-w-xl font-body text-[1.3rem] leading-[1.8] text-[#313738]">
-            这是主人专用入口。进入后会直接进入 Agent 控制台，并继续处理笔记、任务计划与公开内容输出。
+            这是单人私有入口。进入后会直接回到 Today Vault Panel，并继续处理 raw / ingest / wiki 的知识沉淀流。
+          </p>
+          <p className="mt-4 max-w-xl text-sm leading-7 text-ink-muted">
+            默认工作流是：导入 raw，等待 AI 在 ingest 中提出补丁，然后由你确认哪些变化能写入 wiki。
           </p>
         </section>
 

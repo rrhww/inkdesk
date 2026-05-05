@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Stabilize the Inkdesk MVP backend for local demo delivery by making local seed data idempotent and aligning backend documentation with the implemented API boundary.
+**Goal:** Stabilize the Inkvault MVP backend for local demo delivery by making local seed data idempotent and aligning backend documentation with the implemented API boundary.
 
 **Architecture:** Keep the current Spring Boot domain model and controllers intact, and tighten the backend completion gate in two places: deterministic local seed backfill and documentation/API contract consistency. The code change should stay narrow by extending the existing local seed loaders instead of introducing new bootstrapping services or schema changes.
 
@@ -13,9 +13,9 @@
 ### Task 1: Make local knowledge seed backfill missing demo data
 
 **Files:**
-- Create: `C:\Users\whq\.codex\worktrees\cbe8\inkdesk\server\src\test\java\com\inkdesk\server\knowledge\LocalKnowledgeSeedLoaderIntegrationTest.java`
-- Modify: `C:\Users\whq\.codex\worktrees\cbe8\inkdesk\server\src\main\java\com\inkdesk\server\knowledge\service\LocalKnowledgeSeedLoader.java`
-- Reuse: `C:\Users\whq\.codex\worktrees\cbe8\inkdesk\server\src\test\resources\testdata\owner-without-settings.sql`
+- Create: `C:\Users\whq\.codex\worktrees\cbe8\inkvault\server\src\test\java\com\inkvault\server\knowledge\LocalKnowledgeSeedLoaderIntegrationTest.java`
+- Modify: `C:\Users\whq\.codex\worktrees\cbe8\inkvault\server\src\main\java\com\inkvault\server\knowledge\service\LocalKnowledgeSeedLoader.java`
+- Reuse: `C:\Users\whq\.codex\worktrees\cbe8\inkvault\server\src\test\resources\testdata\owner-without-settings.sql`
 
 - [ ] **Step 1: Write the failing test**
 
@@ -53,8 +53,8 @@ class LocalKnowledgeSeedLoaderIntegrationTest {
         loader.run(new DefaultApplicationArguments(new String[0]));
 
         assertThat(userRepository.findByUsername("owner")).isPresent();
-        assertThat(workspaceRepository.findBySlug("inkdesk")).isPresent();
-        assertThat(workspaceSettingsRepository.findById("workspace-inkdesk")).isPresent();
+        assertThat(workspaceRepository.findBySlug("inkvault")).isPresent();
+        assertThat(workspaceSettingsRepository.findById("workspace-inkvault")).isPresent();
         assertThat(tagRepository.findById("tag-agent")).isPresent();
         assertThat(contentNodeRepository.findById("folder-system-structure")).isPresent();
         assertThat(contentNodeRepository.findNoteByIdWithRelations("note-001")).isPresent();
@@ -80,7 +80,7 @@ public void run(ApplicationArguments args) {
     UserEntity owner = userRepository.findByUsername("owner")
             .orElseGet(() -> userRepository.save(buildOwner(now)));
 
-    WorkspaceEntity workspace = workspaceRepository.findBySlug("inkdesk")
+    WorkspaceEntity workspace = workspaceRepository.findBySlug("inkvault")
             .orElseGet(() -> workspaceRepository.save(buildWorkspace(owner, now)));
 
     if (workspaceSettingsRepository.findById(workspace.getId()).isEmpty()) {
@@ -104,11 +104,11 @@ public void run(ApplicationArguments args) {
             "note-001",
             workspace,
             folderProduct,
-            "把 Inkdesk 从知识库改造成超级个人工作台",
+            "把 Inkvault 从知识库改造成超级个人工作台",
             110,
             Instant.parse("2026-04-12T08:10:00Z"),
             "重新定义公共面、主系统、Agent 控制台和任务计划在整个产品中的位置。",
-            "# 把 Inkdesk 从知识库改造成超级个人工作台\n\n新的 Inkdesk 不再只是个人知识库加发布站，而是一个双面系统。",
+            "# 把 Inkvault 从知识库改造成超级个人工作台\n\n新的 Inkvault 不再只是个人知识库加发布站，而是一个双面系统。",
             1120,
             Set.of(positioning, superWorkbench, agent),
             buildPublication("pub-001", "super-personal-workbench-reframe", PublicationStatus.PUBLISHED, Instant.parse("2026-04-12T08:20:00Z"), Instant.parse("2026-04-12T08:20:00Z"))
@@ -150,16 +150,16 @@ Expected: PASS
 - [ ] **Step 5: Commit**
 
 ```bash
-git add server/src/main/java/com/inkdesk/server/knowledge/service/LocalKnowledgeSeedLoader.java server/src/test/java/com/inkdesk/server/knowledge/LocalKnowledgeSeedLoaderIntegrationTest.java
+git add server/src/main/java/com/inkvault/server/knowledge/service/LocalKnowledgeSeedLoader.java server/src/test/java/com/inkvault/server/knowledge/LocalKnowledgeSeedLoaderIntegrationTest.java
 git commit -m "test: stabilize local knowledge seed backfill"
 ```
 
 ### Task 2: Make local plan seed backfill missing plans without clobbering existing data
 
 **Files:**
-- Create: `C:\Users\whq\.codex\worktrees\cbe8\inkdesk\server\src\test\java\com\inkdesk\server\plans\LocalPlanSeedLoaderIntegrationTest.java`
-- Create: `C:\Users\whq\.codex\worktrees\cbe8\inkdesk\server\src\test\resources\testdata\partial-plans.sql`
-- Modify: `C:\Users\whq\.codex\worktrees\cbe8\inkdesk\server\src\main\java\com\inkdesk\server\plans\LocalPlanSeedLoader.java`
+- Create: `C:\Users\whq\.codex\worktrees\cbe8\inkvault\server\src\test\java\com\inkvault\server\plans\LocalPlanSeedLoaderIntegrationTest.java`
+- Create: `C:\Users\whq\.codex\worktrees\cbe8\inkvault\server\src\test\resources\testdata\partial-plans.sql`
+- Modify: `C:\Users\whq\.codex\worktrees\cbe8\inkvault\server\src\main\java\com\inkvault\server\plans\LocalPlanSeedLoader.java`
 
 - [ ] **Step 1: Write the failing test**
 
@@ -202,7 +202,7 @@ INSERT INTO plans (
   id, workspace_id, title, summary, status, horizon, priority, focus_label,
   next_step, next_action_label, next_action_href, search_term, agent_prompt, created_at, updated_at
 ) VALUES (
-  'plan-001', 'workspace-inkdesk', '重构公共面与主系统的双面入口', '先把公开博客入口、隐藏登录入口和主系统骨架彻底分开。',
+  'plan-001', 'workspace-inkvault', '重构公共面与主系统的双面入口', '先把公开博客入口、隐藏登录入口和主系统骨架彻底分开。',
   'ACTIVE', 'TODAY', 'CRITICAL', '系统入口', '把访客入口、隐藏登录和主系统跳转链路再检查一轮。',
   '检查入口链路', '/app/search?q=%E5%85%AC%E5%85%B1%E9%9D%A2', '公共面',
   '把双面系统的入口规则压缩成一份可执行检查清单。',
@@ -221,7 +221,7 @@ Expected: FAIL because `LocalPlanSeedLoader` exits on `planRepository.count() > 
 @Override
 @Transactional
 public void run(ApplicationArguments args) {
-    var workspace = workspaceRepository.findBySlug("inkdesk").orElse(null);
+    var workspace = workspaceRepository.findBySlug("inkvault").orElse(null);
     if (workspace == null) {
         return;
     }
@@ -328,17 +328,17 @@ Expected: PASS
 - [ ] **Step 5: Commit**
 
 ```bash
-git add server/src/main/java/com/inkdesk/server/plans/LocalPlanSeedLoader.java server/src/test/java/com/inkdesk/server/plans/LocalPlanSeedLoaderIntegrationTest.java server/src/test/resources/testdata/partial-plans.sql
+git add server/src/main/java/com/inkvault/server/plans/LocalPlanSeedLoader.java server/src/test/java/com/inkvault/server/plans/LocalPlanSeedLoaderIntegrationTest.java server/src/test/resources/testdata/partial-plans.sql
 git commit -m "test: stabilize local plan seed backfill"
 ```
 
 ### Task 3: Align backend documentation with the implemented MVP boundary
 
 **Files:**
-- Modify: `C:\Users\whq\.codex\worktrees\cbe8\inkdesk\server\README.md`
-- Modify: `C:\Users\whq\.codex\worktrees\cbe8\inkdesk\docs\architecture\api-draft.md`
-- Modify: `C:\Users\whq\.codex\worktrees\cbe8\inkdesk\docs\delivery\local-fullstack-acceptance.md`
-- Modify: `C:\Users\whq\.codex\worktrees\cbe8\inkdesk\docs\architecture\tooling-and-mcp.md`
+- Modify: `C:\Users\whq\.codex\worktrees\cbe8\inkvault\server\README.md`
+- Modify: `C:\Users\whq\.codex\worktrees\cbe8\inkvault\docs\architecture\api-draft.md`
+- Modify: `C:\Users\whq\.codex\worktrees\cbe8\inkvault\docs\delivery\local-fullstack-acceptance.md`
+- Modify: `C:\Users\whq\.codex\worktrees\cbe8\inkvault\docs\architecture\tooling-and-mcp.md`
 
 - [ ] **Step 1: Capture current drift**
 
@@ -433,7 +433,7 @@ git commit -m "docs: align backend mvp boundary"
 ### Task 4: Verify the backend completion slice end-to-end
 
 **Files:**
-- Verify only: `C:\Users\whq\.codex\worktrees\cbe8\inkdesk\server`
+- Verify only: `C:\Users\whq\.codex\worktrees\cbe8\inkvault\server`
 
 - [ ] **Step 1: Run the targeted seed loader tests**
 

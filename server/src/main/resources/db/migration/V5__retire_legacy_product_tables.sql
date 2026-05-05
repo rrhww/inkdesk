@@ -1,0 +1,6 @@
+DROP TABLE IF EXISTS plan_notes;
+DROP TABLE IF EXISTS plans;
+DROP TABLE IF EXISTS note_tags;
+DROP TABLE IF EXISTS publications;
+DROP TABLE IF EXISTS tags;
+DROP TABLE IF EXISTS workspace_settings;

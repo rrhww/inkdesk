@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 
+import { TopSectionTabs } from "@/components/shell/top-section-tabs";
+
 type AppHeaderContextItem = {
   label: string;
   value: string;
@@ -15,8 +17,11 @@ type AppHeaderProps = {
 export function AppHeader({ title, subtitle, contextItems, action }: AppHeaderProps) {
   return (
     <header className="sticky top-0 z-30 border-b border-black/5 bg-white/80 backdrop-blur-lg">
+      <div className="border-b border-black/5 px-6 py-3 lg:px-8">
+        <TopSectionTabs />
+      </div>
       <div className="flex min-h-16 items-center justify-between gap-6 px-6 py-4 lg:px-8">
-        <div>
+        <div className="min-w-0">
           <h1 className="font-headline text-xl font-extrabold tracking-tight text-ink-text">{title}</h1>
           {subtitle ? <p className="mt-1 text-sm text-ink-muted">{subtitle}</p> : null}
         </div>

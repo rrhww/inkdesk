@@ -15,7 +15,7 @@ describe("fullstack preflight helpers", () => {
 
   it("collects localhost diagnostics for backend, postgres, minio and docker", async () => {
     const diagnostics = await collectLocalDiagnostics("http://localhost:8080/api", {
-      probeTcpPort: async (_host, port) => port === 5432 || port === 9000,
+      probeTcpPort: async (_host: string, port: number) => port === 5432 || port === 9000,
       checkCommand: async () => false
     });
 
@@ -49,12 +49,12 @@ describe("fullstack preflight helpers", () => {
     });
 
     expect(message).toContain("无法访问后端健康检查");
-    expect(message).toContain("Spring Boot 还没有在 localhost:8080 提供健康检查");
+    expect(message).toContain("Python 后端还没有在 localhost:8080 提供健康检查");
     expect(message).toContain("PostgreSQL 也没有在 localhost:5432 监听");
     expect(message).toContain("当前机器还没有可用的 docker 命令");
   });
 
-  it("builds a backend startup hint when postgres is ready but spring boot is not", () => {
+  it("builds a backend startup hint when postgres is ready but the python backend is not", () => {
     const message = buildBackendUnavailableMessage({
       apiBaseUrl: "http://localhost:8080/api",
       healthUrl: "http://localhost:8080/actuator/health",
@@ -71,6 +71,6 @@ describe("fullstack preflight helpers", () => {
     });
 
     expect(message).toContain("PostgreSQL 已经就绪");
-    expect(message).toContain(".\\mvnw.cmd spring-boot:run -Dspring-boot.run.profiles=local");
+    expect(message).toContain("python -m uvicorn inkvault_server.main:app --host 0.0.0.0 --port 8080");
   });
 });

@@ -4,11 +4,11 @@ import { redirect } from "next/navigation";
 
 import { AppHeader } from "@/components/app-header";
 import { AppSidebar } from "@/components/app-sidebar";
-import { getWorkbenchSnapshot } from "@/lib/home";
 import { logoutOwner } from "@/lib/owner-auth";
-import { InkdeskApiError } from "@/lib/server-api";
+import { getResearchDashboard } from "@/lib/research";
+import { InkvaultApiError } from "@/lib/server-api";
 import { OWNER_SESSION_COOKIE, hasOwnerSession } from "@/lib/owner-session";
-import type { WorkbenchSnapshot } from "@/lib/types";
+import type { ResearchDashboard } from "@/lib/types";
 
 async function logoutAction() {
   "use server";
@@ -16,7 +16,7 @@ async function logoutAction() {
   const cookieStore = await cookies();
   await logoutOwner(cookieStore.get(OWNER_SESSION_COOKIE)?.value);
   cookieStore.delete(OWNER_SESSION_COOKIE);
-  redirect("/");
+  redirect("/login");
 }
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
@@ -27,12 +27,12 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     redirect("/login");
   }
 
-  let snapshot: WorkbenchSnapshot;
+  let snapshot: ResearchDashboard;
 
   try {
-    snapshot = await getWorkbenchSnapshot(ownerSession);
+    snapshot = await getResearchDashboard(ownerSession);
   } catch (error) {
-    if (error instanceof InkdeskApiError && error.status === 401) {
+    if (error instanceof InkvaultApiError && error.status === 401) {
       cookieStore.delete(OWNER_SESSION_COOKIE);
       redirect("/login");
     }
@@ -42,19 +42,19 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen">
-      <AppSidebar />
-      <div className="lg:ml-60">
+      <AppSidebar snapshot={snapshot} />
+      <div className="lg:ml-72">
         <AppHeader
-          title="Inkdesk 主系统"
-          subtitle="Agent、笔记与任务计划协同运行的超级个人工作台"
+          title="问答"
+          subtitle="先沿着最近对话继续，再决定回到资料、审阅还是知识库。"
           contextItems={[
-            { label: "当前模式", value: "主人主系统" },
-            { label: "进行中计划", value: `${snapshot.summary.activePlans} 项` },
-            { label: "已公开内容", value: `${snapshot.summary.publishedNotes} 篇` }
+            { label: "当前模式", value: "仅基于知识库" },
+            { label: "待审阅", value: `${snapshot.summary.pendingReviews} 条` },
+            { label: "知识页", value: `${snapshot.summary.activeTopics} 个` }
           ]}
           action={
             <form action={logoutAction}>
-              <button className="rounded-sm bg-ink-low px-4 py-3 font-headline text-sm font-semibold text-ink-text">退出主系统</button>
+              <button className="rounded-sm bg-ink-low px-4 py-3 font-headline text-sm font-semibold text-ink-text">退出</button>
             </form>
           }
         />

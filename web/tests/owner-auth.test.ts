@@ -46,8 +46,8 @@ test("owner auth helper logs in against the backend when an API base URL is conf
       assert.equal(init?.method, "POST");
       assert.equal((init?.headers as Record<string, string> | undefined)?.["Content-Type"], "application/json");
       assert.deepEqual(JSON.parse(String(init.body)), {
-        email: "owner@inkdesk.local",
-        password: "inkdesk-owner"
+        email: "owner@inkvault.local",
+        password: "inkvault-owner"
       });
 
       return createJsonResponse({
@@ -58,7 +58,7 @@ test("owner auth helper logs in against the backend when an API base URL is conf
     throw new Error(`Unexpected fetch URL: ${url}`);
   }, async () => {
     const module = await import("../lib/owner-auth");
-    const result = await module.loginOwner("owner@inkdesk.local", "inkdesk-owner");
+    const result = await module.loginOwner("owner@inkvault.local", "inkvault-owner");
 
     assert.equal(result?.sessionToken, "backend-session-token");
   });
@@ -74,8 +74,8 @@ test("owner auth helper falls back to the local hidden-owner credentials when no
   }, async () => {
     const module = await import("../lib/owner-auth");
 
-    assert.equal((await module.loginOwner("owner@inkdesk.local", "inkdesk-owner"))?.sessionToken, "owner");
-    assert.equal(await module.loginOwner("owner@inkdesk.local", "wrong-password"), null);
+    assert.equal((await module.loginOwner("owner@inkvault.local", "inkvault-owner"))?.sessionToken, "owner");
+    assert.equal(await module.loginOwner("owner@inkvault.local", "wrong-password"), null);
   });
 });
 
@@ -87,8 +87,8 @@ test("owner auth helper falls back to the local hidden-owner credentials when th
   }, async () => {
     const module = await import("../lib/owner-auth");
 
-    assert.equal((await module.loginOwner("owner@inkdesk.local", "inkdesk-owner"))?.sessionToken, "owner");
-    assert.equal(await module.loginOwner("owner@inkdesk.local", "wrong-password"), null);
+    assert.equal((await module.loginOwner("owner@inkvault.local", "inkvault-owner"))?.sessionToken, "owner");
+    assert.equal(await module.loginOwner("owner@inkvault.local", "wrong-password"), null);
   });
 
   delete process.env.NEXT_PUBLIC_API_BASE_URL;

@@ -13,9 +13,9 @@
 ### Task 1: Lock backend search behavior with failing tests
 
 **Files:**
-- Modify: `E:\dev\projects\inkdesk\server\src\test\java\com\inkdesk\server\knowledge\KnowledgeApiIntegrationTest.java`
-- Create: `E:\dev\projects\inkdesk\server\src\test\java\com\inkdesk\server\search\SearchQueryServiceTest.java`
-- Modify: `E:\dev\projects\inkdesk\server\src\test\resources\testdata\knowledge-fixtures.sql`
+- Modify: `E:\dev\projects\inkvault\server\src\test\java\com\inkvault\server\knowledge\KnowledgeApiIntegrationTest.java`
+- Create: `E:\dev\projects\inkvault\server\src\test\java\com\inkvault\server\search\SearchQueryServiceTest.java`
+- Modify: `E:\dev\projects\inkvault\server\src\test\resources\testdata\knowledge-fixtures.sql`
 
 - [ ] **Step 1: Write the failing test**
 
@@ -26,7 +26,7 @@ Add tests that assert:
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `E:\dev\projects\inkdesk\server\mvnw.cmd test`
+Run: `E:\dev\projects\inkvault\server\mvnw.cmd test`
 Expected: FAIL because `/api/admin/search` and its service do not exist.
 
 - [ ] **Step 3: Write minimal implementation**
@@ -37,16 +37,16 @@ Add:
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `E:\dev\projects\inkdesk\server\mvnw.cmd test`
+Run: `E:\dev\projects\inkvault\server\mvnw.cmd test`
 Expected: PASS for the new search tests.
 
 ### Task 2: Lock backend plans read behavior with failing tests
 
 **Files:**
-- Create: `E:\dev\projects\inkdesk\server\src\test\java\com\inkdesk\server\plans\PlanApiIntegrationTest.java`
-- Create: `E:\dev\projects\inkdesk\server\src\test\java\com\inkdesk\server\plans\PlanQueryServiceTest.java`
-- Modify: `E:\dev\projects\inkdesk\server\src\test\resources\testdata\cleanup.sql`
-- Modify: `E:\dev\projects\inkdesk\server\src\test\resources\testdata\knowledge-fixtures.sql`
+- Create: `E:\dev\projects\inkvault\server\src\test\java\com\inkvault\server\plans\PlanApiIntegrationTest.java`
+- Create: `E:\dev\projects\inkvault\server\src\test\java\com\inkvault\server\plans\PlanQueryServiceTest.java`
+- Modify: `E:\dev\projects\inkvault\server\src\test\resources\testdata\cleanup.sql`
+- Modify: `E:\dev\projects\inkvault\server\src\test\resources\testdata\knowledge-fixtures.sql`
 
 - [ ] **Step 1: Write the failing test**
 
@@ -57,7 +57,7 @@ Add tests that assert:
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `E:\dev\projects\inkdesk\server\mvnw.cmd test`
+Run: `E:\dev\projects\inkvault\server\mvnw.cmd test`
 Expected: FAIL because plan tables, entities, and endpoint do not exist.
 
 - [ ] **Step 3: Write minimal implementation**
@@ -69,15 +69,15 @@ Add:
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `E:\dev\projects\inkdesk\server\mvnw.cmd test`
+Run: `E:\dev\projects\inkvault\server\mvnw.cmd test`
 Expected: PASS for the new plans tests.
 
 ### Task 3: Switch web search to the backend path
 
 **Files:**
-- Modify: `E:\dev\projects\inkdesk\web\lib\search.ts`
-- Modify: `E:\dev\projects\inkdesk\web\app\app\search\page.tsx`
-- Create: `E:\dev\projects\inkdesk\web\tests\search-api.test.ts`
+- Modify: `E:\dev\projects\inkvault\web\lib\search.ts`
+- Modify: `E:\dev\projects\inkvault\web\app\app\search\page.tsx`
+- Create: `E:\dev\projects\inkvault\web\tests\search-api.test.ts`
 
 - [ ] **Step 1: Write the failing test**
 
@@ -103,9 +103,9 @@ Expected: PASS
 ### Task 4: Switch web plans to the backend path
 
 **Files:**
-- Modify: `E:\dev\projects\inkdesk\web\lib\plans.ts`
-- Modify: `E:\dev\projects\inkdesk\web\app\app\plans\page.tsx`
-- Create: `E:\dev\projects\inkdesk\web\tests\plans-api.test.tsx`
+- Modify: `E:\dev\projects\inkvault\web\lib\plans.ts`
+- Modify: `E:\dev\projects\inkvault\web\app\app\plans\page.tsx`
+- Create: `E:\dev\projects\inkvault\web\tests\plans-api.test.tsx`
 
 - [ ] **Step 1: Write the failing test**
 
@@ -131,7 +131,7 @@ Expected: PASS
 ### Task 5: Verify the slice end-to-end
 
 **Files:**
-- Modify: `E:\dev\projects\inkdesk\web\README.md`
+- Modify: `E:\dev\projects\inkvault\web\README.md`
 
 - [ ] **Step 1: Document the newly connected pages**
 
@@ -139,7 +139,7 @@ Update the README to note that search and plans now use the backend when configu
 
 - [ ] **Step 2: Run backend tests**
 
-Run: `E:\dev\projects\inkdesk\server\mvnw.cmd test`
+Run: `E:\dev\projects\inkvault\server\mvnw.cmd test`
 Expected: PASS
 
 - [ ] **Step 3: Run web tests**

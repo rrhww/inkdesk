@@ -36,10 +36,23 @@ web-dev-*.err
 .workbuddy/
 .worktrees/
 publish-flow-cookies.txt
+.playwright-mcp/
 
 # Generated assets
 assets/wireframes/*.tmp
+assets/ask-vault-result.png
+assets/ask-web-result.png
+assets/ingest-proposal-result.png
+assets/ingest-proposal-top.png
 
 # Test and build caches
 test-results/
 *.tsbuildinfo
+__pycache__/
+.pytest_cache/
+*.egg-info/
+.venv/
+
+# Local vault data
+inkvault-vault/
+server/inkvault-vault/

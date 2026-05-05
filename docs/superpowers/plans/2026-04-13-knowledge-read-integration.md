@@ -13,8 +13,8 @@
 ### Task 1: Add failing tests for backend-backed knowledge helpers
 
 **Files:**
-- Create: `E:\dev\projects\inkdesk\web\tests\knowledge-api.test.ts`
-- Modify: `E:\dev\projects\inkdesk\web\package.json`
+- Create: `E:\dev\projects\inkvault\web\tests\knowledge-api.test.ts`
+- Modify: `E:\dev\projects\inkvault\web\package.json`
 
 - [ ] **Step 1: Write the failing test**
 
@@ -43,10 +43,10 @@ Expected: PASS
 ### Task 2: Switch the public pages to the new helpers
 
 **Files:**
-- Modify: `E:\dev\projects\inkdesk\web\app\page.tsx`
-- Modify: `E:\dev\projects\inkdesk\web\components\public-home-view.tsx`
-- Modify: `E:\dev\projects\inkdesk\web\app\articles\[slug]\page.tsx`
-- Test: `E:\dev\projects\inkdesk\web\tests\repositioning.test.tsx`
+- Modify: `E:\dev\projects\inkvault\web\app\page.tsx`
+- Modify: `E:\dev\projects\inkvault\web\components\public-home-view.tsx`
+- Modify: `E:\dev\projects\inkvault\web\app\articles\[slug]\page.tsx`
+- Test: `E:\dev\projects\inkvault\web\tests\repositioning.test.tsx`
 
 - [ ] **Step 1: Add a failing page-level test**
 
@@ -69,11 +69,11 @@ Expected: PASS
 ### Task 3: Switch the knowledge pages to the new helpers
 
 **Files:**
-- Modify: `E:\dev\projects\inkdesk\web\app\app\library\page.tsx`
-- Modify: `E:\dev\projects\inkdesk\web\app\app\notes\[id]\page.tsx`
-- Modify: `E:\dev\projects\inkdesk\web\components\editor-view.tsx`
-- Modify: `E:\dev\projects\inkdesk\web\lib\knowledge.ts`
-- Test: `E:\dev\projects\inkdesk\web\tests\repositioning.test.tsx`
+- Modify: `E:\dev\projects\inkvault\web\app\app\library\page.tsx`
+- Modify: `E:\dev\projects\inkvault\web\app\app\notes\[id]\page.tsx`
+- Modify: `E:\dev\projects\inkvault\web\components\editor-view.tsx`
+- Modify: `E:\dev\projects\inkvault\web\lib\knowledge.ts`
+- Test: `E:\dev\projects\inkvault\web\tests\repositioning.test.tsx`
 
 - [ ] **Step 1: Add a failing page-level test**
 
@@ -99,7 +99,7 @@ Expected: PASS
 ### Task 4: Verify fallback behavior and build health
 
 **Files:**
-- Modify: `E:\dev\projects\inkdesk\web\README.md`
+- Modify: `E:\dev\projects\inkvault\web\README.md`
 
 - [ ] **Step 1: Document the new API base URL**
 

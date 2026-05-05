@@ -13,8 +13,8 @@
 ### Task 1: Expand mock workbench data
 
 **Files:**
-- Modify: `E:\dev\projects\inkdesk\web\lib\mock-data.ts`
-- Test: `E:\dev\projects\inkdesk\web\tests\repositioning.test.tsx`
+- Modify: `E:\dev\projects\inkvault\web\lib\mock-data.ts`
+- Test: `E:\dev\projects\inkvault\web\tests\repositioning.test.tsx`
 
 - [ ] **Step 1: Write the failing test**
 
@@ -40,9 +40,9 @@ Expected: PASS
 ### Task 2: Polish the private shell
 
 **Files:**
-- Modify: `E:\dev\projects\inkdesk\web\components\app-sidebar.tsx`
-- Modify: `E:\dev\projects\inkdesk\web\components\app-header.tsx`
-- Modify: `E:\dev\projects\inkdesk\web\app\app\layout.tsx`
+- Modify: `E:\dev\projects\inkvault\web\components\app-sidebar.tsx`
+- Modify: `E:\dev\projects\inkvault\web\components\app-header.tsx`
+- Modify: `E:\dev\projects\inkvault\web\app\app\layout.tsx`
 
 - [ ] **Step 1: Add a failing UI-oriented test**
 
@@ -68,8 +68,8 @@ Expected: PASS
 ### Task 3: Recompose the Agent console
 
 **Files:**
-- Modify: `E:\dev\projects\inkdesk\web\app\app\page.tsx`
-- Modify: `E:\dev\projects\inkdesk\web\app\globals.css`
+- Modify: `E:\dev\projects\inkvault\web\app\app\page.tsx`
+- Modify: `E:\dev\projects\inkvault\web\app\globals.css`
 
 - [ ] **Step 1: Add a failing UI-oriented test**
 
@@ -95,7 +95,7 @@ Expected: PASS
 ### Task 4: Verify the polished workbench
 
 **Files:**
-- Modify: `E:\dev\projects\inkdesk\web\README.md`
+- Modify: `E:\dev\projects\inkvault\web\README.md`
 
 - [ ] **Step 1: Update the web README**
 
