@@ -2,117 +2,111 @@
 
 ## 目标
 
-说明 Inkdesk 当前 MVP 的系统边界、职责拆分、关键数据流与部署形态。
+说明 Inkvault 当前主产品的系统边界、职责拆分、关键数据流与部署形态。
 
 ## 系统定位
 
-Inkdesk 的长期目标是一个围绕长期项目运转的个人主系统。当前 MVP 采用公开入口 + 主系统入口的实现方式：
+Inkvault 当前不是公开发布系统，而是一个单人私有、vault-first 的研究记忆系统。主路径围绕下面这条研究闭环展开：
 
-- 公开输出 / 分享层：公开文章与项目分享
-- 主系统：主人登录后进入的私有系统
+```text
+raw -> ingest -> wiki -> ask
+```
 
-在 MVP 阶段，系统重点解决以下问题：
-
-- 访客只能看到公开输出入口
-- 主人通过隐藏入口进入主系统
-- 主系统以 Agent 控制台为第一屏
-- 笔记、任务计划、检索与次级发布模块围绕主系统协同
+- `raw/`：保存网页、PDF、legacy note 等原始材料
+- `ingest`：Agent 生成可审阅提案，等待人工接受或拒绝
+- `wiki/`：保存被接受后的知识页与长期记忆
+- `ask`：优先基于 wiki、再回退 raw 的研究问答入口
 
 ## 核心技术栈
 
 - 前端：`Next.js`
-- 后端：`Spring Boot`
+- 后端：`FastAPI / Python`
+- Agent runtime：`LangGraph`
 - 数据库：`PostgreSQL`
-- 对象存储：生产环境使用 `腾讯云 COS`，本地开发使用 `MinIO`
-- 内容事实来源：`Markdown`
+- 本地对象存储占位：`MinIO`
+- 内容事实来源：`Vault Markdown`
 
 ## 系统边界
 
 ### 系统内部
 
-- 公开输出前端
-- 主系统前端
-- 内容与认证后端
+- 私有前端工作区
+- Python 主后端
+- LangGraph Ask / Compile runtime
 - PostgreSQL
-- 对象存储
+- 本地 vault 文件系统
 
 ### 系统外部
 
-- 浏览器访客
-- 主人
-- 腾讯云基础设施
+- 主人浏览器
+- 外部网页 / PDF 来源
+- OpenAI-compatible 模型服务
 - GitHub 仓库与 CI/CD
-- 后续 Agent / 自动化服务
 
 ## 职责划分
 
 ### 前端职责
 
-- 渲染公开输出首页与公开文章页
-- 渲染主系统页面与主导航
-- 承担隐藏登录入口与入口切换逻辑
-- 组织 Agent 控制台、笔记、任务计划、检索与发布模块
+- 渲染登录页、Today Vault Panel、raw / ingest / wiki / ask 页面
+- 组织 owner session 与私有路由守卫
+- 展示提案审阅、wiki 页面和问答结果
 
 ### 后端职责
 
-- 处理认证与主人身份
-- 提供笔记、计划、检索、发布等接口
-- 提供公开文章读取能力
-- 为未来对象存储接入保留基础设施形态
+- 处理认证与 owner 会话
+- 维护 raw / ingest / wiki / ask API
+- 读写 vault markdown
+- 编排 LangGraph Ask / Compile runtime
+- 维护数据库索引、提案队列和问答记录
 
 ### 数据库职责
 
-- 存储主人信息
-- 存储笔记与修订
-- 存储任务 / 计划
-- 存储发布信息与 slug
+- 存储 owner、workspace、source、topic、review、ask turn 等索引数据
+- 追踪提案状态与 wiki/source 关系
+- 作为缓存和工作流状态层，而不是最终知识真相
 
-### 对象存储职责
+### Vault 职责
 
-- 本地阶段使用 `MinIO` 预留对象存储形态
-- 当前本轮不接入知识资产附件上传
+- 持久化 `raw/` 与 `wiki/` markdown 文件
+- 保存 frontmatter、引用来源与知识页结构
+- 作为长期真相来源，允许 DB 缺失后重建索引
 
 ## 请求与数据流
 
 ```mermaid
 flowchart LR
-    A["访客或主人浏览器"] --> B["Next.js 前端"]
-    B --> C["Spring Boot 后端"]
-    C --> D["PostgreSQL"]
-    C --> E["COS / MinIO"]
-    C --> F["后续 Agent / 自动化服务"]
+    A["主人浏览器"] --> B["Next.js 前端"]
+    B --> C["Python FastAPI 后端"]
+    C --> D["PostgreSQL 索引/队列"]
+    C --> E["Vault Markdown"]
+    C --> F["LangGraph Ask / Compile"]
+    F --> G["OpenAI-compatible 模型"]
 ```
 
 ### 主请求流
 
-1. 访客访问 `/`，或主人访问 `/login` / `/app`
-2. 前端根据身份与路由渲染公开输出入口或主系统
-3. 前端向后端发起认证、内容、计划、检索、发布请求
-4. 后端读写数据库与对象存储
-5. 结果返回前端渲染
+1. 主人访问 `/login` 或 `/app`
+2. 前端根据 session 渲染私有工作区
+3. 前端向后端发起 raw、ingest、wiki、ask 请求
+4. 后端读写 PostgreSQL 与 vault markdown
+5. Ask / Compile 在需要时调用 LangGraph runtime
+6. 结果返回前端渲染，知识只在人工接受提案后进入 wiki
 
 ## 部署形态
 
-Inkdesk 当前仍保持单体 MVP 形态：
+Inkvault 当前保持单体私有部署形态：
 
 - 单一 Git 仓库
-- 单一前端应用
-- 单一后端应用
+- 单一 Next.js 前端应用
+- 单一 Python 主后端
 - 一个 PostgreSQL 实例
-- 一个对象存储桶
+- 一个本地或挂载 vault 目录
 - 一个 Nginx 入口
 
-## 输出层与主系统关系
+## 当前边界
 
-- 公开输出层只展示主人主动公开的内容
-- 主系统负责组织、编辑、检索、计划与同步
-- 公开输出层不承担系统入口职责
-- 主系统不承担访客导览职责
-
-## 非目标
-
-- 多人协作
-- 实时协同编辑
-- 复杂权限体系
-- 完整自动化引擎
-- 真正 автономous Agent 执行闭环
+- 不提供公开阅读面
+- 不提供 plans / publish / settings 主路径
+- 不做多租户或多人协作
+- 不允许 AI 静默改写 wiki
+- 不做长时自治执行 loop

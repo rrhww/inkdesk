@@ -23,7 +23,7 @@
 
 ## 5. 登录模型
 
-- 当前阶段使用真实 single-owner auth + `inkdesk_owner_session` Cookie
+- 当前阶段使用真实 single-owner auth + `inkvault_owner_session` Cookie
 - 登录标识固定为邮箱
 - 原因：本地全栈闭环必须覆盖真实登录、登出与会话校验
 
@@ -46,7 +46,7 @@
 ## 9. 任务 / 计划策略
 
 - 任务与计划作为一级模块进入主系统
-- 原因：Inkdesk 已从“存内容”转为“组织工作”
+- 原因：Inkvault 已从“存内容”转为“组织工作”
 
 ## 10. 发布策略
 

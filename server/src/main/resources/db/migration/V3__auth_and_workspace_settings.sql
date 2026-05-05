@@ -2,7 +2,7 @@ ALTER TABLE users
     ADD COLUMN email VARCHAR(255);
 
 UPDATE users
-SET email = username || '@inkdesk.local'
+SET email = username || '@inkvault.local'
 WHERE email IS NULL;
 
 ALTER TABLE users

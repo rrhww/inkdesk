@@ -2,14 +2,14 @@
 
 ## 目标
 
-将 Inkdesk 作为“主系统优先、公开输出从属”的个人系统推进到一个可稳定使用的 MVP。
+将 Inkvault 作为“主系统优先、公开输出从属”的个人系统推进到一个可稳定使用的 MVP。
 
 ## 项目边界
 
 - 产品形态：公开输出入口 + 私有主系统
 - 主系统核心：Agent 控制台、笔记系统、任务 / 计划、检索
 - 输出层核心：作者介绍、公开文章、项目 / 链接
-- 技术栈：`Next.js + Spring Boot + PostgreSQL + COS + MinIO`
+- 技术栈：`Next.js + FastAPI + PostgreSQL + Vault Markdown + MinIO`
 
 ## 阶段顺序
 

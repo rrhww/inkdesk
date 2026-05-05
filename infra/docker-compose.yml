@@ -1,36 +1,65 @@
 services:
   postgres:
-    image: postgres:16-alpine
-    container_name: inkdesk-postgres
+    image: pgvector/pgvector:pg16
+    container_name: inkvault-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-inkdesk}
-      POSTGRES_USER: ${POSTGRES_USER:-inkdesk}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-inkdesk}
+      POSTGRES_DB: ${POSTGRES_DB:-inkvault}
+      POSTGRES_USER: ${POSTGRES_USER:-inkvault}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-inkvault}
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
-      - inkdesk-postgres-data:/var/lib/postgresql/data
+      - inkvault-postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-inkdesk} -d ${POSTGRES_DB:-inkdesk}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-inkvault} -d ${POSTGRES_DB:-inkvault}"]
       interval: 10s
       timeout: 5s
       retries: 5
 
   minio:
     image: minio/minio:latest
-    container_name: inkdesk-minio
+    container_name: inkvault-minio
     restart: unless-stopped
     command: server /data --console-address ":9001"
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-inkdesk}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-inkdeskminio}
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-inkvault}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-inkvaultminio}
     ports:
       - "${MINIO_API_PORT:-9000}:9000"
       - "${MINIO_CONSOLE_PORT:-9001}:9001"
     volumes:
-      - inkdesk-minio-data:/data
+      - inkvault-minio-data:/data
+
+  server:
+    build:
+      context: ../server
+    container_name: inkvault-server
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      INKVAULT_DB_URL: postgresql+psycopg://${POSTGRES_USER:-inkvault}:${POSTGRES_PASSWORD:-inkvault}@postgres:5432/${POSTGRES_DB:-inkvault}
+      INKVAULT_VAULT_ROOT: /app/inkvault-vault
+      INKVAULT_AUTH_SECRET: ${INKVAULT_AUTH_SECRET:-replace-with-a-long-random-secret}
+      INKVAULT_AGENT_PROVIDER_PROFILE: ${INKVAULT_AGENT_PROVIDER_PROFILE:-openai}
+      INKVAULT_AGENT_MODEL: ${INKVAULT_AGENT_MODEL:-}
+      INKVAULT_AGENT_API_KEY: ${INKVAULT_AGENT_API_KEY:-}
+      INKVAULT_AGENT_BASE_URL: ${INKVAULT_AGENT_BASE_URL:-}
+      INKVAULT_EMBEDDING_PROVIDER_PROFILE: ${INKVAULT_EMBEDDING_PROVIDER_PROFILE:-openai}
+      INKVAULT_EMBEDDING_MODEL: ${INKVAULT_EMBEDDING_MODEL:-text-embedding-3-small}
+      INKVAULT_EMBEDDING_API_KEY: ${INKVAULT_EMBEDDING_API_KEY:-}
+      INKVAULT_EMBEDDING_BASE_URL: ${INKVAULT_EMBEDDING_BASE_URL:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+    ports:
+      - "${INKVAULT_SERVER_PORT:-8080}:8080"
+    volumes:
+      - inkvault-vault-data:/app/inkvault-vault
 
 volumes:
-  inkdesk-postgres-data:
-  inkdesk-minio-data:
+  inkvault-postgres-data:
+  inkvault-minio-data:
+  inkvault-vault-data:

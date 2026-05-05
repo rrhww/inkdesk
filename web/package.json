@@ -1,5 +1,5 @@
 {
-  "name": "inkdesk-web",
+  "name": "inkvault-web",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -8,7 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "test:smoke": "node --import tsx --test tests/owner-session.test.ts tests/repositioning.test.tsx tests/knowledge-api.test.ts tests/knowledge-pages.test.tsx tests/home-api.test.tsx tests/publish-api.test.ts tests/publish-pages.test.tsx tests/search-api.test.tsx tests/plans-api.test.tsx",
+    "test:smoke": "node --import tsx --test tests/owner-session.test.ts tests/owner-auth.test.ts tests/research-api.test.tsx tests/research-pages.test.tsx",
     "unit": "vitest run",
     "test": "npm run test:smoke && npm run unit",
     "e2e": "playwright test",

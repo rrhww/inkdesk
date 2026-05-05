@@ -1,9 +1,9 @@
-import { AgentConsole } from "@/components/workbench/agent-console";
-import { getWorkbenchSnapshot } from "@/lib/home";
+import { ResearchDashboardView } from "@/components/workbench/research-dashboard";
 import { getRequestOwnerSession } from "@/lib/request-owner-session";
+import { getResearchDashboard } from "@/lib/research";
 
 export default async function WorkbenchPage() {
   const ownerSession = await getRequestOwnerSession();
 
-  return <AgentConsole snapshot={await getWorkbenchSnapshot(ownerSession)} />;
+  return <ResearchDashboardView snapshot={await getResearchDashboard(ownerSession)} />;
 }

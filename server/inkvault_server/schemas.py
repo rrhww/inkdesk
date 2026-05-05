@@ -1,0 +1,234 @@
+from __future__ import annotations
+
+from datetime import datetime
+
+from pydantic import BaseModel
+
+
+class ApiErrorResponse(BaseModel):
+    code: str
+    message: str
+
+
+class AuthLoginRequest(BaseModel):
+    email: str
+    password: str
+
+
+class AuthLoginResponse(BaseModel):
+    sessionToken: str
+
+
+class AuthMeResponse(BaseModel):
+    userId: str
+    username: str
+    workspaceId: str
+    workspaceName: str
+    workspaceSlug: str
+
+
+class CreateSourceRequest(BaseModel):
+    kind: str = "TEXT"
+    title: str | None = None
+    locator: str | None = None
+    excerpt: str | None = None
+    body: str | None = None
+
+
+class WebRawImportRequest(BaseModel):
+    url: str
+    title: str | None = None
+
+
+class SourceResponse(BaseModel):
+    id: str
+    kind: str
+    status: str
+    title: str
+    locator: str | None = None
+    excerpt: str
+    legacyNoteId: str | None = None
+    vaultPath: str | None = None
+    contentHash: str | None = None
+    updatedAt: datetime
+
+
+class ReviewDecisionResponse(BaseModel):
+    reviewId: str
+    status: str
+    topicId: str | None = None
+
+
+class ProposalTopicDecisionResponse(BaseModel):
+    decision: str
+    targetTopicId: str | None = None
+    targetTopicTitle: str | None = None
+    proposedTopicTitle: str | None = None
+
+
+class ProposalClaimResponse(BaseModel):
+    statement: str
+    citationLabel: str
+    sourceId: str | None = None
+    citationChunkIds: list[str] = []
+
+
+class ProposalEvidenceResponse(BaseModel):
+    sourceId: str
+    sourceTitle: str
+    sourceVaultPath: str | None = None
+    locator: str | None = None
+    excerpt: str
+    chunkId: str | None = None
+    entityType: str | None = None
+    entityId: str | None = None
+    topicId: str | None = None
+
+
+class ProposalPayloadResponse(BaseModel):
+    topicDecision: ProposalTopicDecisionResponse
+    summaryChanges: list[str]
+    claims: list[ProposalClaimResponse]
+    conflicts: list[str]
+    openQuestions: list[str]
+    explanation: str
+    evidence: list[ProposalEvidenceResponse]
+
+
+class ReviewItemResponse(BaseModel):
+    id: str
+    kind: str
+    proposalKind: str
+    title: str
+    summary: str
+    sourceId: str | None = None
+    sourceTitle: str | None = None
+    targetTopicId: str | None = None
+    targetTopicTitle: str | None = None
+    proposedTopicTitle: str | None = None
+    proposedUnderstanding: str | None = None
+    proposedOpenQuestions: str | None = None
+    proposedClaim: str | None = None
+    proposedVaultPath: str | None = None
+    sourceVaultPath: str | None = None
+    proposalPayload: ProposalPayloadResponse
+    createdAt: datetime
+
+
+class TopicSummaryResponse(BaseModel):
+    id: str
+    title: str
+    summary: str
+    sourceCount: int
+    openQuestionCount: int
+    vaultPath: str | None = None
+    updatedAt: datetime
+
+
+class TopicSourceLinkResponse(BaseModel):
+    sourceId: str
+    title: str
+    kind: str
+    locator: str | None = None
+    vaultPath: str | None = None
+    legacyNoteId: str | None = None
+
+
+class TopicClaimResponse(BaseModel):
+    id: str
+    statement: str
+    sourceId: str | None = None
+    citationLabel: str
+
+
+class TopicThreadEntryResponse(BaseModel):
+    id: str
+    role: str
+    content: str
+    sourceId: str | None = None
+    createdAt: datetime
+
+
+class TopicDetailResponse(BaseModel):
+    id: str
+    title: str
+    summary: str
+    vaultPath: str | None = None
+    contentHash: str | None = None
+    currentUnderstanding: list[str]
+    openQuestions: list[str]
+    sources: list[TopicSourceLinkResponse]
+    keyClaims: list[TopicClaimResponse]
+    thread: list[TopicThreadEntryResponse]
+    updatedAt: datetime
+
+
+class ResearchDashboardSummary(BaseModel):
+    activeTopics: int
+    pendingReviews: int
+    inboxSources: int
+    totalSources: int
+
+
+class ResearchDashboardResponse(BaseModel):
+    summary: ResearchDashboardSummary
+    focusTopic: TopicSummaryResponse | None
+    recentSources: list[SourceResponse]
+    pendingReviews: list[ReviewItemResponse]
+    suggestedQuestions: list[str]
+
+
+class AskRequest(BaseModel):
+    topicId: str | None = None
+    question: str
+    mode: str | None = "vault"
+    continueFromAskTurnId: str | None = None
+
+
+class AskCitationResponse(BaseModel):
+    id: str
+    entityType: str
+    entityId: str
+    sourceId: str | None = None
+    topicId: str | None = None
+    title: str
+    locator: str | None = None
+    vaultPath: str | None = None
+    snippet: str
+    chunkId: str
+
+
+class AskWebSourceResponse(BaseModel):
+    url: str
+    title: str
+    excerpt: str
+    reasonUsed: str
+
+
+class AskResponse(BaseModel):
+    id: str
+    topicId: str | None = None
+    parentAskTurnId: str | None = None
+    threadRootAskTurnId: str
+    lineageAskTurnIds: list[str]
+    question: str
+    answer: str
+    confidence: float
+    retrievalMode: str
+    usedChunkIds: list[str]
+    followUpQuestions: list[str]
+    knowledgeGaps: list[str]
+    usedWikiIds: list[str]
+    usedSourceIds: list[str]
+    usedWebSources: list[AskWebSourceResponse]
+    contextAskTurnIds: list[str]
+    canWriteback: bool
+    citations: list[AskCitationResponse]
+    createdAt: datetime
+
+
+class AskThreadResponse(BaseModel):
+    rootAskTurnId: str
+    currentAskTurnId: str
+    topicId: str | None = None
+    turns: list[AskResponse]

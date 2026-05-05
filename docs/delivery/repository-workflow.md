@@ -2,18 +2,18 @@
 
 ## 目标
 
-这份文档用于固定 Inkdesk 的 GitHub 仓库信息、本地仓库规则和单人开发阶段的提交流程。
+这份文档用于固定 Inkvault 的 GitHub 仓库信息、本地仓库规则和单人开发阶段的提交流程。
 
 ## 仓库信息
 
-- GitHub 仓库：`https://github.com/rrhww/inkdesk.git`
+- GitHub 仓库：`https://github.com/rrhww/inkvault.git`
 - 远程名称：`origin`
 - 默认分支：`main`
 - 当前可见性：`Private`
 
 ## 项目根目录
 
-- 本地仓库根目录固定为 `E:\dev\projects\inkdesk`
+- 本地仓库根目录固定为 `E:\dev\projects\inkvault`
 
 ## 当前开发策略
 

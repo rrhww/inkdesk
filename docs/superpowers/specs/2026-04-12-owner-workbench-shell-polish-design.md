@@ -1,4 +1,4 @@
-# Inkdesk 主系统壳层与 Agent 控制台打磨设计
+# Inkvault 主系统壳层与 Agent 控制台打磨设计
 
 ## 1. 目标
 

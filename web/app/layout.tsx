@@ -1,31 +1,15 @@
 /* eslint-disable @next/next/no-page-custom-font */
 import type { Metadata } from "next";
-import { Inter, Manrope, Newsreader } from "next/font/google";
 
 import "./globals.css";
 
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter"
-});
-
-const manrope = Manrope({
-  subsets: ["latin"],
-  variable: "--font-manrope"
-});
-
-const newsreader = Newsreader({
-  subsets: ["latin"],
-  variable: "--font-newsreader"
-});
-
 export const metadata: Metadata = {
-  title: "Inkdesk",
-  description: "围绕长期项目运转的个人主系统，附带公开输出与分享能力",
-  metadataBase: new URL("https://inkdesk.local"),
+  title: "Inkvault",
+  description: "单人私有、raw / ingest / wiki 的 Vault-first LLM Wiki",
+  metadataBase: new URL("https://inkvault.local"),
   openGraph: {
-    title: "Inkdesk",
-    description: "一个把个人笔记系统、Agent 与任务计划整合进同一工作流的超级个人工作台。",
+    title: "Inkvault",
+    description: "一个把 raw 导入、ingest 编译和 wiki 沉淀整合进同一研究工作流的私有系统。",
     type: "website"
   }
 };
@@ -39,7 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           rel="stylesheet"
         />
       </head>
-      <body className={`${inter.variable} ${manrope.variable} ${newsreader.variable} overflow-x-hidden`}>{children}</body>
+      <body className="overflow-x-hidden">{children}</body>
     </html>
   );
 }

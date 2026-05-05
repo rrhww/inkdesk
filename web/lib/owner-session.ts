@@ -1,4 +1,4 @@
-export const OWNER_SESSION_COOKIE = "inkdesk_owner_session";
+export const OWNER_SESSION_COOKIE = "inkvault_owner_session";
 export const OWNER_SESSION_VALUE = "owner";
 
 export function hasOwnerSession(value?: string) {
@@ -6,7 +6,7 @@ export function hasOwnerSession(value?: string) {
 }
 
 export function resolveRootDestination(value?: string) {
-  return hasOwnerSession(value) ? "app" : "public";
+  return hasOwnerSession(value) ? "app" : "login";
 }
 
 export function resolveProtectedAppRedirect(pathname: string, value?: string) {

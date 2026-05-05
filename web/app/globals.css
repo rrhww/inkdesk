@@ -4,6 +4,9 @@
 
 :root {
   color-scheme: light;
+  --font-inter: "Aptos", "Segoe UI", "Helvetica Neue", "PingFang SC", "Microsoft YaHei UI", sans-serif;
+  --font-manrope: "Aptos Display", "Segoe UI Semibold", "Trebuchet MS", "PingFang SC", "Microsoft YaHei UI", sans-serif;
+  --font-newsreader: "Iowan Old Style", "Palatino Linotype", "Noto Serif SC", "Source Han Serif SC", serif;
 }
 
 html,

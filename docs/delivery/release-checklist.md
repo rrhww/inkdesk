@@ -2,56 +2,50 @@
 
 ## 本轮目标
 
-本轮的放行标准不是“差不多能看”，而是本地全栈闭环成立。
+本轮的放行标准不是“差不多能看”，而是私有 vault-first LLM Wiki 的本地全栈闭环成立。
 
 ## 基础设施
 
 - `docker compose` 能拉起 `PostgreSQL + MinIO`
-- Spring Boot 可连接本地 PostgreSQL
-- Next.js 可连接 Spring Boot
-- `local` profile 会自动提供 owner 账号和示例数据
+- Python 主后端可连接本地 PostgreSQL
+- Next.js 可连接 Python 主后端
+- 默认启动会提供 owner 账号与示例 research 数据
 
 ## 主系统链路
 
 - `/login` 可访问
-- 使用 `owner@inkdesk.local / inkdesk-owner` 可登录
+- 使用 `owner@inkvault.local / inkvault-owner` 可登录
 - 登录后进入 `/app`
 - 未登录访问 `/app/*` 会被拦回 `/login`
-- `/app` 第一屏是 Agent 控制台
-- `/app/settings` 可读取并保存设置
+- `/app` 第一屏是 Today Vault Panel
+- `/app/raw`、`/app/ingest`、`/app/wiki`、`/app/ask` 可正常访问
 - 退出登录后再次访问 `/app/*` 会被拦回 `/login`
 
-## 知识与发布链路
+## 研究闭环链路
 
-- 可以创建一篇新的知识资产
-- 可以再次打开并保存该知识资产
-- 可以从 `/app/publish` 发布该知识资产
-- 发布后 `/` 与 `/articles/[slug]` 可见
-- 可以撤回该知识资产
-- 撤回后公共面不可见
-
-## 计划链路
-
-- 可以创建新计划
-- 可以将计划关联到知识资产
-- 可以更新计划状态
-- 更新后页面可立即回显真实值
+- 原始材料可以进入 `raw/`
+- ingest 提案不会静默写入 wiki
+- 接受提案后才会创建或更新 wiki 页面
+- wiki 页面能看到 understanding、claims、questions、sources
+- Ask 返回 wiki/source citation
 
 ## 自动化验证
 
-- `server\\mvnw.cmd test` 通过
-- `web\\npm test` 通过
-- `web\\npm run build` 通过
-- `web\\npm run e2e` 通过
-- 如果本地全栈环境已启动，`web\\npm run e2e:fullstack` 通过
+- `cd server && python -m pytest` 通过
+- `cd web && npm test` 通过
+- `cd web && npm run typecheck` 通过
+- `cd web && npm run lint` 通过
+- `cd web && npm run build` 通过
+- `cd web && npm run e2e` 通过
+- 如果本地全栈环境已启动，`cd web && npm run e2e:fullstack` 通过
 
 ## 阻塞项判定
 
 以下任一项不满足，都不能标记为放行：
 
 - 认证链路断开
-- 知识创建 / 保存 / 发布 / 撤回任一环节失败
-- 计划创建 / 更新失败
-- 设置刷新后无法回显
+- raw / ingest / wiki / ask 任一环节失败
+- 提案未经确认直接写入 wiki
+- Ask 缺少引用来源
 - 未登录仍能进入私有页面
-- 测试或构建存在失败
+- 测试、类型检查、lint 或构建存在失败
