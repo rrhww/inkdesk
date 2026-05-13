@@ -2,8 +2,7 @@ import type { ReactNode } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
-import { AppHeader } from "@/components/app-header";
-import { AppSidebar } from "@/components/app-sidebar";
+import { AppChrome } from "@/components/app-chrome";
 import { logoutOwner } from "@/lib/owner-auth";
 import { getResearchDashboard } from "@/lib/research";
 import { InkvaultApiError } from "@/lib/server-api";
@@ -41,25 +40,8 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen">
-      <AppSidebar snapshot={snapshot} />
-      <div className="lg:ml-72">
-        <AppHeader
-          title="问答"
-          subtitle="先沿着最近对话继续，再决定回到资料、审阅还是知识库。"
-          contextItems={[
-            { label: "当前模式", value: "仅基于知识库" },
-            { label: "待审阅", value: `${snapshot.summary.pendingReviews} 条` },
-            { label: "知识页", value: `${snapshot.summary.activeTopics} 个` }
-          ]}
-          action={
-            <form action={logoutAction}>
-              <button className="rounded-sm bg-ink-low px-4 py-3 font-headline text-sm font-semibold text-ink-text">退出</button>
-            </form>
-          }
-        />
-        {children}
-      </div>
-    </div>
+    <AppChrome logoutAction={logoutAction} snapshot={snapshot}>
+      {children}
+    </AppChrome>
   );
 }

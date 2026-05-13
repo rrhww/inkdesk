@@ -1,6 +1,6 @@
 # Server
 
-Inkvault 的 Python 主后端，当前服务于单人私有、Vault-first 的 LLM Wiki。
+Inkvault 的 Python 主后端，当前服务于单人私有、Vault-first 的研究工作台。
 
 ## 当前能力
 
@@ -9,7 +9,7 @@ Inkvault 的 Python 主后端，当前服务于单人私有、Vault-first 的 LL
 - `SQLAlchemy + PostgreSQL`
 - `health` 与 `actuator/health`
 - 真实 owner 登录 / 登出 / 会话校验
-- Today Vault Panel 聚合接口
+- 研究工作区聚合接口
 - raw / ingest / wiki / Ask 研究接口
 - `INKVAULT_VAULT_ROOT` 可配置 vault 根目录，默认 `./inkvault-vault`
 - 启动和请求时确保 vault 中存在 `raw/`、`wiki/`、`AGENTS.md`
@@ -19,10 +19,7 @@ Inkvault 的 Python 主后端，当前服务于单人私有、Vault-first 的 LL
 ## 当前产品边界
 
 - 单人私有部署模型
-- 没有公开文章接口
-- 没有 plans 接口
-- 没有 search 接口
-- 没有 settings 接口
+- 只提供私有研究工作流接口
 - AI 只能提交可审阅提案，不能静默改写正式知识
 - Vault markdown 是长期真相，DB 只做索引、队列和缓存
 

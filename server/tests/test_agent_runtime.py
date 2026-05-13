@@ -264,6 +264,185 @@ def test_agent_runtime_flows_concrete_web_evidence_and_writeback_package_from_an
     assert response.writebackPackage == writeback_package
 
 
+def test_agent_runtime_generates_deterministic_workspace_briefing_without_model_credentials(temp_app_env):
+    from inkvault_server.agents import AgentRuntime, AskBriefingRequestModel, AskBriefingSignalModel, CitationModel
+    from inkvault_server.core.config import get_settings
+
+    runtime = AgentRuntime(get_settings())
+    response = runtime.brief(
+        AskBriefingRequestModel(
+            scope="workspace",
+            pendingReviewCount=3,
+            focusTopicTitle="Inkvault repositioning",
+            recentSourceTitles=["Research-first wiki note"],
+            healthSignals=[
+                AskBriefingSignalModel(
+                    type="RAW_BACKLOG",
+                    title="raw 里有 3 条材料等待编译",
+                    summary="这些材料还没有进入 wiki。",
+                    href="/app/raw",
+                ),
+                AskBriefingSignalModel(
+                    type="REVIEW_BACKLOG",
+                    title="ingest 队列有 3 条待审阅提案",
+                    summary="这些提案需要人工确认。",
+                    href="/app/ingest",
+                ),
+                AskBriefingSignalModel(
+                    type="UNSUPPORTED_CLAIM",
+                    title="有 1 条 claim 缺少直接证据",
+                    summary="至少有一条关键结论还没有直接证据链支持。",
+                    href="/app/wiki",
+                ),
+            ],
+            citations=[
+                CitationModel(
+                    id="source-001",
+                    title="Research-first wiki note",
+                    kind="WEB",
+                    excerpt="强调 wiki-first 的研究工作流。",
+                    locator="https://example.com/wiki",
+                    vaultPath="raw/source-001.md",
+                )
+            ],
+            suggestedQuestions=["当前最值得先审阅哪条迁移提案？"],
+        )
+    )
+
+    assert response.scope == "workspace"
+    assert response.summary
+    assert response.knowledgeGaps
+    assert any(gap.title == "有 1 条 claim 缺少直接证据" for gap in response.knowledgeGaps)
+    assert response.nextActions
+    assert response.suggestedQuestions
+    assert response.supportingSignals
+
+
+def test_agent_runtime_uses_real_briefing_llm_with_structured_provider_when_credentials_present(temp_app_env, monkeypatch):
+    from inkvault_server import agents
+    from inkvault_server.core.config import get_settings
+
+    captured: dict[str, object] = {"schemas": [], "methods": []}
+
+    class FakeStructuredBriefingLLM:
+        def invoke(self, prompt):
+            captured["prompt"] = prompt
+            return agents.AskBriefingStructuredOutput(
+                summary="当前最值得先处理的是 ingest 队列。",
+                confidence=0.88,
+                knowledgeGaps=[
+                    agents.AskBriefingGapStructuredOutput(
+                        title="待审阅提案积压",
+                        detail="还有 3 条 ingest 提案没有进入最终知识层。",
+                        href="/app/ingest",
+                    )
+                ],
+                nextActions=[
+                    agents.AskBriefingActionStructuredOutput(
+                        kind="OPEN_INGEST",
+                        label="打开审阅队列",
+                        description="先处理最靠前的提案，再继续提问。",
+                        href="/app/ingest",
+                    )
+                ],
+                suggestedQuestions=["当前哪条提案最值得先审阅？"],
+                supportingSignals=[
+                    agents.AskBriefingSignalModel(
+                        type="REVIEW_BACKLOG",
+                        title="ingest 队列有 3 条待审阅提案",
+                        summary="这些提案需要人工确认。",
+                        href="/app/ingest",
+                    )
+                ],
+            )
+
+    class FakeChatOpenAI:
+        def __init__(self, **_kwargs):
+            pass
+
+        def with_structured_output(self, schema, **kwargs):
+            captured["schemas"].append(schema)
+            captured["methods"].append(kwargs.get("method"))
+            return FakeStructuredBriefingLLM()
+
+    monkeypatch.setenv("INKVAULT_AGENT_RUNTIME", "langgraph")
+    monkeypatch.setenv("OPENAI_API_KEY", "test-openai-key")
+    get_settings.cache_clear()
+    monkeypatch.setattr(agents, "ChatOpenAI", FakeChatOpenAI)
+
+    runtime = agents.AgentRuntime(get_settings())
+    response = runtime.brief(
+        agents.AskBriefingRequestModel(
+            scope="workspace",
+            pendingReviewCount=3,
+            focusTopicTitle="Inkvault repositioning",
+            recentSourceTitles=["Research-first wiki note"],
+            healthSignals=[
+                agents.AskBriefingSignalModel(
+                    type="REVIEW_BACKLOG",
+                    title="ingest 队列有 3 条待审阅提案",
+                    summary="这些提案需要人工确认。",
+                    href="/app/ingest",
+                )
+            ],
+            citations=[],
+            suggestedQuestions=["当前哪条提案最值得先审阅？"],
+        )
+    )
+
+    assert captured["schemas"] == [agents.AskStructuredOutput, agents.CompileStructuredOutput, agents.AskBriefingStructuredOutput]
+    assert captured["methods"] == ["json_schema", "json_schema", "json_schema"]
+    assert "Briefing scope: workspace" in str(captured["prompt"])
+    assert response.summary == "当前最值得先处理的是 ingest 队列。"
+    assert response.nextActions[0].kind == "OPEN_INGEST"
+
+
+def test_agent_runtime_falls_back_to_deterministic_briefing_when_provider_invoke_fails(temp_app_env, monkeypatch):
+    from inkvault_server import agents
+    from inkvault_server.core.config import get_settings
+
+    class FailingStructuredBriefingLLM:
+        def invoke(self, _prompt):
+            raise RuntimeError("provider unavailable")
+
+    class FakeChatOpenAI:
+        def __init__(self, **_kwargs):
+            pass
+
+        def with_structured_output(self, schema, **_kwargs):
+            if schema is agents.AskBriefingStructuredOutput:
+                return FailingStructuredBriefingLLM()
+            return object()
+
+    monkeypatch.setenv("INKVAULT_AGENT_RUNTIME", "langgraph")
+    monkeypatch.setenv("OPENAI_API_KEY", "test-openai-key")
+    get_settings.cache_clear()
+    monkeypatch.setattr(agents, "ChatOpenAI", FakeChatOpenAI)
+
+    runtime = agents.AgentRuntime(get_settings())
+    response = runtime.brief(
+        agents.AskBriefingRequestModel(
+            scope="ask_turn",
+            askTurnId="ask-001",
+            topicTitle="Inkvault repositioning",
+            askQuestion="这个主题当前最稳定的理解是什么？",
+            askAnswer="当前最稳定的理解是 wiki 是新的核心对象。",
+            askKnowledgeGaps=["当前还缺少最新外部资料。"],
+            canWriteback=True,
+            pendingReviewCount=1,
+            focusTopicTitle="Inkvault repositioning",
+            recentSourceTitles=["Research-first wiki note"],
+            healthSignals=[],
+            citations=[],
+            suggestedQuestions=["下一步最值得补哪条证据？"],
+        )
+    )
+
+    assert response.scope == "ask_turn"
+    assert response.knowledgeGaps[0].title
+    assert response.nextActions[0].href
+
+
 def test_ask_structured_output_normalizes_confidence_labels():
     from inkvault_server.agents import AskStructuredOutput
 
@@ -426,8 +605,12 @@ def test_agent_runtime_uses_real_ask_llm_with_structured_provider_when_credentia
         )
     )
 
-    assert captured["schemas"] == [agents.AskStructuredOutput, agents.CompileStructuredOutput]
-    assert captured["methods"] == ["json_schema", "json_schema"]
+    assert captured["schemas"] == [
+        agents.AskStructuredOutput,
+        agents.CompileStructuredOutput,
+        agents.AskBriefingStructuredOutput,
+    ]
+    assert captured["methods"] == ["json_schema", "json_schema", "json_schema"]
     assert captured["init_kwargs"][0] == {
         "model": "gpt-test",
         "api_key": "test-openai-key",
@@ -492,6 +675,7 @@ def test_agent_runtime_uses_json_mode_for_deepseek_structured_output(temp_app_en
     assert captured["calls"] == [
         (agents.AskStructuredOutput, "json_mode"),
         (agents.CompileStructuredOutput, "json_mode"),
+        (agents.AskBriefingStructuredOutput, "json_mode"),
     ]
     assert captured["init_kwargs"][0]["api_key"] == "deepseek-test-key"
     assert captured["init_kwargs"][0]["base_url"] == "https://api.deepseek.com"
@@ -594,7 +778,7 @@ def test_agent_runtime_uses_real_compile_llm_with_structured_provider_when_crede
     from inkvault_server import agents
     from inkvault_server.core.config import get_settings
 
-    captured: dict[str, object] = {}
+    captured: dict[str, object] = {"schemas": [], "methods": [], "init_kwargs": []}
 
     class FakeStructuredCompileLLM:
         def invoke(self, prompt):
@@ -611,11 +795,11 @@ def test_agent_runtime_uses_real_compile_llm_with_structured_provider_when_crede
 
     class FakeChatOpenAI:
         def __init__(self, **kwargs):
-            captured["init_kwargs"] = kwargs
+            captured["init_kwargs"].append(kwargs)
 
         def with_structured_output(self, schema, **kwargs):
-            captured["schema"] = schema
-            captured["method"] = kwargs.get("method")
+            captured["schemas"].append(schema)
+            captured["methods"].append(kwargs.get("method"))
             return FakeStructuredCompileLLM()
 
     monkeypatch.setenv("INKVAULT_AGENT_RUNTIME", "langgraph")
@@ -660,9 +844,13 @@ def test_agent_runtime_uses_real_compile_llm_with_structured_provider_when_crede
         )
     )
 
-    assert captured["schema"] is agents.CompileStructuredOutput
-    assert captured["method"] == "json_schema"
-    assert captured["init_kwargs"] == {
+    assert captured["schemas"] == [
+        agents.AskStructuredOutput,
+        agents.CompileStructuredOutput,
+        agents.AskBriefingStructuredOutput,
+    ]
+    assert captured["methods"] == ["json_schema", "json_schema", "json_schema"]
+    assert captured["init_kwargs"][1] == {
         "model": "gpt-test",
         "api_key": "test-openai-key",
         "base_url": "https://example.com/v1",
@@ -784,11 +972,12 @@ def test_research_workspace_service_flows_context_and_runtime_metadata_on_real_a
         ]
         assert [item.model_dump() for item in response.usedWebSources] == [web_source.model_dump()]
         assert response.contextAskTurnIds == [previous_turn.id]
-        assert response.canWriteback is False
-        assert stored_turn is not None
-        assert stored_turn.parent_ask_turn_id == previous_turn.id
-        assert service.decode_web_citations(stored_turn.used_web_sources_json) == [web_source]
-        assert service.decode_writeback_package(stored_turn.writeback_package_json) == writeback_package
+    assert response.canWriteback is False
+    assert stored_turn is not None
+    assert stored_turn.parent_ask_turn_id == previous_turn.id
+    assert service.decode_web_citations(stored_turn.used_web_sources_json) == [web_source]
+    assert service.decode_writeback_package(stored_turn.writeback_package_json) == writeback_package
+    assert service.decode_ask_briefing(stored_turn.judgment_payload_json) is not None
 
 
 def test_research_workspace_service_falls_back_to_persisted_context_ids_when_runtime_returns_only_fabricated_ids(temp_app_env):

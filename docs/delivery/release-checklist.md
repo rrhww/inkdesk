@@ -2,7 +2,7 @@
 
 ## 本轮目标
 
-本轮的放行标准不是“差不多能看”，而是私有 vault-first LLM Wiki 的本地全栈闭环成立。
+本轮的放行标准不是“差不多能看”，而是私有 vault-first 研究工作台的本地全栈闭环成立。
 
 ## 基础设施
 
@@ -17,8 +17,11 @@
 - 使用 `owner@inkvault.local / inkvault-owner` 可登录
 - 登录后进入 `/app`
 - 未登录访问 `/app/*` 会被拦回 `/login`
-- `/app` 第一屏是 Today Vault Panel
+- `/app` 第一屏是 Ask-first 主入口，不再回到 dashboard 聚合页
+- `/app` 首屏可见 briefing summary、suggested questions、知识缺口、下一步动作与判断面板
+- `/app` 与 `/app/ask` 都能露出当前真实数据对应的知识健康信号；如果当前数据已产生 unsupported claim，则应额外露出“缺少直接证据”提示
 - `/app/raw`、`/app/ingest`、`/app/wiki`、`/app/ask` 可正常访问
+- `/app/ask` 作为兼容别名复用同一 Ask-first 页面
 - 退出登录后再次访问 `/app/*` 会被拦回 `/login`
 
 ## 研究闭环链路
@@ -27,7 +30,11 @@
 - ingest 提案不会静默写入 wiki
 - 接受提案后才会创建或更新 wiki 页面
 - wiki 页面能看到 understanding、claims、questions、sources
+- wiki claim 能看到 `supported / partial / unsupported`、`证据 N 条`、`最近验证`
 - Ask 返回 wiki/source citation
+- Ask 之后可拉取 ask-scoped briefing，并刷新判断面板
+- Ask 保持 vault-first / explicit web assist 纪律
+- briefing 失败时 `/app` 仍能返回 deterministic 判断，不会整页失效
 
 ## 自动化验证
 
@@ -44,8 +51,11 @@
 以下任一项不满足，都不能标记为放行：
 
 - 认证链路断开
+- `/app` 仍然落回旧 dashboard 或首屏无法理解当前缺口与下一步
 - raw / ingest / wiki / ask 任一环节失败
+- Ask 后判断面板没有刷新为本轮 Ask 结果
 - 提案未经确认直接写入 wiki
 - Ask 缺少引用来源
+- briefing 失败导致主入口不可用
 - 未登录仍能进入私有页面
 - 测试、类型检查、lint 或构建存在失败

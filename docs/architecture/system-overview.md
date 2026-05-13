@@ -47,7 +47,7 @@ raw -> ingest -> wiki -> ask
 
 ### 前端职责
 
-- 渲染登录页、Today Vault Panel、raw / ingest / wiki / ask 页面
+- 渲染登录页、问答主入口、raw / ingest / wiki 页面
 - 组织 owner session 与私有路由守卫
 - 展示提案审阅、wiki 页面和问答结果
 

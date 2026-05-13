@@ -39,6 +39,683 @@ def test_dashboard_bootstraps_legacy_notes_into_raw_and_pending_ingest(temp_app_
     assert (temp_app_env / "AGENTS.md").exists()
 
 
+def test_dashboard_includes_derived_knowledge_health_counts(temp_app_env):
+    client = owner_client(temp_app_env)
+
+    response = client.get("/api/admin/home")
+
+    assert response.status_code == 200
+    payload = response.json()
+    health = payload["health"]
+    assert health["rawBacklogCount"] == 3
+    assert health["reviewBacklogCount"] == 3
+    assert health["openQuestionCount"] == 0
+    assert health["knowledgeGapCount"] == 0
+    assert health["writebackCandidateCount"] == 0
+    assert health["unsupportedClaimCount"] == 0
+    assert {signal["type"] for signal in health["signals"]} >= {"RAW_BACKLOG", "REVIEW_BACKLOG"}
+
+    review_id = payload["pendingReviews"][0]["id"]
+    accept_response = client.post(f"/api/ingest/{review_id}/accept")
+    assert accept_response.status_code == 200
+
+    updated_payload = client.get("/api/admin/home").json()
+    updated_health = updated_payload["health"]
+    assert updated_health["openQuestionCount"] >= 1
+    assert any(signal["type"] == "OPEN_QUESTIONS" for signal in updated_health["signals"])
+
+
+def test_dashboard_health_surfaces_recent_ask_knowledge_gaps(temp_app_env):
+    client = owner_client(temp_app_env)
+    client.get("/api/admin/home")
+
+    ask_response = client.post(
+        "/api/ask",
+        json={"question": "现在有哪些待审阅的研究迁移项？", "mode": "vault"},
+    )
+    assert ask_response.status_code == 200
+    ask_payload = ask_response.json()
+    assert ask_payload["knowledgeGaps"]
+
+    dashboard_payload = client.get("/api/admin/home").json()
+    health = dashboard_payload["health"]
+    gap_signal = next(signal for signal in health["signals"] if signal["type"] == "KNOWLEDGE_GAP")
+
+    assert health["knowledgeGapCount"] >= len(ask_payload["knowledgeGaps"])
+    assert gap_signal["relatedId"] == ask_payload["id"]
+    assert gap_signal["relatedTitle"] == ask_payload["question"]
+    assert ask_payload["knowledgeGaps"][0] in gap_signal["summary"]
+
+
+def test_dashboard_health_surfaces_ask_writeback_candidates(temp_app_env):
+    client = owner_client(temp_app_env)
+    initial_reviews = client.get("/api/ingest").json()
+    topic_id = client.post(f"/api/ingest/{initial_reviews[0]['id']}/accept").json()["topicId"]
+
+    ask_response = client.post(
+        "/api/ask",
+        json={"topicId": topic_id, "question": "这个回答值得沉淀到 wiki 吗？", "mode": "vault"},
+    )
+    assert ask_response.status_code == 200
+    ask_payload = ask_response.json()
+    assert ask_payload["canWriteback"] is True
+
+    dashboard_payload = client.get("/api/admin/home").json()
+    health = dashboard_payload["health"]
+    writeback_signal = next(signal for signal in health["signals"] if signal["type"] == "WRITEBACK_CANDIDATE")
+
+    assert health["writebackCandidateCount"] >= 1
+    assert writeback_signal["relatedId"] == ask_payload["id"]
+    assert writeback_signal["relatedTitle"] == ask_payload["question"]
+
+
+def test_dashboard_health_does_not_count_materialized_ask_writeback_candidates(temp_app_env):
+    client = owner_client(temp_app_env)
+    initial_reviews = client.get("/api/ingest").json()
+    topic_id = client.post(f"/api/ingest/{initial_reviews[0]['id']}/accept").json()["topicId"]
+    ask_payload = client.post(
+        "/api/ask",
+        json={"topicId": topic_id, "question": "这条结论进入 ingest 后还算候选吗？", "mode": "vault"},
+    ).json()
+
+    assert client.get("/api/admin/home").json()["health"]["writebackCandidateCount"] >= 1
+
+    writeback_response = client.post(f"/api/ask/{ask_payload['id']}/writeback")
+    assert writeback_response.status_code == 200
+
+    health = client.get("/api/admin/home").json()["health"]
+    assert health["writebackCandidateCount"] == 0
+    assert all(signal["type"] != "WRITEBACK_CANDIDATE" for signal in health["signals"])
+
+
+def test_ask_briefing_endpoint_returns_workspace_summary_by_default(temp_app_env):
+    client = owner_client(temp_app_env)
+
+    response = client.get("/api/ask/briefing")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["scope"] == "workspace"
+    assert payload["summary"]
+    assert payload["knowledgeGaps"]
+    assert payload["nextActions"]
+    assert payload["suggestedQuestions"]
+    assert "generatedAt" in payload
+
+
+def test_ask_briefing_endpoint_returns_topic_scoped_summary(temp_app_env):
+    client = owner_client(temp_app_env)
+    initial_reviews = client.get("/api/ingest").json()
+    topic_id = client.post(f"/api/ingest/{initial_reviews[0]['id']}/accept").json()["topicId"]
+
+    response = client.get("/api/ask/briefing", params={"topicId": topic_id})
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["scope"] == "topic"
+    assert payload["topicId"] == topic_id
+    assert payload["topicTitle"]
+
+
+def test_dashboard_health_and_briefing_surface_unsupported_claims(temp_app_env):
+    from inkvault_server.db import session_scope
+    from inkvault_server.models import TopicClaim
+
+    client = owner_client(temp_app_env)
+    initial_reviews = client.get("/api/ingest").json()
+    topic_id = client.post(f"/api/ingest/{initial_reviews[0]['id']}/accept").json()["topicId"]
+
+    with session_scope() as db:
+        claim = db.scalar(select(TopicClaim).where(TopicClaim.topic_id == topic_id))
+        assert claim is not None
+        claim.source_id = None
+        claim.evidence_count = 0
+        claim.provenance_status = "unsupported"
+        claim.last_verified_at = None
+        db.add(claim)
+
+    dashboard_payload = client.get("/api/admin/home").json()
+    health = dashboard_payload["health"]
+    unsupported_signal = next(signal for signal in health["signals"] if signal["type"] == "UNSUPPORTED_CLAIM")
+
+    assert health["unsupportedClaimCount"] == 1
+    assert unsupported_signal["relatedId"] == topic_id
+    assert unsupported_signal["relatedTitle"]
+
+    briefing_payload = client.get("/api/ask/briefing").json()
+    assert any(signal["type"] == "UNSUPPORTED_CLAIM" for signal in briefing_payload["supportingSignals"])
+    assert any("claim" in gap["title"] or "证据" in gap["detail"] for gap in briefing_payload["knowledgeGaps"])
+
+
+def test_wiki_topic_summaries_surface_claim_risk_counts(temp_app_env):
+    from datetime import UTC, datetime, timedelta
+
+    from inkvault_server.db import session_scope
+    from inkvault_server.models import TopicClaim
+
+    client = owner_client(temp_app_env)
+    initial_reviews = client.get("/api/ingest").json()
+    topic_id = client.post(f"/api/ingest/{initial_reviews[0]['id']}/accept").json()["topicId"]
+
+    with session_scope() as db:
+        claim = db.scalar(select(TopicClaim).where(TopicClaim.topic_id == topic_id))
+        assert claim is not None
+        claim.evidence_count = 0
+        claim.provenance_status = "unsupported"
+        claim.usage_count = 4
+        claim.last_used_at = datetime.now(UTC)
+        claim.last_verified_at = datetime.now(UTC) - timedelta(days=90)
+        db.add(claim)
+
+    topics_payload = client.get("/api/wiki").json()
+    topic_summary = next(topic for topic in topics_payload if topic["id"] == topic_id)
+
+    assert topic_summary["unsupportedClaimCount"] == 1
+    assert topic_summary["staleClaimCount"] == 1
+
+
+def test_topic_scoped_ask_records_claim_usage_on_existing_claims(temp_app_env):
+    from inkvault_server.db import session_scope
+    from inkvault_server.models import TopicClaim
+
+    client = owner_client(temp_app_env)
+    initial_reviews = client.get("/api/ingest").json()
+    topic_id = client.post(f"/api/ingest/{initial_reviews[0]['id']}/accept").json()["topicId"]
+
+    with session_scope() as db:
+        claim_before = db.scalar(select(TopicClaim).where(TopicClaim.topic_id == topic_id))
+        assert claim_before is not None
+        assert getattr(claim_before, "usage_count", 0) == 0
+        assert getattr(claim_before, "last_used_at", None) is None
+
+    ask_response = client.post(
+        "/api/ask",
+        json={
+            "topicId": topic_id,
+            "question": "这个主题当前最重要的理解是什么？",
+            "mode": "vault",
+        },
+    )
+    assert ask_response.status_code == 200
+
+    with session_scope() as db:
+        claim_after = db.scalar(select(TopicClaim).where(TopicClaim.topic_id == topic_id))
+        assert claim_after is not None
+        assert claim_after.usage_count == 1
+        assert claim_after.last_used_at is not None
+
+    topic_payload = client.get(f"/api/wiki/{topic_id}").json()
+    assert topic_payload["keyClaims"][0]["usageCount"] == 1
+    assert topic_payload["keyClaims"][0]["lastUsedAt"] is not None
+
+
+def test_global_ask_records_claim_usage_for_cited_topics(temp_app_env):
+    from inkvault_server.db import session_scope
+    from inkvault_server.models import TopicClaim
+
+    client = owner_client(temp_app_env)
+    initial_reviews = client.get("/api/ingest").json()
+    topic_id = client.post(f"/api/ingest/{initial_reviews[0]['id']}/accept").json()["topicId"]
+
+    with session_scope() as db:
+        claim_before = db.scalar(select(TopicClaim).where(TopicClaim.topic_id == topic_id))
+        assert claim_before is not None
+        assert claim_before.usage_count == 0
+
+    ask_response = client.post(
+        "/api/ask",
+        json={
+            "question": "现在有哪些待审阅的研究迁移项？",
+            "mode": "vault",
+        },
+    )
+    assert ask_response.status_code == 200
+    ask_payload = ask_response.json()
+    assert topic_id in ask_payload["usedWikiIds"]
+
+    with session_scope() as db:
+        claim_after = db.scalar(select(TopicClaim).where(TopicClaim.topic_id == topic_id))
+        assert claim_after is not None
+        assert claim_after.usage_count == 1
+        assert claim_after.last_used_at is not None
+
+
+def test_dashboard_health_surfaces_stale_claims_when_recently_used_claim_lacks_fresh_verification(temp_app_env):
+    from datetime import UTC, datetime, timedelta
+
+    from inkvault_server.db import session_scope
+    from inkvault_server.models import TopicClaim
+
+    client = owner_client(temp_app_env)
+    initial_reviews = client.get("/api/ingest").json()
+    topic_id = client.post(f"/api/ingest/{initial_reviews[0]['id']}/accept").json()["topicId"]
+    ask_response = client.post(
+        "/api/ask",
+        json={
+            "topicId": topic_id,
+            "question": "这个主题当前最重要的理解是什么？",
+            "mode": "vault",
+        },
+    )
+    assert ask_response.status_code == 200
+
+    with session_scope() as db:
+        claim = db.scalar(select(TopicClaim).where(TopicClaim.topic_id == topic_id))
+        assert claim is not None
+        claim.usage_count = 3
+        claim.last_used_at = datetime.now(UTC)
+        claim.last_verified_at = datetime.now(UTC) - timedelta(days=45)
+        claim.provenance_status = "partial"
+        db.add(claim)
+
+    dashboard_payload = client.get("/api/admin/home").json()
+    health = dashboard_payload["health"]
+    stale_signal = next(signal for signal in health["signals"] if signal["type"] == "STALE_CLAIM")
+
+    assert health["staleClaimCount"] == 1
+    assert stale_signal["relatedId"] == topic_id
+    assert stale_signal["relatedTitle"]
+
+    briefing_payload = client.get("/api/ask/briefing").json()
+    assert any(signal["type"] == "STALE_CLAIM" for signal in briefing_payload["supportingSignals"])
+    assert any("重审" in action["label"] or "复核" in action["description"] for action in briefing_payload["nextActions"])
+
+
+def test_dashboard_health_briefing_and_topic_detail_surface_conflicting_claims(temp_app_env):
+    from datetime import UTC, datetime, timedelta
+
+    from inkvault_server.db import session_scope
+    from inkvault_server.models import TopicClaim
+
+    client = owner_client(temp_app_env)
+    initial_reviews = client.get("/api/ingest").json()
+    topic_id = client.post(f"/api/ingest/{initial_reviews[0]['id']}/accept").json()["topicId"]
+
+    with session_scope() as db:
+        claim = db.scalar(select(TopicClaim).where(TopicClaim.topic_id == topic_id))
+        assert claim is not None
+        now = datetime.now(UTC)
+        claim.statement = "首页应该先呈现 Ask 工作区。"
+        claim.evidence_count = 2
+        claim.provenance_status = "supported"
+        claim.last_verified_at = now
+        claim.updated_at = now
+        db.add(claim)
+        db.add(
+            TopicClaim(
+                id="claim-conflict-001",
+                topic_id=topic_id,
+                source_id=claim.source_id,
+                statement="首页不应该先呈现 Ask 工作区。",
+                citation_label=claim.citation_label,
+                evidence_count=0,
+                provenance_status="unsupported",
+                last_verified_at=now - timedelta(days=5),
+                updated_at=now - timedelta(days=5),
+                usage_count=1,
+                last_used_at=now - timedelta(days=1),
+                sort_order=(claim.sort_order or 0) + 1,
+                created_at=now - timedelta(days=5),
+            )
+        )
+
+    dashboard_payload = client.get("/api/admin/home").json()
+    health = dashboard_payload["health"]
+    conflict_signal = next(signal for signal in health["signals"] if signal["type"] == "CONFLICTING_CLAIM")
+
+    assert health["conflictingClaimCount"] == 2
+    assert conflict_signal["relatedId"] == topic_id
+    assert conflict_signal["relatedTitle"]
+
+    briefing_payload = client.get("/api/ask/briefing").json()
+    assert any(signal["type"] == "CONFLICTING_CLAIM" for signal in briefing_payload["supportingSignals"])
+    assert any("冲突" in gap["title"] or "冲突" in gap["detail"] for gap in briefing_payload["knowledgeGaps"])
+    assert any("冲突" in action["label"] or "冲突" in action["description"] for action in briefing_payload["nextActions"])
+
+    topic_payload = client.get(f"/api/wiki/{topic_id}").json()
+    conflicting_claims = [claim for claim in topic_payload["keyClaims"] if claim["hasConflict"]]
+    assert len(conflicting_claims) == 2
+
+
+def test_used_stale_claim_materializes_re_review_item_without_creating_duplicate(temp_app_env):
+    from datetime import UTC, datetime, timedelta
+
+    from inkvault_server.db import init_db, session_scope
+    from inkvault_server.models import TopicClaim
+    from inkvault_server.research import get_research_service
+    from inkvault_server.core.config import get_settings
+
+    init_db()
+    with session_scope() as db:
+        service = get_research_service(db, get_settings())
+        first_review = service.get_review_items()[0]
+        topic_id = service.accept_review(first_review.id).topicId
+        claim = db.scalar(select(TopicClaim).where(TopicClaim.topic_id == topic_id))
+        assert claim is not None
+        claim.usage_count = 4
+        claim.last_used_at = datetime.now(UTC)
+        claim.last_verified_at = datetime.now(UTC) - timedelta(days=60)
+        claim.provenance_status = "partial"
+        db.add(claim)
+
+        created_review = service.ensure_claim_review_for_topic(topic_id)
+        assert created_review is not None
+        assert created_review.kind == "TOPIC_PATCH"
+        assert created_review.targetTopicId == topic_id
+        assert "重审" in created_review.title or "复核" in created_review.title
+        assert created_review.proposalPayload.topicDecision.decision == "PATCH"
+        assert created_review.proposalPayload.claims
+        assert created_review.proposalPayload.claims[0].statement == claim.statement
+        assert created_review.proposalPayload.claims[0].provenanceStatus == "partial"
+        assert created_review.proposalPayload.claims[0].usageCount == 4
+        assert created_review.proposalPayload.claims[0].lastUsedAt is not None
+        assert created_review.proposalPayload.claims[0].lastVerifiedAt is not None
+        assert created_review.proposalPayload.openQuestions
+        assert any("重审" in item or "复核" in item for item in created_review.proposalPayload.openQuestions)
+
+        duplicate_review = service.ensure_claim_review_for_topic(topic_id)
+        assert duplicate_review is not None
+        assert duplicate_review.id == created_review.id
+
+
+def test_accepting_stale_claim_review_refreshes_existing_claim_and_clears_repeat_staleness(temp_app_env):
+    from datetime import UTC, datetime, timedelta
+
+    from inkvault_server.db import init_db, session_scope
+    from inkvault_server.models import TopicClaim
+    from inkvault_server.research import get_research_service
+    from inkvault_server.core.config import get_settings
+    from inkvault_server.time_utils import ensure_utc_datetime
+
+    init_db()
+    with session_scope() as db:
+        service = get_research_service(db, get_settings())
+        first_review = service.get_review_items()[0]
+        topic_id = service.accept_review(first_review.id).topicId
+        claim = db.scalar(select(TopicClaim).where(TopicClaim.topic_id == topic_id))
+        assert claim is not None
+        claim.usage_count = 5
+        claim.last_used_at = datetime.now(UTC)
+        claim.last_verified_at = datetime.now(UTC) - timedelta(days=90)
+        claim.provenance_status = "partial"
+        original_claim_id = claim.id
+        db.add(claim)
+
+        stale_review = service.ensure_claim_review_for_topic(topic_id)
+        assert stale_review is not None
+
+        service.accept_review(stale_review.id)
+        refreshed = db.scalar(select(TopicClaim).where(TopicClaim.id == original_claim_id))
+        assert refreshed is not None
+        assert refreshed.last_verified_at is not None
+        assert ensure_utc_datetime(refreshed.last_verified_at) > datetime.now(UTC) - timedelta(minutes=1)
+        assert refreshed.id == original_claim_id
+
+        topic_payload = service.get_topic(topic_id)
+        refreshed_claim = next(claim for claim in topic_payload.keyClaims if claim.id == original_claim_id)
+        assert refreshed_claim.lastVerifiedAt is not None
+        assert ensure_utc_datetime(refreshed_claim.lastVerifiedAt) > datetime.now(UTC) - timedelta(minutes=1)
+
+        dashboard_payload = service.get_dashboard()
+        assert dashboard_payload.health.staleClaimCount == 0
+        assert all(signal.type != "STALE_CLAIM" for signal in dashboard_payload.health.signals)
+
+        briefing_payload = service.get_ask_briefing(topic_id=topic_id)
+        assert all(signal.type != "STALE_CLAIM" for signal in briefing_payload.supportingSignals)
+        assert all("需要重审" not in gap.title for gap in briefing_payload.knowledgeGaps)
+
+        pending_repeat = service.ensure_claim_review_for_topic(topic_id)
+        assert pending_repeat is None
+
+def test_stale_claim_review_appears_in_ingest_after_health_materialization(temp_app_env):
+    from datetime import UTC, datetime, timedelta
+
+    from inkvault_server.db import session_scope
+    from inkvault_server.models import TopicClaim
+
+    client = owner_client(temp_app_env)
+    initial_reviews = client.get("/api/ingest").json()
+    topic_id = client.post(f"/api/ingest/{initial_reviews[0]['id']}/accept").json()["topicId"]
+
+    with session_scope() as db:
+        claim = db.scalar(select(TopicClaim).where(TopicClaim.topic_id == topic_id))
+        assert claim is not None
+        claim.usage_count = 4
+        claim.last_used_at = datetime.now(UTC)
+        claim.last_verified_at = datetime.now(UTC) - timedelta(days=90)
+        claim.provenance_status = "partial"
+        db.add(claim)
+
+    client.get("/api/admin/home")
+    ingest_payload = client.get("/api/ingest").json()
+    stale_review = next(review for review in ingest_payload if "重审" in review["title"] or "复核" in review["summary"])
+
+    assert stale_review["targetTopicId"] == topic_id
+    assert stale_review["proposalPayload"]["topicDecision"]["decision"] == "PATCH"
+    assert stale_review["proposalPayload"]["claims"][0]["usageCount"] == 4
+    assert stale_review["proposalPayload"]["claims"][0]["lastUsedAt"] is not None
+    assert stale_review["proposalPayload"]["claims"][0]["lastVerifiedAt"] is not None
+    assert stale_review["proposalPayload"]["claims"][0]["needsReview"] is True
+
+
+def test_conflicting_claim_review_materializes_without_creating_duplicate(temp_app_env):
+    from datetime import UTC, datetime, timedelta
+
+    from inkvault_server.db import init_db, session_scope
+    from inkvault_server.models import TopicClaim
+    from inkvault_server.research import get_research_service
+    from inkvault_server.core.config import get_settings
+
+    init_db()
+    with session_scope() as db:
+        service = get_research_service(db, get_settings())
+        first_review = service.get_review_items()[0]
+        topic_id = service.accept_review(first_review.id).topicId
+        canonical_claim = db.scalar(select(TopicClaim).where(TopicClaim.topic_id == topic_id))
+        assert canonical_claim is not None
+        now = datetime.now(UTC)
+        canonical_claim.statement = "首页应该先呈现 Ask 工作区。"
+        canonical_claim.evidence_count = 2
+        canonical_claim.provenance_status = "supported"
+        canonical_claim.last_verified_at = now
+        canonical_claim.updated_at = now
+        db.add(canonical_claim)
+        db.add(
+            TopicClaim(
+                id="claim-conflict-002",
+                topic_id=topic_id,
+                source_id=canonical_claim.source_id,
+                statement="首页不应该先呈现 Ask 工作区。",
+                citation_label=canonical_claim.citation_label,
+                evidence_count=0,
+                provenance_status="unsupported",
+                last_verified_at=now - timedelta(days=10),
+                updated_at=now - timedelta(days=10),
+                usage_count=1,
+                last_used_at=now - timedelta(days=1),
+                sort_order=(canonical_claim.sort_order or 0) + 1,
+                created_at=now - timedelta(days=10),
+            )
+        )
+
+        created_review = service.ensure_conflict_review_for_topic(topic_id)
+        assert created_review is not None
+        assert created_review.kind == "TOPIC_PATCH"
+        assert created_review.targetTopicId == topic_id
+        assert "冲突" in created_review.title or "冲突" in created_review.summary
+        assert created_review.proposalPayload.topicDecision.decision == "PATCH"
+        assert created_review.proposalPayload.claims
+        assert created_review.proposalPayload.claims[0].statement == canonical_claim.statement
+        assert created_review.proposalPayload.claims[0].hasConflict is True
+        assert created_review.proposalPayload.conflicts
+        assert any("冲突" in item for item in created_review.proposalPayload.conflicts)
+
+        duplicate_review = service.ensure_conflict_review_for_topic(topic_id)
+        assert duplicate_review is not None
+        assert duplicate_review.id == created_review.id
+
+
+def test_accepting_conflict_review_keeps_canonical_claim_and_clears_repeat_conflict(temp_app_env):
+    from datetime import UTC, datetime, timedelta
+
+    from inkvault_server.db import init_db, session_scope
+    from inkvault_server.models import TopicClaim
+    from inkvault_server.research import get_research_service
+    from inkvault_server.core.config import get_settings
+
+    init_db()
+    with session_scope() as db:
+        service = get_research_service(db, get_settings())
+        first_review = service.get_review_items()[0]
+        topic_id = service.accept_review(first_review.id).topicId
+        canonical_claim = db.scalar(select(TopicClaim).where(TopicClaim.topic_id == topic_id))
+        assert canonical_claim is not None
+        now = datetime.now(UTC)
+        canonical_claim.statement = "首页应该先呈现 Ask 工作区。"
+        canonical_claim.evidence_count = 2
+        canonical_claim.provenance_status = "supported"
+        canonical_claim.last_verified_at = now
+        canonical_claim.updated_at = now
+        canonical_claim_id = canonical_claim.id
+        db.add(canonical_claim)
+        db.add(
+            TopicClaim(
+                id="claim-conflict-003",
+                topic_id=topic_id,
+                source_id=canonical_claim.source_id,
+                statement="首页不应该先呈现 Ask 工作区。",
+                citation_label=canonical_claim.citation_label,
+                evidence_count=0,
+                provenance_status="unsupported",
+                last_verified_at=now - timedelta(days=10),
+                updated_at=now - timedelta(days=10),
+                usage_count=1,
+                last_used_at=now - timedelta(days=1),
+                sort_order=(canonical_claim.sort_order or 0) + 1,
+                created_at=now - timedelta(days=10),
+            )
+        )
+
+        conflict_review = service.ensure_conflict_review_for_topic(topic_id)
+        assert conflict_review is not None
+
+        service.accept_review(conflict_review.id)
+        topic_payload = service.get_topic(topic_id)
+        claims_by_id = {claim.id: claim for claim in topic_payload.keyClaims}
+
+        assert canonical_claim_id in claims_by_id
+        assert len(topic_payload.keyClaims) == 1
+        assert claims_by_id[canonical_claim_id].hasConflict is False
+
+        dashboard_payload = service.get_dashboard()
+        assert dashboard_payload.health.conflictingClaimCount == 0
+        assert all(signal.type != "CONFLICTING_CLAIM" for signal in dashboard_payload.health.signals)
+
+        briefing_payload = service.get_ask_briefing(topic_id=topic_id)
+        assert all(signal.type != "CONFLICTING_CLAIM" for signal in briefing_payload.supportingSignals)
+        assert all("冲突" not in gap.title and "冲突" not in gap.detail for gap in briefing_payload.knowledgeGaps)
+
+        pending_repeat = service.ensure_conflict_review_for_topic(topic_id)
+        assert pending_repeat is None
+
+
+def test_conflicting_claim_review_appears_in_ingest_after_health_materialization(temp_app_env):
+    from datetime import UTC, datetime, timedelta
+
+    from inkvault_server.db import session_scope
+    from inkvault_server.models import TopicClaim
+
+    client = owner_client(temp_app_env)
+    initial_reviews = client.get("/api/ingest").json()
+    topic_id = client.post(f"/api/ingest/{initial_reviews[0]['id']}/accept").json()["topicId"]
+
+    with session_scope() as db:
+        canonical_claim = db.scalar(select(TopicClaim).where(TopicClaim.topic_id == topic_id))
+        assert canonical_claim is not None
+        now = datetime.now(UTC)
+        canonical_claim.statement = "首页应该先呈现 Ask 工作区。"
+        canonical_claim.evidence_count = 2
+        canonical_claim.provenance_status = "supported"
+        canonical_claim.last_verified_at = now
+        canonical_claim.updated_at = now
+        db.add(canonical_claim)
+        db.add(
+            TopicClaim(
+                id="claim-conflict-004",
+                topic_id=topic_id,
+                source_id=canonical_claim.source_id,
+                statement="首页不应该先呈现 Ask 工作区。",
+                citation_label=canonical_claim.citation_label,
+                evidence_count=0,
+                provenance_status="unsupported",
+                last_verified_at=now - timedelta(days=7),
+                updated_at=now - timedelta(days=7),
+                usage_count=1,
+                last_used_at=now - timedelta(days=1),
+                sort_order=(canonical_claim.sort_order or 0) + 1,
+                created_at=now - timedelta(days=7),
+            )
+        )
+
+    client.get("/api/admin/home")
+    ingest_payload = client.get("/api/ingest").json()
+    conflict_review = next(review for review in ingest_payload if "冲突" in review["title"] or "冲突" in review["summary"])
+
+    assert conflict_review["targetTopicId"] == topic_id
+    assert conflict_review["proposalPayload"]["topicDecision"]["decision"] == "PATCH"
+    assert conflict_review["proposalPayload"]["claims"][0]["statement"] == "首页应该先呈现 Ask 工作区。"
+    assert conflict_review["proposalPayload"]["claims"][0]["hasConflict"] is True
+    assert conflict_review["proposalPayload"]["conflicts"]
+
+
+def test_ask_briefing_endpoint_returns_ask_turn_scoped_summary_and_persists_payload(temp_app_env):
+    client = owner_client(temp_app_env)
+    ask_payload = client.post(
+        "/api/ask",
+        json={"question": "现在有哪些待审阅的研究迁移项？", "mode": "vault"},
+    ).json()
+
+    response = client.get("/api/ask/briefing", params={"askTurnId": ask_payload["id"]})
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["scope"] == "ask_turn"
+    assert payload["askTurnId"] == ask_payload["id"]
+    assert payload["knowledgeGaps"]
+
+    from inkvault_server.db import session_scope
+    from inkvault_server.models import AskTurn
+
+    with session_scope() as db:
+        stored_turn = db.scalar(select(AskTurn).where(AskTurn.id == ask_payload["id"]))
+        assert stored_turn is not None
+        assert stored_turn.judgment_payload_json != "{}"
+
+
+def test_ask_briefing_endpoint_recomputes_missing_judgment_payload_for_legacy_turn(temp_app_env):
+    client = owner_client(temp_app_env)
+    ask_payload = client.post(
+        "/api/ask",
+        json={"question": "现在有哪些待审阅的研究迁移项？", "mode": "vault"},
+    ).json()
+
+    from inkvault_server.db import session_scope
+    from inkvault_server.models import AskTurn
+
+    with session_scope() as db:
+        stored_turn = db.scalar(select(AskTurn).where(AskTurn.id == ask_payload["id"]))
+        assert stored_turn is not None
+        stored_turn.judgment_payload_json = "{}"
+        db.add(stored_turn)
+
+    response = client.get("/api/ask/briefing", params={"askTurnId": ask_payload["id"]})
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["scope"] == "ask_turn"
+    assert payload["summary"]
+
+
 def test_raw_import_and_wiki_accept_flow(temp_app_env):
     client = owner_client(temp_app_env)
 
@@ -365,6 +1042,9 @@ def test_compile_review_persists_structured_agent_payload_with_chunk_backlinks(t
         assert review.proposalPayload.summaryChanges == ["补充材料强化了 raw / ingest / wiki 的研究闭环。"]
         assert review.proposalPayload.claims[0].statement == "新的 raw 材料支持现有 wiki 主题。"
         assert review.proposalPayload.claims[0].citationChunkIds
+        assert review.proposalPayload.claims[0].supportingChunkIds == review.proposalPayload.claims[0].citationChunkIds
+        assert review.proposalPayload.claims[0].evidenceCount == 1
+        assert review.proposalPayload.claims[0].provenanceStatus == "supported"
         assert review.proposalPayload.conflicts == ["旧的个人操作系统叙事需要继续降权。"]
         assert review.proposalPayload.openQuestions == ["还缺少哪条外部对照来源？"]
         assert review.proposalPayload.explanation == "因为检索到的 wiki chunk 与新 raw 材料高度一致，所以更适合走 PATCH。"
@@ -427,9 +1107,12 @@ def test_accept_review_applies_all_structured_claims_and_open_questions_to_topic
         service.accept_review(review.id)
         topic = service.get_topic(topic_id)
 
-        claim_statements = [claim.statement for claim in topic.keyClaims]
-        assert "新的 raw 材料支持现有 wiki 主题。" in claim_statements
-        assert "产品主路径需要继续压缩到 research-first workflow。" in claim_statements
+        claims_by_statement = {claim.statement: claim for claim in topic.keyClaims}
+        assert "新的 raw 材料支持现有 wiki 主题。" in claims_by_statement
+        assert "产品主路径需要继续压缩到 research-first workflow。" in claims_by_statement
+        assert claims_by_statement["新的 raw 材料支持现有 wiki 主题。"].provenanceStatus == "supported"
+        assert claims_by_statement["新的 raw 材料支持现有 wiki 主题。"].evidenceCount == 1
+        assert claims_by_statement["新的 raw 材料支持现有 wiki 主题。"].lastVerifiedAt is not None
         assert "还缺少哪条外部对照来源？" in topic.openQuestions
         assert "是否需要补一条迁移说明？" in topic.openQuestions
 
@@ -489,9 +1172,12 @@ def test_accept_topic_create_review_applies_structured_payload_to_new_topic(temp
         assert topic.title == "Agent-native 研究记忆系统"
         assert "系统应该以 Ask 为主入口、以 Compile 为沉淀底座。" in topic.currentUnderstanding
         assert "canonical knowledge 只能通过 review 进入 wiki。" in topic.currentUnderstanding
-        claim_statements = [claim.statement for claim in topic.keyClaims]
-        assert "研究记忆系统需要保留人工审阅环节。" in claim_statements
-        assert "Ask 的高质量回答应该可以转成可审阅提案。" in claim_statements
+        claims_by_statement = {claim.statement: claim for claim in topic.keyClaims}
+        assert "研究记忆系统需要保留人工审阅环节。" in claims_by_statement
+        assert "Ask 的高质量回答应该可以转成可审阅提案。" in claims_by_statement
+        assert claims_by_statement["研究记忆系统需要保留人工审阅环节。"].provenanceStatus == "partial"
+        assert claims_by_statement["研究记忆系统需要保留人工审阅环节。"].evidenceCount == 1
+        assert claims_by_statement["研究记忆系统需要保留人工审阅环节。"].lastVerifiedAt is not None
         assert "首个版本是否需要默认联网补证？" in topic.openQuestions
         assert "是否保留更细粒度 claim 级 accept？" in topic.openQuestions
 

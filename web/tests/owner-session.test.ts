@@ -12,5 +12,5 @@ test("owner session helpers define the hidden owner entry and protect the privat
   assert.equal(module.resolveRootDestination(undefined), "login");
   assert.equal(module.resolveRootDestination("session-token-value"), "app");
   assert.equal(module.resolveProtectedAppRedirect("/app", undefined), "/login");
-  assert.equal(module.resolveProtectedAppRedirect("/app/topics", "session-token-value"), null);
+  assert.equal(module.resolveProtectedAppRedirect("/app/wiki", "session-token-value"), null);
 });

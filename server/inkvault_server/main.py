@@ -14,6 +14,7 @@ from inkvault_server.models import User
 from inkvault_server.research import ResearchWorkspaceService, get_research_service
 from inkvault_server.schemas import (
     ApiErrorResponse,
+    AskBriefingResponse,
     AskRequest,
     AskResponse,
     AskThreadResponse,
@@ -215,6 +216,16 @@ def create_app() -> FastAPI:
         settings: Annotated[Settings, Depends(get_settings)],
     ):
         return get_research_service(db, settings).ask(request)
+
+    @app.get("/api/ask/briefing", response_model=AskBriefingResponse)
+    def ask_briefing(
+        _: Annotated[VerifiedOwnerSession, Depends(require_owner)],
+        db: Annotated[Session, Depends(get_db)],
+        settings: Annotated[Settings, Depends(get_settings)],
+        topicId: str | None = None,
+        askTurnId: str | None = None,
+    ):
+        return get_research_service(db, settings).get_ask_briefing(topic_id=topicId, ask_turn_id=askTurnId)
 
     @app.get("/api/ask/{ask_turn_id}", response_model=AskResponse)
     def ask_detail(

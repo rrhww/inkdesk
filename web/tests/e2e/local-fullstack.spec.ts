@@ -8,6 +8,14 @@ async function login(page: Page) {
   await expect(page).toHaveURL(/\/app$/);
 }
 
+function healthSignal(page: Page) {
+  return page
+    .getByText(/wiki 里还有 \d+ 个开放问题/)
+    .or(page.getByText(/ingest 队列有 \d+ 条待审阅提案/))
+    .or(page.getByText(/raw 里有 \d+ 条材料等待编译/))
+    .first();
+}
+
 test.describe("local full-stack loop", () => {
   test.describe.configure({ mode: "serial" });
 
@@ -21,28 +29,45 @@ test.describe("local full-stack loop", () => {
 
     await login(page);
 
-    await expect(page.getByText("Today Vault Panel", { exact: true })).toBeVisible();
-    await expect(page.getByText("ingest 队列")).toBeVisible();
-    await expect(page.getByText("最新 raw")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "研究问答" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "判断面板" })).toBeVisible();
+    await expect(page.getByText("建议提问", { exact: true })).toBeVisible();
+    await expect(page.getByRole("link", { name: "问答", exact: true })).toBeVisible();
+    await expect(page.getByRole("link", { name: "健康", exact: true })).toHaveCount(0);
+    await expect(healthSignal(page)).toBeVisible();
 
     await page.goto("/app/ingest");
     await expect(page.getByRole("heading", { name: "AI 编译提案队列" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "接受写入 wiki" }).first()).toBeVisible();
     await page.getByRole("button", { name: "接受写入 wiki" }).first().click();
+
+    await page.goto("/app");
+    await expect(healthSignal(page)).toBeVisible();
+
+    await page.goto("/app/ask");
+    await expect(healthSignal(page)).toBeVisible();
 
     await page.goto("/app/wiki");
     await expect(page.getByRole("heading", { name: "沉淀后的知识页面" })).toBeVisible();
     await expect(page.getByRole("link", { name: "打开 wiki" }).first()).toBeVisible();
     await page.getByRole("link", { name: "打开 wiki" }).first().click();
 
-    await expect(page.getByText("Current Understanding")).toBeVisible();
-    await expect(page.getByText("Key Claims")).toBeVisible();
-    await expect(page.getByText("Research Thread")).toBeVisible();
+    await expect(page.getByText("Current Understanding", { exact: true })).toBeVisible();
+    await expect(page.getByText("Key Claims", { exact: true })).toBeVisible();
+    await expect(page.getByText("Research Thread", { exact: true })).toBeVisible();
+    await expect(page.getByText(/supported/i).first()).toBeVisible();
+    await expect(page.getByText(/最近验证/).first()).toBeVisible();
+    await expect(page.getByText(/最近使用/).first()).toBeVisible();
+    await expect(page.getByText(/证据 1 条/).first()).toBeVisible();
+    await expect(page.getByText(/最近验证 \d{4}-\d{2}-\d{2}/).first()).toBeVisible();
+    await expect(page.getByText(/当前最重要的理解是：把产品中心收回到 raw \/ ingest \/ wiki/)).toHaveCount(0);
 
     await page.goto("/app/ask");
     await expect(page.getByRole("heading", { name: "研究问答" })).toBeVisible();
-    await page.locator('a[href*="/app/ask?q="]').first().click();
+    await page.locator('a[href*="/app/ask?q="], a[href*="/app?q="]').first().click();
     await expect(page.getByText("引用来源")).toBeVisible();
-    await page.getByRole("link", { name: /继续追问/i }).first().click();
+    await expect(healthSignal(page)).toBeVisible();
+    await page.locator('a[href*="continueFromAskTurnId="]').first().click();
     await expect(page.getByText("正在延续上一轮问答")).toBeVisible();
     await page.getByRole("button", { name: "沉淀到 wiki" }).click();
     await expect(page).toHaveURL(/\/app\/ingest\?created=/);
@@ -50,9 +75,9 @@ test.describe("local full-stack loop", () => {
 
     await page.goto("/app/raw");
     await expect(page.getByRole("heading", { name: "原始材料 vault" })).toBeVisible();
-    await expect(page.getByText("legacy://note-001")).toBeVisible();
+    await expect(page.getByText(/legacy-note:\/\/note-001/)).toBeVisible();
 
-    await page.getByRole("button", { name: "退出 wiki" }).click();
+    await page.getByRole("button", { name: "退出" }).click();
     await expect(page).toHaveURL(/\/login$/);
 
     await page.goto("/app/wiki");

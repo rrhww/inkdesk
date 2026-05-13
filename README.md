@@ -1,33 +1,37 @@
 # Inkvault
 
-> A single-owner, private, vault-first LLM Wiki.
+> A single-owner, private, vault-first research memory system.
 
-Inkvault is being shaped around a simple research loop:
+Inkvault is shaped around one core loop:
 
 ```text
-raw -> ingest -> wiki
+raw -> ingest -> wiki -> ask
 ```
 
-`raw/` stores imported webpages, PDFs, and migrated internal notes. `ingest` is the AI proposal and human review workflow. `wiki/` stores the accepted knowledge pages that become long-term memory.
+- `raw/` stores imported webpages, PDFs, and migrated notes as original research material.
+- `ingest` is the AI proposal plus human review workflow.
+- `wiki/` stores accepted knowledge pages as long-term memory.
+- `ask` lets the owner ask grounded questions over wiki first and raw second, then optionally write back a new review proposal.
 
-The vault is the source of truth. The database indexes files, queues ingest proposals, and caches read models, but accepted knowledge must be recoverable from vault markdown.
+The vault is the source of truth. The database indexes files, tracks workflow state, and caches read models, but accepted knowledge must remain recoverable from vault markdown.
 
 ## Product Model
 
 - Private single-owner workspace, protected by a hidden owner login.
-- No public publishing surface in the primary product.
-- No plans module in the primary product.
+- Ask-first research workspace after login.
 - AI may suggest wiki creation or patches, but it never silently edits canonical knowledge.
 - Every accepted claim must preserve provenance back to raw source material.
 
 ## Current App Shape
 
-- `/app`: Today Vault Panel
-- `/app/raw`: raw materials in the vault
-- `/app/ingest`: AI-generated proposals awaiting accept/reject
-- `/app/wiki`: accepted knowledge pages
-- `/app/wiki/[id]`: wiki page detail with understanding, claims, questions, and sources
-- `/app/ask`: grounded questions over wiki first, raw second
+- `/` redirects to `/login` or `/app` based on owner session
+- `/login` hidden owner login
+- `/app` ask-first research entry
+- `/app/raw` raw materials in the vault
+- `/app/ingest` AI-generated proposals awaiting accept/reject
+- `/app/wiki` accepted knowledge pages
+- `/app/wiki/[id]` wiki page detail with understanding, claims, questions, and sources
+- `/app/ask` compatibility alias for the ask workspace
 
 Legacy routes such as `/app/inbox`, `/app/review`, `/app/topics`, and `/app/sources` are compatibility redirects only.
 

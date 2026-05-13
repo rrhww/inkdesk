@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
+import { existsSync } from "node:fs";
 import test from "node:test";
+import { join } from "node:path";
 
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -33,17 +35,39 @@ async function captureConsoleDuring(run: () => Promise<void> | void) {
 
 (globalThis as typeof globalThis & { React: typeof React }).React = React;
 
-test("today vault panel becomes the authenticated home experience", async () => {
+test("ask-first workspace becomes the authenticated home experience", async () => {
   const module = await import("../app/app/page");
-  const html = compact(renderToStaticMarkup(await module.default()));
+  const html = compact(
+    renderToStaticMarkup(
+      await module.default({
+        searchParams: Promise.resolve({})
+      })
+    )
+  );
 
-  assert.match(html, /Today Vault Panel/);
-  assert.match(html, /raw/);
-  assert.match(html, /ingest/);
-  assert.match(html, /wiki/);
+  assert.match(html, /研究问答/);
+  assert.match(html, /先看当前缺什么证据，再决定下一步/);
+  assert.match(html, /判断面板/);
   assert.match(html, /建议提问/);
+  assert.match(html, /下一步动作/);
+  assert.match(html, /知识缺口/);
+  assert.match(html, /name="q"/);
   assert.doesNotMatch(html, /任务与计划/);
   assert.doesNotMatch(html, /待发布内容/);
+});
+
+test("legacy compatibility app routes are no longer product entry points", () => {
+  const legacyRouteFiles = [
+    "app/app/inbox/page.tsx",
+    "app/app/sources/page.tsx",
+    "app/app/review/page.tsx",
+    "app/app/topics/page.tsx",
+    "app/app/topics/[id]/page.tsx"
+  ];
+
+  for (const routeFile of legacyRouteFiles) {
+    assert.equal(existsSync(join(process.cwd(), routeFile)), false, `${routeFile} should be removed`);
+  }
 });
 
 test("sidebar becomes a history-first research rail", async () => {
@@ -113,11 +137,27 @@ test("wiki index and detail pages expose compiled understanding, open questions,
 
   assert.match(wikiHtml, /wiki/);
   assert.match(wikiHtml, /Inkvault repositioning/);
+  assert.match(wikiHtml, /claim 治理总览/);
+  assert.match(wikiHtml, /2 条高风险 claim 仍需处理/);
+  assert.match(wikiHtml, /1 条缺少直接证据/);
+  assert.match(wikiHtml, /1 条需要重审/);
+  assert.match(wikiHtml, /2 条 claim 存在冲突/);
+  assert.match(wikiHtml, /知识页里仍有 claim 需要补证或重审/);
   assert.match(detailHtml, /Current Understanding/);
   assert.match(detailHtml, /Open Questions/);
   assert.match(detailHtml, /Key Claims/);
   assert.match(detailHtml, /Sources/);
   assert.match(detailHtml, /Research-first wiki note/);
+  assert.match(detailHtml, /supported/i);
+  assert.match(detailHtml, /最近验证/);
+  assert.match(detailHtml, /最近使用/);
+  assert.match(detailHtml, /使用 3 次/);
+  assert.match(detailHtml, /证据 1 条/);
+  assert.match(detailHtml, /最近已验证/);
+  assert.match(detailHtml, /当前验证较新/);
+  assert.match(detailHtml, /缺少直接证据/);
+  assert.match(detailHtml, /存在冲突/);
+  assert.match(detailHtml, /这条 claim 当前和同主题里的另一条判断互相打架/);
   assert.match(detailHtml, /wiki\//);
 });
 
@@ -125,6 +165,7 @@ test("ingest, ask, and raw pages form the new core workflow", async () => {
   const ingestPage = await import("../app/app/ingest/page");
   const askPage = await import("../app/app/ask/page");
   const rawPage = await import("../app/app/raw/page");
+  const appPage = await import("../app/app/page");
 
   const ingestHtml = compact(renderToStaticMarkup(await ingestPage.default({})));
   const askHtml = compact(
@@ -137,13 +178,26 @@ test("ingest, ask, and raw pages form the new core workflow", async () => {
       })
     )
   );
+  const appHtml = compact(
+    renderToStaticMarkup(
+      await appPage.default({
+        searchParams: Promise.resolve({
+          q: "这个主题当前最稳定的理解是什么？",
+          topicId: "topic-001"
+        })
+      })
+    )
+  );
   const rawHtml = compact(renderToStaticMarkup(await rawPage.default()));
 
   assert.match(ingestHtml, /ingest/);
   assert.match(ingestHtml, /TOPIC_PATCH/);
+  assert.match(ingestHtml, /重审/);
   assert.match(ingestHtml, /提案解释/);
   assert.match(ingestHtml, /Topic 归属/);
   assert.match(ingestHtml, /证据来源/);
+  assert.match(ingestHtml, /unsupported/i);
+  assert.match(ingestHtml, /证据 0 条/);
   assert.match(ingestHtml, /接受写入 wiki/);
   assert.match(ingestHtml, /忽略提案/);
   assert.match(askHtml, /研究问答/);
@@ -158,6 +212,12 @@ test("ingest, ask, and raw pages form the new core workflow", async () => {
   assert.match(askHtml, /<form/);
   assert.match(askHtml, /name="q"/);
   assert.match(askHtml, /name="topicId"/);
+  assert.match(appHtml, /研究问答/);
+  assert.match(appHtml, /判断面板/);
+  assert.match(appHtml, /当前最稳定的理解/);
+  assert.match(appHtml, /缺少直接证据/);
+  assert.match(appHtml, /需要重审/);
+  assert.match(appHtml, /claim 彼此冲突/);
   assert.match(rawHtml, /原始材料/);
   assert.match(rawHtml, /raw\//);
   assert.match(rawHtml, /legacy:\/\/note-001/);
@@ -184,11 +244,20 @@ test("ask page surfaces follow-up context and external web evidence boundaries",
   assert.match(askHtml, /continueFromAskTurnId=/);
 });
 
+test("ingest revalidation covers ask alias and affected wiki routes", async () => {
+  const module = await import("../app/app/ingest/revalidation-paths");
+
+  assert.deepEqual(module.buildIngestRevalidationPaths(), ["/app", "/app/ask", "/app/ingest", "/app/wiki", "/app/raw"]);
+  assert.deepEqual(module.buildIngestRevalidationPaths("topic-001"), ["/app", "/app/ask", "/app/ingest", "/app/wiki", "/app/raw", "/app/wiki/topic-001"]);
+});
+
 test("login page now frames Inkvault as a private research-first workspace", async () => {
   const module = await import("../app/login/page");
   const html = compact(renderToStaticMarkup(await module.default({ searchParams: Promise.resolve({}) })));
 
   assert.match(html, /进入私有 LLM Wiki/);
-  assert.match(html, /raw \/ ingest \/ wiki/);
+  assert.match(html, /Ask-first 工作区/);
+  assert.match(html, /继续追问、补 raw、审 ingest 或打开 wiki/);
+  assert.doesNotMatch(html, /Today Vault Panel/);
   assert.doesNotMatch(html, /任务计划与公开内容输出/);
 });

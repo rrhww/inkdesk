@@ -26,10 +26,20 @@ ASK_TURNS_SCHEMA_UPGRADES = (
     ("follow_up_questions_json", "ALTER TABLE ask_turns ADD COLUMN follow_up_questions_json TEXT NOT NULL DEFAULT '[]'"),
     ("can_writeback", "ALTER TABLE ask_turns ADD COLUMN can_writeback BOOLEAN NOT NULL DEFAULT 1"),
     ("writeback_package_json", "ALTER TABLE ask_turns ADD COLUMN writeback_package_json TEXT NOT NULL DEFAULT '{}'"),
+    ("judgment_payload_json", "ALTER TABLE ask_turns ADD COLUMN judgment_payload_json TEXT NOT NULL DEFAULT '{}'"),
 )
 
 REVIEW_ITEMS_SCHEMA_UPGRADES = (
     ("proposal_payload_json", "ALTER TABLE review_items ADD COLUMN proposal_payload_json TEXT NOT NULL DEFAULT '{}'"),
+)
+
+TOPIC_CLAIMS_SCHEMA_UPGRADES = (
+    ("evidence_count", "ALTER TABLE topic_claims ADD COLUMN evidence_count INTEGER NOT NULL DEFAULT 0"),
+    ("provenance_status", "ALTER TABLE topic_claims ADD COLUMN provenance_status VARCHAR(20) NOT NULL DEFAULT 'unsupported'"),
+    ("last_verified_at", "ALTER TABLE topic_claims ADD COLUMN last_verified_at TIMESTAMP NULL"),
+    ("updated_at", "ALTER TABLE topic_claims ADD COLUMN updated_at TIMESTAMP NULL"),
+    ("usage_count", "ALTER TABLE topic_claims ADD COLUMN usage_count INTEGER NOT NULL DEFAULT 0"),
+    ("last_used_at", "ALTER TABLE topic_claims ADD COLUMN last_used_at TIMESTAMP NULL"),
 )
 
 
@@ -81,6 +91,14 @@ def upgrade_existing_schema(engine) -> None:
                     continue
                 connection.exec_driver_sql(ddl)
                 review_columns.add(column_name)
+
+        if inspector.has_table("topic_claims"):
+            topic_claim_columns = {column["name"] for column in inspector.get_columns("topic_claims")}
+            for column_name, ddl in TOPIC_CLAIMS_SCHEMA_UPGRADES:
+                if column_name in topic_claim_columns:
+                    continue
+                connection.exec_driver_sql(ddl)
+                topic_claim_columns.add(column_name)
 
 
 def get_db() -> Session:

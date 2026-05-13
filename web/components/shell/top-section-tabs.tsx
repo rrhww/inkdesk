@@ -3,16 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const topTabs = [
-  { href: "/app", label: "问答", matchers: ["/app", "/app/ask"] },
-  { href: "/app/raw", label: "资料", matchers: ["/app/raw", "/app/inbox", "/app/sources"] },
-  { href: "/app/ingest", label: "审阅", matchers: ["/app/ingest", "/app/review"] },
-  { href: "/app/wiki", label: "知识库", matchers: ["/app/wiki", "/app/topics"] }
-];
-
-function matchesPath(pathname: string, matchers: string[]) {
-  return matchers.some((matcher) => pathname === matcher || pathname.startsWith(`${matcher}/`));
-}
+import { PRIMARY_SECTIONS, pathnameMatchesSection } from "@/lib/app-shell";
 
 export function TopSectionTabs() {
   const pathname = usePathname() ?? "/app";
@@ -20,8 +11,8 @@ export function TopSectionTabs() {
   return (
     <nav aria-label="主分区" className="overflow-x-auto">
       <div className="flex min-w-max items-center gap-2">
-        {topTabs.map((tab) => {
-          const active = matchesPath(pathname, tab.matchers);
+        {PRIMARY_SECTIONS.map((tab) => {
+          const active = pathnameMatchesSection(pathname, tab);
 
           return (
             <Link
