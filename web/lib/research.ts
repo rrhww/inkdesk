@@ -1,17 +1,20 @@
 import {
   answerResearchQuestionFixture,
   createAskWritebackFixture,
+  getAskBriefingFixture,
   getResearchTopicDetailFixture,
   researchDashboardFixture,
   researchReviewItemsFixture,
   researchSourcesFixture,
   researchTopicSummariesFixture
 } from "@/lib/mock/research-fixtures";
-import { fetchInkvaultJson, hasApiBaseUrl, InkvaultApiError, postInkvault, postInkvaultJson } from "@/lib/server-api";
+import { fetchInkvaultJson, hasApiBaseUrl, InkvaultApiError, postInkvaultJson } from "@/lib/server-api";
 import type {
   ResearchAskRequest,
+  ResearchAskBriefing,
   ResearchAskResponse,
   ResearchDashboard,
+  ResearchReviewDecision,
   ResearchReviewItem,
   ResearchSourceRecord,
   ResearchTextImportRequest,
@@ -85,6 +88,26 @@ export async function askResearch(request: ResearchAskRequest, ownerSession?: st
   );
 }
 
+export async function getAskBriefing(
+  input?: { topicId?: string; askTurnId?: string },
+  ownerSession?: string
+): Promise<ResearchAskBriefing> {
+  return withResearchFallback(
+    () => {
+      const params = new URLSearchParams();
+      if (input?.topicId) {
+        params.set("topicId", input.topicId);
+      }
+      if (input?.askTurnId) {
+        params.set("askTurnId", input.askTurnId);
+      }
+      const suffix = params.toString() ? `?${params.toString()}` : "";
+      return fetchInkvaultJson<ResearchAskBriefing>(`/ask/briefing${suffix}`, { ownerSession });
+    },
+    () => getAskBriefingFixture(input)
+  );
+}
+
 export async function proposeAskWriteback(askTurnId: string, ownerSession?: string): Promise<ResearchReviewItem> {
   return withResearchFallback(
     () => postInkvaultJson<ResearchReviewItem>(`/ask/${askTurnId}/writeback`, {}, { ownerSession }),
@@ -93,11 +116,11 @@ export async function proposeAskWriteback(askTurnId: string, ownerSession?: stri
 }
 
 export async function acceptIngest(reviewId: string, ownerSession?: string) {
-  await postInkvault(`/ingest/${reviewId}/accept`, { ownerSession });
+  return postInkvaultJson<ResearchReviewDecision>(`/ingest/${reviewId}/accept`, {}, { ownerSession });
 }
 
 export async function rejectIngest(reviewId: string, ownerSession?: string) {
-  await postInkvault(`/ingest/${reviewId}/reject`, { ownerSession });
+  return postInkvaultJson<ResearchReviewDecision>(`/ingest/${reviewId}/reject`, {}, { ownerSession });
 }
 
 export async function importWebSource(request: ResearchWebImportRequest, ownerSession?: string) {

@@ -1,9 +1,9 @@
 # 文档索引
 
-`docs/` 是 Inkvault 项目的唯一正式事实来源。Inkvault 的长期定义已经收敛为“围绕长期项目运转的个人主系统”，当前 MVP 仍保留公开入口与主系统入口：
+`docs/` 是 Inkvault 项目的正式事实来源。Inkvault 的当前定义已经收敛为：
 
-- 对外是公开输出与分享层
-- 对内是主人登录后进入的私有主系统
+- 一个单人私有、vault-first、以知识健康为核心的 AI 研究系统
+- 一条明确的主闭环：`raw -> ingest -> wiki -> ask -> health -> ingest`
 
 ## 分层说明
 
@@ -12,11 +12,13 @@
 - `architecture/`：系统边界、领域模型、接口、数据库与技术决策
 - `delivery/`：阶段排期、开发环境、协作与上线检查
 - `ops/`：部署、环境变量、备份与恢复
+- `superpowers/`：开发期设计稿、执行计划和历史规格归档
 
 ## 推荐阅读顺序
 
 ### 第一步，理解产品
 
+- `product/product-vision.md`
 - `product/mvp-prd.md`
 - `product/user-stories.md`
 - `product/product-roadmap.md`
@@ -25,13 +27,6 @@
 
 - `design/information-architecture.md`
 - `design/page-briefs.md`
-- `design/page-inventory.md`
-- `design/editor-interactions.md`
-- `design/design-workflow.md`
-- `design/prototype-plan.md`
-- `design/html-direction-review.md`
-- `design/stitch-prompts.md`
-- `design/stitch-review-checklist.md`
 
 ### 第三步，理解技术实现
 
@@ -44,9 +39,6 @@
 
 ### 第四步，理解交付与上线
 
-- `delivery/growth-engineer-training-manual.md`
-- `delivery/fullstack-mentorship-plan.md`
-- `delivery/mentorship-progress-log.md`
 - `delivery/development-plan.md`
 - `delivery/mvp-roadmap.md`
 - `delivery/dev-setup.md`
@@ -59,5 +51,7 @@
 ## 文档维护原则
 
 - 文档全部使用中文，技术名词、接口、路径保留英文
+- 当前主叙事以 `product/product-vision.md` 和 `raw -> ingest -> wiki -> ask -> health -> ingest` 为准
+- 历史方案、旧路线和设计归档放在历史文档中，不作为当前产品定义
 - 同一项决策只能有一个主归属文档，避免重复和冲突
 - 文档更新优先于实现更新，聊天记录不作为项目规范

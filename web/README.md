@@ -1,24 +1,19 @@
 # Web
 
-Inkvault 的 Next.js 前端应用，当前只服务于单人私有、Vault-first 的 LLM Wiki。
+Inkvault 的 Next.js 前端应用，当前只服务于单人私有、Vault-first 的研究工作台。
 
 ## 当前页面模型
 
 - `/`：根据 owner session 重定向到 `/login` 或 `/app`
 - `/login`：隐藏 owner 登录入口
-- `/app`：Today Vault Panel
+- `/app`：Ask-first 研究工作区
 - `/app/raw`：raw 原始材料 vault
 - `/app/ingest`：AI 提案审阅队列
 - `/app/wiki`：已接受的 wiki 页面
 - `/app/wiki/[id]`：单个 wiki 页面详情
-- `/app/ask`：基于 wiki 优先、raw 补充的问答
+- `/app/ask`：兼容问答别名，复用 `/app` 的 Ask-first 工作区
 
-兼容路由：
-
-- `/app/inbox` -> `/app/raw`
-- `/app/review` -> `/app/ingest`
-- `/app/topics` -> `/app/wiki`
-- `/app/sources` -> `/app/raw`
+旧兼容路由已移除：`/app/inbox`、`/app/sources`、`/app/review`、`/app/topics` 不再作为产品入口。
 
 ## 入口规则
 
@@ -32,7 +27,7 @@ Inkvault 的 Next.js 前端应用，当前只服务于单人私有、Vault-first
 - 没有 plans 模块
 - 没有 publish 模块
 - 没有旧的 note editor 工作流
-- raw / ingest / wiki 是主产品语言，legacy note 只作为迁移来源存在
+- ask / raw / ingest / wiki 是主产品语言，legacy note 只作为迁移来源存在
 
 ## 本地启动
 
@@ -86,4 +81,4 @@ npm run e2e
 npm run e2e:fullstack
 ```
 
-这个命令会走一遍 login -> ingest -> wiki -> ask -> raw 的 LLM Wiki 闭环。
+这个命令会走一遍 login -> raw -> ingest -> wiki -> ask 的研究闭环。

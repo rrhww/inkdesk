@@ -128,6 +128,12 @@ class TopicClaim(Base):
     source_id: Mapped[str | None] = mapped_column(String(64), ForeignKey("sources.id", ondelete="SET NULL"), nullable=True)
     statement: Mapped[str] = mapped_column(Text, nullable=False)
     citation_label: Mapped[str] = mapped_column(String(240), nullable=False)
+    evidence_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    provenance_status: Mapped[str] = mapped_column(String(20), nullable=False, default="unsupported")
+    last_verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    usage_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    last_used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     sort_order: Mapped[int] = mapped_column(Integer, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
@@ -218,6 +224,7 @@ class AskTurn(Base):
     follow_up_questions_json: Mapped[str] = mapped_column(Text, nullable=False, default="[]")
     can_writeback: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     writeback_package_json: Mapped[str] = mapped_column(Text, nullable=False, default="{}")
+    judgment_payload_json: Mapped[str] = mapped_column(Text, nullable=False, default="{}")
     citation_source_ids: Mapped[str] = mapped_column(Text, nullable=False, default="")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 

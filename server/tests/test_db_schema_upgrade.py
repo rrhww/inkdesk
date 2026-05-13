@@ -51,7 +51,8 @@ def test_init_db_upgrades_legacy_ask_turns_schema_in_place(temp_app_env):
                     knowledge_gaps_json,
                     follow_up_questions_json,
                     can_writeback,
-                    writeback_package_json
+                    writeback_package_json,
+                    judgment_payload_json
                 FROM ask_turns
                 WHERE id = 'ask-legacy'
                 """
@@ -71,6 +72,7 @@ def test_init_db_upgrades_legacy_ask_turns_schema_in_place(temp_app_env):
     assert row["follow_up_questions_json"] == "[]"
     assert row["can_writeback"] == 1
     assert row["writeback_package_json"] == "{}"
+    assert row["judgment_payload_json"] == "{}"
 
 
 def test_init_db_upgrades_legacy_review_items_schema_in_place(temp_app_env):
@@ -117,3 +119,75 @@ def test_init_db_upgrades_legacy_review_items_schema_in_place(temp_app_env):
         ).mappings().one()
 
     assert row["proposal_payload_json"] == "{}"
+
+
+def test_init_db_upgrades_legacy_topic_claims_schema_in_place(temp_app_env):
+    from inkvault_server.db import get_engine, init_db
+
+    engine = get_engine()
+    with engine.begin() as connection:
+        connection.execute(
+            text(
+                """
+                CREATE TABLE topic_claims (
+                    id VARCHAR(64) PRIMARY KEY,
+                    topic_id VARCHAR(64) NOT NULL,
+                    source_id VARCHAR(64),
+                    statement TEXT NOT NULL,
+                    citation_label VARCHAR(240) NOT NULL,
+                    sort_order INTEGER NOT NULL,
+                    created_at TIMESTAMP NOT NULL
+                )
+                """
+            )
+        )
+        connection.execute(
+            text(
+                """
+                INSERT INTO topic_claims (
+                    id,
+                    topic_id,
+                    source_id,
+                    statement,
+                    citation_label,
+                    sort_order,
+                    created_at
+                )
+                VALUES (
+                    'claim-legacy',
+                    'topic-1',
+                    NULL,
+                    'legacy claim',
+                    'legacy citation',
+                    1,
+                    '2026-04-13T08:45:00Z'
+                )
+                """
+            )
+        )
+
+    init_db()
+
+    with engine.connect() as connection:
+        row = connection.execute(
+            text(
+                """
+                SELECT
+                    evidence_count,
+                    provenance_status,
+                    last_verified_at,
+                    updated_at,
+                    usage_count,
+                    last_used_at
+                FROM topic_claims
+                WHERE id = 'claim-legacy'
+                """
+            )
+        ).mappings().one()
+
+    assert row["evidence_count"] == 0
+    assert row["provenance_status"] == "unsupported"
+    assert row["last_verified_at"] is None
+    assert row["updated_at"] is None
+    assert row["usage_count"] == 0
+    assert row["last_used_at"] is None

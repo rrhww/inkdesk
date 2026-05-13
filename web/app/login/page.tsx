@@ -57,10 +57,10 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           <div className="font-headline text-sm uppercase tracking-[0.22em] text-ink-muted">Inkvault</div>
           <h1 className="mt-6 font-headline text-5xl font-extrabold tracking-tight">进入私有 LLM Wiki</h1>
           <p className="mt-6 max-w-xl font-body text-[1.3rem] leading-[1.8] text-[#313738]">
-            这是单人私有入口。进入后会直接回到 Today Vault Panel，并继续处理 raw / ingest / wiki 的知识沉淀流。
+            这是单人私有入口。进入后会直接回到 Ask-first 工作区，先看当前缺什么证据，再决定继续追问、补 raw、审 ingest 或打开 wiki。
           </p>
           <p className="mt-4 max-w-xl text-sm leading-7 text-ink-muted">
-            默认工作流是：导入 raw，等待 AI 在 ingest 中提出补丁，然后由你确认哪些变化能写入 wiki。
+            默认工作流是：Ask 暴露判断和缺口，raw 保存来源，ingest 提出补丁，然后由你确认哪些变化能写入 wiki。
           </p>
         </section>
 

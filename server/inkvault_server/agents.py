@@ -35,6 +35,17 @@ REVIEW_CARD_TITLE_BY_KIND = {
     "TOPIC_PATCH": "把 raw 编译进现有 wiki",
 }
 
+BRIEFING_SIGNAL_PRIORITY = {
+    "UNSUPPORTED_CLAIM": 0,
+    "STALE_CLAIM": 1,
+    "CONFLICTING_CLAIM": 2,
+    "KNOWLEDGE_GAP": 3,
+    "OPEN_QUESTIONS": 4,
+    "REVIEW_BACKLOG": 5,
+    "RAW_BACKLOG": 6,
+    "WRITEBACK_CANDIDATE": 7,
+}
+
 
 def ensure_langchain_runtime_globals() -> None:
     if langchain is None:
@@ -51,6 +62,12 @@ ASK_JSON_MODE_INSTRUCTIONS = (
     "Return only valid JSON. "
     "The JSON object must contain exactly these keys: "
     "answer, confidence, followUpQuestions, knowledgeGaps, citationSourceIds."
+)
+
+BRIEFING_JSON_MODE_INSTRUCTIONS = (
+    "Return only valid JSON. "
+    "The JSON object must contain exactly these keys: "
+    "summary, confidence, knowledgeGaps, nextActions, suggestedQuestions, supportingSignals."
 )
 
 COMPILE_JSON_MODE_INSTRUCTIONS = (
@@ -140,6 +157,57 @@ class AskResponseModel(BaseModel):
     contextAskTurnIds: list[str] = Field(default_factory=list)
     canWriteback: bool = True
     writebackPackage: AskWritebackPackageModel | None = None
+
+
+class AskBriefingSignalModel(BaseModel):
+    type: str
+    title: str
+    summary: str
+    href: str
+
+
+class AskBriefingGapModel(BaseModel):
+    title: str
+    detail: str
+    href: str
+
+
+class AskBriefingActionModel(BaseModel):
+    kind: str
+    label: str
+    description: str
+    href: str
+
+
+class AskBriefingRequestModel(BaseModel):
+    scope: str
+    topicId: str | None = None
+    topicTitle: str | None = None
+    askTurnId: str | None = None
+    askQuestion: str | None = None
+    askAnswer: str | None = None
+    askKnowledgeGaps: list[str] = Field(default_factory=list)
+    askUsedWebSources: list[WebCitationModel] = Field(default_factory=list)
+    canWriteback: bool = False
+    pendingReviewCount: int = 0
+    focusTopicTitle: str | None = None
+    recentSourceTitles: list[str] = Field(default_factory=list)
+    healthSignals: list[AskBriefingSignalModel] = Field(default_factory=list)
+    citations: list[CitationModel] = Field(default_factory=list)
+    suggestedQuestions: list[str] = Field(default_factory=list)
+
+
+class AskBriefingResponseModel(BaseModel):
+    scope: str
+    topicId: str | None = None
+    topicTitle: str | None = None
+    askTurnId: str | None = None
+    summary: str
+    confidence: float
+    knowledgeGaps: list[AskBriefingGapModel] = Field(default_factory=list)
+    nextActions: list[AskBriefingActionModel] = Field(default_factory=list)
+    suggestedQuestions: list[str] = Field(default_factory=list)
+    supportingSignals: list[AskBriefingSignalModel] = Field(default_factory=list)
 
 
 class CompileRequestModel(BaseModel):
@@ -234,6 +302,33 @@ class AskStructuredOutput(BaseModel):
         return 0.5
 
 
+class AskBriefingGapStructuredOutput(BaseModel):
+    title: str
+    detail: str
+    href: str
+
+
+class AskBriefingActionStructuredOutput(BaseModel):
+    kind: str
+    label: str
+    description: str
+    href: str
+
+
+class AskBriefingStructuredOutput(BaseModel):
+    summary: str
+    confidence: float
+    knowledgeGaps: list[AskBriefingGapStructuredOutput] = Field(default_factory=list)
+    nextActions: list[AskBriefingActionStructuredOutput] = Field(default_factory=list)
+    suggestedQuestions: list[str] = Field(default_factory=list)
+    supportingSignals: list[AskBriefingSignalModel] = Field(default_factory=list)
+
+    @field_validator("confidence", mode="before")
+    @classmethod
+    def normalize_confidence(cls, value: Any) -> float:
+        return AskStructuredOutput.normalize_confidence(value)
+
+
 class CompileStructuredOutput(BaseModel):
     kind: str
     title: str
@@ -317,6 +412,7 @@ class AgentRuntime:
         ensure_langchain_runtime_globals()
         self._ask_llm = self._build_ask_llm()
         self._compile_llm = self._build_compile_llm()
+        self._briefing_llm = self._build_briefing_llm()
         if StateGraph is None:
             self._ask_graph = None
             self._compile_graph = None
@@ -340,6 +436,43 @@ class AgentRuntime:
             writebackPackage=state.get("writeback_package"),
         )
 
+    def brief(self, request: AskBriefingRequestModel) -> AskBriefingResponseModel:
+        if self._briefing_llm is None:
+            return self._deterministic_briefing(request)
+        prompt = self._render_briefing_prompt(request)
+        try:
+            result = self._briefing_llm.invoke(prompt)
+            return AskBriefingResponseModel(
+                scope=request.scope,
+                topicId=request.topicId,
+                topicTitle=request.topicTitle,
+                askTurnId=request.askTurnId,
+                summary=result.summary,
+                confidence=result.confidence,
+                knowledgeGaps=[
+                    AskBriefingGapModel(
+                        title=item.title,
+                        detail=item.detail,
+                        href=item.href,
+                    )
+                    for item in result.knowledgeGaps
+                ],
+                nextActions=[
+                    AskBriefingActionModel(
+                        kind=item.kind,
+                        label=item.label,
+                        description=item.description,
+                        href=item.href,
+                    )
+                    for item in result.nextActions
+                ],
+                suggestedQuestions=result.suggestedQuestions,
+                supportingSignals=result.supportingSignals,
+            )
+        except Exception:
+            logger.exception("Briefing LLM invocation failed; falling back to deterministic briefing.")
+            return self._deterministic_briefing(request)
+
     def compile(self, request: CompileRequestModel) -> CompileResponseModel:
         if self._compile_llm is None or self._compile_graph is None:
             return self._deterministic_compile(request)
@@ -362,6 +495,9 @@ class AgentRuntime:
 
     def _build_ask_llm(self):
         return self._build_structured_llm(AskStructuredOutput)
+
+    def _build_briefing_llm(self):
+        return self._build_structured_llm(AskBriefingStructuredOutput)
 
     def _build_compile_llm(self):
         return self._build_structured_llm(CompileStructuredOutput)
@@ -586,6 +722,46 @@ class AgentRuntime:
             )
         return "\n".join(lines)
 
+    def _render_briefing_prompt(self, request: AskBriefingRequestModel) -> str:
+        lines = [
+            "You are the judgment hub for the Ask-first Inkvault workspace.",
+            "Summarize the current research situation in Simplified Chinese.",
+            "Focus on knowledge gaps and next safe actions.",
+            f"Briefing scope: {request.scope}",
+            BRIEFING_JSON_MODE_INSTRUCTIONS if self._structured_output_method() == "json_mode" else "",
+        ]
+        if request.topicTitle:
+            lines.append(f"Topic title: {request.topicTitle}")
+        if request.focusTopicTitle:
+            lines.append(f"Focus topic: {request.focusTopicTitle}")
+        if request.askTurnId:
+            lines.append(f"Ask turn id: {request.askTurnId}")
+        if request.askQuestion:
+            lines.append(f"Ask question: {request.askQuestion}")
+        if request.askAnswer:
+            lines.append(f"Ask answer: {request.askAnswer}")
+        if request.askKnowledgeGaps:
+            lines.append("Ask knowledge gaps:")
+            lines.extend(f"- {gap}" for gap in request.askKnowledgeGaps)
+        if request.askUsedWebSources:
+            lines.append("Ask external web evidence:")
+            lines.extend(f"- {source.title}: {source.excerpt}" for source in request.askUsedWebSources)
+        lines.append(f"Pending review count: {request.pendingReviewCount}")
+        if request.recentSourceTitles:
+            lines.append("Recent sources:")
+            lines.extend(f"- {title}" for title in request.recentSourceTitles)
+        if request.healthSignals:
+            lines.append("Health signals:")
+            lines.extend(f"- [{signal.type}] {signal.title}: {signal.summary} ({signal.href})" for signal in request.healthSignals)
+        if request.citations:
+            lines.append("Available citations:")
+            lines.extend(f"- [{citation.id}] {citation.title}: {citation.excerpt}" for citation in request.citations)
+        if request.suggestedQuestions:
+            lines.append("Suggested questions:")
+            lines.extend(f"- {item}" for item in request.suggestedQuestions)
+        lines.append(f"Can write back: {'yes' if request.canWriteback else 'no'}")
+        return "\n".join(line for line in lines if line)
+
     def _prepare_compile_prompt(self, state: CompileState) -> dict[str, Any]:
         request = state["request"]
         lines = [
@@ -750,6 +926,166 @@ class AgentRuntime:
             usedWebSources=[],
             contextAskTurnIds=self._context_ask_turn_ids(request),
             canWriteback=True,
+        )
+
+    def _deterministic_briefing(self, request: AskBriefingRequestModel) -> AskBriefingResponseModel:
+        knowledge_gaps: list[AskBriefingGapModel] = []
+        next_actions: list[AskBriefingActionModel] = []
+        prioritized_signals = sorted(
+            request.healthSignals,
+            key=lambda signal: BRIEFING_SIGNAL_PRIORITY.get(signal.type, 99),
+        )
+
+        if request.askKnowledgeGaps:
+            for gap in request.askKnowledgeGaps[:3]:
+                knowledge_gaps.append(
+                    AskBriefingGapModel(
+                        title=first_sentence(gap, "当前还有知识缺口。"),
+                        detail=gap,
+                        href="/app/ask" if request.scope == "workspace" else "/app",
+                    )
+                )
+
+        if not knowledge_gaps:
+            for signal in prioritized_signals[:3]:
+                if signal.type in {"RAW_BACKLOG", "REVIEW_BACKLOG", "OPEN_QUESTIONS", "KNOWLEDGE_GAP", "UNSUPPORTED_CLAIM", "STALE_CLAIM", "CONFLICTING_CLAIM"}:
+                    knowledge_gaps.append(
+                        AskBriefingGapModel(
+                            title=signal.title,
+                            detail=signal.summary,
+                            href=signal.href,
+                        )
+                    )
+
+        if request.scope == "ask_turn":
+            summary = first_non_empty(
+                [
+                    f"这轮问答已经得到一版可继续推进的判断：{first_sentence(request.askAnswer or '', '先从当前回答继续推进。')}",
+                    request.askQuestion or "",
+                ],
+                "这轮问答已经形成一版可继续推进的判断。",
+            )
+            next_actions.append(
+                AskBriefingActionModel(
+                    kind="CONTINUE_ASK",
+                    label="继续追问",
+                    description="围绕这轮回答继续补证或缩小范围。",
+                    href="/app/ask",
+                )
+            )
+            if request.canWriteback:
+                next_actions.append(
+                    AskBriefingActionModel(
+                        kind="WRITEBACK",
+                        label="沉淀到知识库",
+                        description="把这轮回答送入 ingest 审阅，而不是直接改写 wiki。",
+                        href="/app/ask",
+                    )
+                )
+        elif request.scope == "topic":
+            summary = first_non_empty(
+                [
+                    f"当前主题「{request.topicTitle or request.focusTopicTitle or '未命名主题'}」最需要先补证再推进。",
+                    prioritized_signals[0].title if prioritized_signals else "",
+                ],
+                "当前主题最需要先补证再推进。",
+            )
+            next_actions.append(
+                AskBriefingActionModel(
+                    kind="OPEN_WIKI",
+                    label="打开知识页",
+                    description="先查看当前主题的既有理解，再决定下一轮提问。",
+                    href="/app/wiki",
+                )
+            )
+        else:
+            summary = first_non_empty(
+                [
+                    prioritized_signals[0].title if prioritized_signals else "",
+                    f"当前最需要先处理 {request.pendingReviewCount} 条待审阅提案。",
+                ],
+                "当前最需要先看清知识缺口，再决定下一步动作。",
+            )
+
+        for signal in prioritized_signals:
+            if len(next_actions) >= 3:
+                break
+            if signal.type == "REVIEW_BACKLOG" and not any(action.kind == "OPEN_INGEST" for action in next_actions):
+                next_actions.append(
+                    AskBriefingActionModel(
+                        kind="OPEN_INGEST",
+                        label="打开审阅队列",
+                        description="先处理最靠前的提案，再继续扩展知识层。",
+                        href=signal.href,
+                    )
+                )
+            elif signal.type == "RAW_BACKLOG" and not any(action.kind == "OPEN_RAW" for action in next_actions):
+                next_actions.append(
+                    AskBriefingActionModel(
+                        kind="OPEN_RAW",
+                        label="补充资料入口",
+                        description="回到 raw 检查哪些材料还没有进入 ingest。",
+                        href=signal.href,
+                    )
+                )
+            elif signal.type == "OPEN_QUESTIONS" and not any(action.kind == "OPEN_WIKI" for action in next_actions):
+                next_actions.append(
+                    AskBriefingActionModel(
+                        kind="OPEN_WIKI",
+                        label="查看开放问题",
+                        description="先读当前 wiki 的开放问题，再决定追问方向。",
+                        href=signal.href,
+                    )
+                )
+            elif signal.type == "STALE_CLAIM" and not any(action.kind == "OPEN_INGEST" for action in next_actions):
+                next_actions.append(
+                    AskBriefingActionModel(
+                        kind="OPEN_INGEST",
+                        label="发起 claim 重审",
+                        description="这些高频 claim 需要回到 ingest 做一轮复核，避免继续带着旧判断推进。",
+                        href=signal.href,
+                    )
+                )
+            elif signal.type == "CONFLICTING_CLAIM" and not any(action.kind == "OPEN_INGEST" for action in next_actions):
+                next_actions.append(
+                    AskBriefingActionModel(
+                        kind="OPEN_INGEST",
+                        label="处理 claim 冲突",
+                        description="回到 ingest 统一裁决互相打架的 claim，避免继续带着冲突理解推进。",
+                        href=signal.href,
+                    )
+                )
+
+        if not next_actions:
+            next_actions.append(
+                AskBriefingActionModel(
+                    kind="CONTINUE_ASK",
+                    label="继续追问",
+                    description="围绕当前问题继续缩小范围或补证。",
+                    href="/app/ask",
+                )
+            )
+
+        suggested_questions = request.suggestedQuestions[:3]
+        if not suggested_questions:
+            if request.askKnowledgeGaps:
+                suggested_questions = [first_sentence(request.askKnowledgeGaps[0], "下一步最值得补哪条证据？")]
+            elif request.focusTopicTitle:
+                suggested_questions = [f"围绕「{request.focusTopicTitle}」下一步最值得补哪条证据？"]
+            else:
+                suggested_questions = ["当前哪条提案最值得先审阅？"]
+
+        return AskBriefingResponseModel(
+            scope=request.scope,
+            topicId=request.topicId,
+            topicTitle=request.topicTitle,
+            askTurnId=request.askTurnId,
+            summary=summary,
+            confidence=0.86 if request.scope == "ask_turn" else 0.74,
+            knowledgeGaps=knowledge_gaps[:3],
+            nextActions=next_actions[:3],
+            suggestedQuestions=suggested_questions[:3],
+            supportingSignals=prioritized_signals[:3],
         )
 
     def _to_web_citation(self, item: Any) -> WebCitationModel | None:

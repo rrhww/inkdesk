@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ApiErrorResponse(BaseModel):
@@ -70,7 +70,15 @@ class ProposalClaimResponse(BaseModel):
     statement: str
     citationLabel: str
     sourceId: str | None = None
-    citationChunkIds: list[str] = []
+    citationChunkIds: list[str] = Field(default_factory=list)
+    supportingChunkIds: list[str] = Field(default_factory=list)
+    evidenceCount: int = 0
+    provenanceStatus: str = "unsupported"
+    lastVerifiedAt: datetime | None = None
+    usageCount: int = 0
+    lastUsedAt: datetime | None = None
+    needsReview: bool = False
+    hasConflict: bool = False
 
 
 class ProposalEvidenceResponse(BaseModel):
@@ -121,6 +129,9 @@ class TopicSummaryResponse(BaseModel):
     summary: str
     sourceCount: int
     openQuestionCount: int
+    unsupportedClaimCount: int = 0
+    staleClaimCount: int = 0
+    conflictingClaimCount: int = 0
     vaultPath: str | None = None
     updatedAt: datetime
 
@@ -139,6 +150,13 @@ class TopicClaimResponse(BaseModel):
     statement: str
     sourceId: str | None = None
     citationLabel: str
+    evidenceCount: int = 0
+    provenanceStatus: str = "unsupported"
+    lastVerifiedAt: datetime | None = None
+    usageCount: int = 0
+    lastUsedAt: datetime | None = None
+    needsReview: bool = False
+    hasConflict: bool = False
 
 
 class TopicThreadEntryResponse(BaseModel):
@@ -170,8 +188,30 @@ class ResearchDashboardSummary(BaseModel):
     totalSources: int
 
 
+class ResearchHealthSignalResponse(BaseModel):
+    type: str
+    severity: str
+    title: str
+    summary: str
+    relatedId: str | None = None
+    relatedTitle: str | None = None
+
+
+class ResearchDashboardHealthResponse(BaseModel):
+    rawBacklogCount: int
+    reviewBacklogCount: int
+    openQuestionCount: int
+    knowledgeGapCount: int
+    writebackCandidateCount: int
+    unsupportedClaimCount: int = 0
+    staleClaimCount: int = 0
+    conflictingClaimCount: int = 0
+    signals: list[ResearchHealthSignalResponse]
+
+
 class ResearchDashboardResponse(BaseModel):
     summary: ResearchDashboardSummary
+    health: ResearchDashboardHealthResponse
     focusTopic: TopicSummaryResponse | None
     recentSources: list[SourceResponse]
     pendingReviews: list[ReviewItemResponse]
@@ -203,6 +243,40 @@ class AskWebSourceResponse(BaseModel):
     title: str
     excerpt: str
     reasonUsed: str
+
+
+class AskBriefingGapResponse(BaseModel):
+    title: str
+    detail: str
+    href: str
+
+
+class AskBriefingActionResponse(BaseModel):
+    kind: str
+    label: str
+    description: str
+    href: str
+
+
+class AskBriefingSignalResponse(BaseModel):
+    type: str
+    title: str
+    summary: str
+    href: str
+
+
+class AskBriefingResponse(BaseModel):
+    scope: str
+    topicId: str | None = None
+    topicTitle: str | None = None
+    askTurnId: str | None = None
+    summary: str
+    confidence: float
+    knowledgeGaps: list[AskBriefingGapResponse]
+    nextActions: list[AskBriefingActionResponse]
+    suggestedQuestions: list[str]
+    supportingSignals: list[AskBriefingSignalResponse]
+    generatedAt: datetime
 
 
 class AskResponse(BaseModel):

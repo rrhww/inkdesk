@@ -3,14 +3,27 @@ from __future__ import annotations
 import json
 import re
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Iterable
 from uuid import uuid4
 
-from sqlalchemy import delete, func, select
+from sqlalchemy import delete, func, inspect, select
 from sqlalchemy.orm import Session, selectinload
 
-from inkvault_server.agents import AskContextTurnModel, AskWritebackPackageModel, AgentRuntime, AskRequestModel, CitationModel, CompileRequestModel, SourceModel, TopicModel, WebCitationModel
+from inkvault_server.agents import (
+    AskBriefingRequestModel,
+    AskBriefingResponseModel,
+    AskBriefingSignalModel,
+    AskContextTurnModel,
+    AskWritebackPackageModel,
+    AgentRuntime,
+    AskRequestModel,
+    CitationModel,
+    CompileRequestModel,
+    SourceModel,
+    TopicModel,
+    WebCitationModel,
+)
 from inkvault_server.core.config import Settings
 from inkvault_server.embeddings import EmbeddingService
 from inkvault_server.importers import ImportedRawMaterial, PdfRawImportService, WebRawImportService
@@ -18,6 +31,10 @@ from inkvault_server.models import AskTurn, ContentNode, NoteDocument, ReviewIte
 from inkvault_server.retrieval import RetrievalSelection, RetrievalService, RetrievedCitation
 from inkvault_server.schemas import (
     AskCitationResponse,
+    AskBriefingActionResponse,
+    AskBriefingGapResponse,
+    AskBriefingResponse,
+    AskBriefingSignalResponse,
     AskRequest,
     AskResponse,
     AskThreadResponse,
@@ -25,8 +42,10 @@ from inkvault_server.schemas import (
     ProposalEvidenceResponse,
     ProposalPayloadResponse,
     ProposalTopicDecisionResponse,
+    ResearchDashboardHealthResponse,
     ResearchDashboardResponse,
     ResearchDashboardSummary,
+    ResearchHealthSignalResponse,
     ReviewDecisionResponse,
     ReviewItemResponse,
     SourceResponse,
@@ -55,6 +74,33 @@ class ResearchWorkspaceService:
     vault_markdown_service: VaultMarkdownService
     web_import_service: WebRawImportService
     pdf_import_service: PdfRawImportService
+
+    CONFLICT_NEGATION_PREFIXES = (
+        "不",
+        "不能",
+        "不会",
+        "无需",
+        "不是",
+        "不应",
+        "不应该",
+        "不需要",
+        "不可以",
+        "不该",
+        "不要",
+        "别",
+        "非",
+    )
+
+    CONFLICT_POLARITY_MARKERS = (
+        ("不应该", "应该"),
+        ("不需要", "需要"),
+        ("不可以", "可以"),
+        ("不是", "是"),
+        ("不能", "能"),
+        ("不会", "会"),
+        ("不应", "应"),
+        ("不该", "该"),
+    )
 
     def bootstrap_seed_data(self) -> None:
         if self.db.scalar(select(func.count(User.id))) > 0:
@@ -129,6 +175,11 @@ class ResearchWorkspaceService:
                 pendingReviews=len(pending_reviews),
                 inboxSources=raw_sources,
                 totalSources=len(sources),
+            ),
+            health=self.build_dashboard_health(
+                topics=topics,
+                pending_reviews=pending_reviews,
+                sources=sources,
             ),
             focusTopic=focus_topic,
             recentSources=[self.to_source_response(source) for source in sources[:3]],
@@ -207,6 +258,7 @@ class ResearchWorkspaceService:
             review.source.updated_at = now
         self.db.add(review)
         self.db.commit()
+        self.db.expire_all()
         return ReviewDecisionResponse(reviewId=review.id, status=review.status, topicId=topic.id)
 
     def reject_review(self, review_id: str) -> ReviewDecisionResponse:
@@ -216,6 +268,7 @@ class ResearchWorkspaceService:
         review.decided_at = datetime.now(UTC)
         self.db.add(review)
         self.db.commit()
+        self.db.expire_all()
         return ReviewDecisionResponse(reviewId=review.id, status=review.status, topicId=review.target_topic.id if review.target_topic else None)
 
     def ask(self, request: AskRequest) -> AskResponse:
@@ -248,7 +301,8 @@ class ResearchWorkspaceService:
         self.ensure_compatible_ask_scope(continued_from, topic)
         topics = self._topics()
         sources = self._sources()
-        pending_review_count = len(self._pending_reviews())
+        pending_reviews = self._pending_reviews()
+        pending_review_count = len(pending_reviews)
         context_turns = self.build_ask_context_turns(continued_from, continued_lineage)
         retrieval = self.retrieval_service.select_for_ask(
             workspace_id=workspace.id,
@@ -279,12 +333,31 @@ class ResearchWorkspaceService:
         context_ask_turn_ids = self.normalize_context_ask_turn_ids(context_turns, draft.contextAskTurnIds)
         can_writeback = draft.canWriteback
         if topic:
+            self.record_topic_claim_usage(topic, now)
             self.append_thread_entry(topic, None, "USER", question, now)
             self.append_thread_entry(topic, self.resolve_thread_source(citations), "ASSISTANT", draft.answer, now)
             topic.updated_at = now
             self.db.add(topic)
+        else:
+            self.record_claim_usage_for_topic_ids(used_wiki_ids, now)
         ask_turn_id = self.new_id("ask")
         thread_root_ask_turn_id = continued_lineage[0].id if continued_lineage else ask_turn_id
+        briefing = self.agent_runtime.brief(
+            self.build_ask_briefing_request(
+                ask_turn_id=ask_turn_id,
+                topic=topic,
+                ask_question=question,
+                ask_answer=draft.answer,
+                ask_knowledge_gaps=draft.knowledgeGaps,
+                ask_used_web_sources=used_web_sources,
+                can_writeback=can_writeback,
+                citations=citations,
+                topics=topics,
+                pending_reviews=pending_reviews,
+                sources=sources,
+                suggested_questions=draft.followUpQuestions,
+            )
+        )
         ask_turn = AskTurn(
             id=ask_turn_id,
             workspace=workspace,
@@ -304,6 +377,7 @@ class ResearchWorkspaceService:
             follow_up_questions_json=self.encode_json_payload(draft.followUpQuestions),
             can_writeback=can_writeback,
             writeback_package_json=self.encode_json_payload(draft.writebackPackage.model_dump() if draft.writebackPackage else {}),
+            judgment_payload_json=self.encode_json_payload(briefing.model_dump()),
             citation_source_ids=self.join_csv(used_source_ids),
             created_at=now,
         )
@@ -321,6 +395,70 @@ class ResearchWorkspaceService:
         self.ensure_research_seed_state()
         ask_turn = self.require_ask_turn(ask_turn_id)
         return self.to_ask_response(ask_turn)
+
+    def get_ask_briefing(self, topic_id: str | None = None, ask_turn_id: str | None = None) -> AskBriefingResponse:
+        self.ensure_research_seed_state()
+        workspace = self.require_workspace()
+        topics = self._topics()
+        pending_reviews = self._pending_reviews()
+        sources = self._sources()
+        if self.blank_to_none(ask_turn_id):
+            ask_turn = self.db.scalar(
+                select(AskTurn)
+                .where(AskTurn.id == ask_turn_id, AskTurn.workspace_id == workspace.id)
+                .options(selectinload(AskTurn.topic))
+            )
+            if not ask_turn:
+                raise ResourceNotFoundError(f"Ask turn not found: {ask_turn_id}")
+            briefing = self.decode_ask_briefing(ask_turn.judgment_payload_json)
+            if briefing is None:
+                briefing = self.agent_runtime.brief(
+                    self.build_ask_briefing_request(
+                        ask_turn_id=ask_turn.id,
+                        topic=ask_turn.topic,
+                        ask_question=ask_turn.question,
+                        ask_answer=ask_turn.answer,
+                        ask_knowledge_gaps=self.decode_json_list(ask_turn.knowledge_gaps_json),
+                        ask_used_web_sources=self.decode_web_citations(ask_turn.used_web_sources_json),
+                        can_writeback=ask_turn.can_writeback,
+                        citations=self.resolve_retrieved_citations(ask_turn.used_chunk_ids),
+                        topics=topics,
+                        pending_reviews=pending_reviews,
+                        sources=sources,
+                        suggested_questions=self.decode_json_list(ask_turn.follow_up_questions_json),
+                    )
+                )
+                ask_turn.judgment_payload_json = self.encode_json_payload(briefing.model_dump())
+                self.db.add(ask_turn)
+                self.db.commit()
+            return self.to_ask_briefing_response(briefing)
+
+        if self.blank_to_none(topic_id):
+            topic = self.db.scalar(
+                select(Topic)
+                .where(Topic.id == topic_id, Topic.workspace_id == workspace.id)
+                .options(selectinload(Topic.sources), selectinload(Topic.claims), selectinload(Topic.thread_entries))
+            )
+            if not topic:
+                raise ResourceNotFoundError(f"Topic not found: {topic_id}")
+            briefing = self.agent_runtime.brief(
+                self.build_topic_briefing_request(
+                    topic=topic,
+                    topics=topics,
+                    pending_reviews=pending_reviews,
+                    sources=sources,
+                )
+            )
+            return self.to_ask_briefing_response(briefing)
+
+        briefing = self.agent_runtime.brief(
+            self.build_workspace_briefing_request(
+                topics=topics,
+                pending_reviews=pending_reviews,
+                sources=sources,
+            )
+        )
+        return self.to_ask_briefing_response(briefing)
 
     def get_ask_thread(self, ask_turn_id: str) -> AskThreadResponse:
         self.ensure_research_seed_state()
@@ -402,6 +540,9 @@ class ResearchWorkspaceService:
                 self.db.add(source)
             if self.is_raw_waiting_for_ingest(source):
                 self.ensure_review_for_source(source, topics)
+        for topic in self._topics():
+            self.ensure_claim_review_for_topic(topic.id)
+            self.ensure_conflict_review_for_topic(topic.id)
         self.db.commit()
 
     def import_legacy_notes_as_sources(self) -> None:
@@ -567,6 +708,7 @@ class ResearchWorkspaceService:
         self.db.add(topic)
         self.db.flush()
         self.apply_review_claims(topic, review, proposal_payload, now)
+        self.reconcile_conflicting_claims(topic, review, proposal_payload)
         self.append_thread_entry(topic, review.source, "ASSISTANT", "已把新来源编译进当前主题。", now)
         self.persist_wiki_page(topic)
         self.retrieval_service.sync_topic(topic)
@@ -597,10 +739,13 @@ class ResearchWorkspaceService:
                 citationLabel=review.source.title if review.source else review.title,
                 sourceId=review.source.id if review.source else None,
                 citationChunkIds=[],
+                supportingChunkIds=[],
+                evidenceCount=1 if review.source else 0,
+                provenanceStatus="partial" if review.source else "unsupported",
             )
         ]
-        existing_statements = {
-            claim.statement.strip()
+        existing_claims_by_statement = {
+            claim.statement.strip(): claim
             for claim in topic.claims
             if claim.statement and claim.statement.strip()
         }
@@ -614,12 +759,25 @@ class ResearchWorkspaceService:
         fallback_source = review.source or (supporting_sources[0] if supporting_sources else None)
         for claim in claim_candidates:
             statement = self.blank_to_none(claim.statement)
-            if not statement or statement in existing_statements:
+            if not statement:
                 continue
             source = self.resolve_review_claim_source(claim, evidence_by_chunk_id, source_by_id, fallback_source)
             citation_label = self.blank_to_fallback(claim.citationLabel, source.title if source else "主题摘要")
-            self.append_claim(topic, source, statement, now, citation_label=citation_label)
-            existing_statements.add(statement)
+            supporting_chunk_ids = self.claim_supporting_chunk_ids(claim, evidence_by_chunk_id)
+            evidence_count, provenance_status = self.claim_governance_values(claim, source, supporting_chunk_ids)
+            existing_claim = existing_claims_by_statement.get(statement)
+            if existing_claim is not None:
+                self.refresh_existing_claim(
+                    existing_claim,
+                    source,
+                    now,
+                    citation_label=citation_label,
+                    evidence_count=evidence_count,
+                    provenance_status=provenance_status,
+                )
+                continue
+            self.append_claim(topic, source, statement, now, citation_label=citation_label, evidence_count=evidence_count, provenance_status=provenance_status)
+            existing_claims_by_statement[statement] = topic.claims[-1] if topic.claims else self.db.scalar(select(TopicClaim).where(TopicClaim.topic_id == topic.id, TopicClaim.statement == statement))
 
     def resolve_review_claim_source(
         self,
@@ -636,16 +794,79 @@ class ResearchWorkspaceService:
                 return source_by_id[evidence.sourceId]
         return fallback_source
 
-    def append_claim(self, topic: Topic, source: Source | None, statement: str, now: datetime, citation_label: str | None = None) -> None:
+    def append_claim(
+        self,
+        topic: Topic,
+        source: Source | None,
+        statement: str,
+        now: datetime,
+        citation_label: str | None = None,
+        evidence_count: int = 0,
+        provenance_status: str = "unsupported",
+    ) -> None:
         claim = TopicClaim(
             id=self.new_id("claim"),
             topic=topic,
             source=source,
             statement=self.blank_to_fallback(statement, topic.summary),
             citation_label=self.blank_to_fallback(citation_label, source.title if source else "主题摘要"),
+            evidence_count=evidence_count,
+            provenance_status=provenance_status,
+            last_verified_at=now,
+            updated_at=now,
             sort_order=len(topic.claims) + 1,
             created_at=now,
         )
+        self.db.add(claim)
+
+    def reconcile_conflicting_claims(self, topic: Topic, review: ReviewItem, proposal_payload: ProposalPayloadResponse) -> None:
+        is_conflict_review = (
+            "冲突" in (review.title or "")
+            or "冲突" in (review.summary or "")
+            or any(getattr(claim, "hasConflict", False) for claim in proposal_payload.claims)
+        )
+        if not is_conflict_review:
+            return
+        if not proposal_payload.claims:
+            return
+        canonical_statement = self.blank_to_none(proposal_payload.claims[0].statement)
+        if canonical_statement is None:
+            return
+        current_claims = self.db.scalars(
+            select(TopicClaim)
+            .where(TopicClaim.topic_id == topic.id)
+            .order_by(TopicClaim.sort_order)
+        ).all()
+        removed_ids = [
+            claim.id
+            for claim in current_claims
+            if claim.statement.strip() != canonical_statement and self.claims_conflict(canonical_statement, claim.statement)
+        ]
+        if not removed_ids:
+            return
+        self.db.execute(delete(TopicClaim).where(TopicClaim.id.in_(removed_ids)))
+        if "claims" in topic.__dict__:
+            topic.claims = [claim for claim in topic.claims if claim.id not in removed_ids]
+        self.db.flush()
+        self.db.expire_all()
+
+    def refresh_existing_claim(
+        self,
+        claim: TopicClaim,
+        source: Source | None,
+        now: datetime,
+        *,
+        citation_label: str,
+        evidence_count: int,
+        provenance_status: str,
+    ) -> None:
+        claim.source = source or claim.source
+        claim.source_id = (source.id if source else claim.source_id)
+        claim.citation_label = self.blank_to_fallback(citation_label, claim.citation_label)
+        claim.evidence_count = max(claim.evidence_count or 0, evidence_count)
+        claim.provenance_status = provenance_status if provenance_status == "supported" or claim.provenance_status == "unsupported" else claim.provenance_status
+        claim.last_verified_at = now
+        claim.updated_at = now
         self.db.add(claim)
 
     def append_thread_entry(self, topic: Topic, source: Source | None, role: str, content: str, now: datetime) -> None:
@@ -666,25 +887,32 @@ class ResearchWorkspaceService:
         source.content_hash = result.content_hash
 
     def persist_wiki_page(self, topic: Topic) -> None:
-        claims = list(sorted(topic.claims, key=lambda item: item.sort_order))
+        claims = self.active_claims(topic.claims)
         result = self.vault_service.write_vault_file(topic.vault_path or self.vault_service.wiki_path_for_slug(topic.slug), self.vault_markdown_service.render_wiki_topic(topic, claims))
         topic.vault_path = result.relative_path
         topic.content_hash = result.content_hash
         self.db.add(topic)
 
     def to_topic_summary(self, topic: Topic) -> TopicSummaryResponse:
+        claims = self.topic_claims(topic.id)
+        unsupported_claim_count = sum(1 for claim in claims if claim.provenance_status == "unsupported")
+        stale_claim_count = sum(1 for claim in claims if self.is_stale_claim(claim))
+        conflicting_claim_count = len(self.conflicting_claims_for_claims(claims))
         return TopicSummaryResponse(
             id=topic.id,
             title=topic.title,
             summary=topic.summary,
             sourceCount=len(topic.sources),
             openQuestionCount=len(self.split_segments(topic.open_questions)),
+            unsupportedClaimCount=unsupported_claim_count,
+            staleClaimCount=stale_claim_count,
+            conflictingClaimCount=conflicting_claim_count,
             vaultPath=topic.vault_path,
             updatedAt=topic.updated_at,
         )
 
     def to_topic_detail(self, topic: Topic) -> TopicDetailResponse:
-        claims = sorted(topic.claims, key=lambda item: item.sort_order)
+        claims = self.topic_claims(topic.id)
         thread = sorted(topic.thread_entries, key=lambda item: item.sort_order)
         sources = sorted(topic.sources, key=lambda item: ensure_utc_datetime(item.updated_at), reverse=True)
         return TopicDetailResponse(
@@ -712,6 +940,13 @@ class ResearchWorkspaceService:
                     statement=claim.statement,
                     sourceId=claim.source_id,
                     citationLabel=claim.citation_label,
+                    evidenceCount=claim.evidence_count,
+                    provenanceStatus=claim.provenance_status,
+                    lastVerifiedAt=claim.last_verified_at,
+                    usageCount=claim.usage_count,
+                    lastUsedAt=claim.last_used_at,
+                    needsReview=self.is_stale_claim(claim),
+                    hasConflict=self.claim_has_conflict(claim, topic.claims),
                 )
                 for claim in claims
             ],
@@ -770,7 +1005,21 @@ class ResearchWorkspaceService:
         decision = "PATCH" if review.kind == "TOPIC_PATCH" else "CREATE"
         summary_changes = [review.proposed_understanding.strip()] if self.blank_to_none(review.proposed_understanding) else []
         claims = (
-            [ProposalClaimResponse(statement=review.proposed_claim.strip(), citationLabel=review.source.title if review.source else review.title, sourceId=review.source.id if review.source else None, citationChunkIds=[])]
+            [
+                ProposalClaimResponse(
+                    statement=review.proposed_claim.strip(),
+                    citationLabel=review.source.title if review.source else review.title,
+                    sourceId=review.source.id if review.source else None,
+                    citationChunkIds=[],
+                    supportingChunkIds=[],
+                    evidenceCount=1 if review.source else 0,
+                    provenanceStatus="partial" if review.source else "unsupported",
+                    lastVerifiedAt=None,
+                    usageCount=0,
+                    lastUsedAt=None,
+                    needsReview=False,
+                )
+            ]
             if self.blank_to_none(review.proposed_claim)
             else []
         )
@@ -824,6 +1073,9 @@ class ResearchWorkspaceService:
                 citationLabel=self.proposal_claim_label(claim.citationIds, citations_by_id, source, matched_topic),
                 sourceId=self.proposal_claim_source_id(claim.citationIds, citations_by_id, source),
                 citationChunkIds=claim.citationIds,
+                supportingChunkIds=self.dedupe_ids(claim.citationIds),
+                evidenceCount=len(self.dedupe_ids(claim.citationIds)),
+                provenanceStatus=("supported" if self.dedupe_ids(claim.citationIds) else "partial"),
             )
             for claim in draft.claims
         ]
@@ -934,6 +1186,44 @@ class ResearchWorkspaceService:
             canWriteback=ask_turn.can_writeback,
             citations=[self.to_ask_citation(source) for source in resolved_citations],
             createdAt=ask_turn.created_at,
+        )
+
+    def to_ask_briefing_response(self, briefing: AskBriefingResponseModel) -> AskBriefingResponse:
+        return AskBriefingResponse(
+            scope=briefing.scope,
+            topicId=briefing.topicId,
+            topicTitle=briefing.topicTitle,
+            askTurnId=briefing.askTurnId,
+            summary=briefing.summary,
+            confidence=briefing.confidence,
+            knowledgeGaps=[
+                AskBriefingGapResponse(
+                    title=item.title,
+                    detail=item.detail,
+                    href=item.href,
+                )
+                for item in briefing.knowledgeGaps
+            ],
+            nextActions=[
+                AskBriefingActionResponse(
+                    kind=item.kind,
+                    label=item.label,
+                    description=item.description,
+                    href=item.href,
+                )
+                for item in briefing.nextActions
+            ],
+            suggestedQuestions=briefing.suggestedQuestions,
+            supportingSignals=[
+                AskBriefingSignalResponse(
+                    type=item.type,
+                    title=item.title,
+                    summary=item.summary,
+                    href=item.href,
+                )
+                for item in briefing.supportingSignals
+            ],
+            generatedAt=datetime.now(UTC),
         )
 
     def to_ask_citation(self, citation: RetrievedCitation) -> AskCitationResponse:
@@ -1122,6 +1412,157 @@ class ResearchWorkspaceService:
             return []
         return resolved_lineage_ids[:-1][-2:]
 
+    def build_workspace_briefing_request(
+        self,
+        *,
+        topics: list[Topic],
+        pending_reviews: list[ReviewItem],
+        sources: list[Source],
+    ) -> AskBriefingRequestModel:
+        dashboard_health = self.build_dashboard_health(
+            topics=topics,
+            pending_reviews=pending_reviews,
+            sources=sources,
+        )
+        focus_topic = topics[0] if topics else None
+        suggested_questions = self.build_suggested_questions(topics, pending_reviews, sources)
+        return AskBriefingRequestModel(
+            scope="workspace",
+            pendingReviewCount=len(pending_reviews),
+            focusTopicTitle=focus_topic.title if focus_topic else None,
+            recentSourceTitles=[source.title for source in sources[:3]],
+            healthSignals=self.to_agent_briefing_signals(dashboard_health),
+            citations=[
+                CitationModel(
+                    id=source.id,
+                    title=source.title,
+                    kind=source.kind,
+                    excerpt=source.excerpt,
+                    locator=source.locator,
+                    vaultPath=source.vault_path,
+                )
+                for source in sources[:3]
+            ],
+            suggestedQuestions=suggested_questions[:3],
+        )
+
+    def build_topic_briefing_request(
+        self,
+        *,
+        topic: Topic,
+        topics: list[Topic],
+        pending_reviews: list[ReviewItem],
+        sources: list[Source],
+    ) -> AskBriefingRequestModel:
+        dashboard_health = self.build_dashboard_health(
+            topics=topics,
+            pending_reviews=pending_reviews,
+            sources=sources,
+        )
+        topic_sources = self.build_topic_citations(topic)
+        suggested_questions = [
+            f"围绕「{topic.title}」还缺哪条证据？",
+            "这个主题现在最稳定的理解是什么？",
+            "下一轮最值得追问的问题是什么？",
+        ]
+        return AskBriefingRequestModel(
+            scope="topic",
+            topicId=topic.id,
+            topicTitle=topic.title,
+            pendingReviewCount=len(pending_reviews),
+            focusTopicTitle=topic.title,
+            recentSourceTitles=[source.title for source in topic_sources[:3]],
+            healthSignals=self.to_agent_briefing_signals(dashboard_health),
+            citations=[
+                CitationModel(
+                    id=source.id,
+                    title=source.title,
+                    kind=source.kind,
+                    excerpt=source.excerpt,
+                    locator=source.locator,
+                    vaultPath=source.vault_path,
+                )
+                for source in topic_sources[:3]
+            ],
+            suggestedQuestions=suggested_questions[:3],
+        )
+
+    def build_ask_briefing_request(
+        self,
+        *,
+        ask_turn_id: str,
+        topic: Topic | None,
+        ask_question: str,
+        ask_answer: str,
+        ask_knowledge_gaps: list[str],
+        ask_used_web_sources: list[WebCitationModel],
+        can_writeback: bool,
+        citations: list[RetrievedCitation],
+        topics: list[Topic],
+        pending_reviews: list[ReviewItem],
+        sources: list[Source],
+        suggested_questions: list[str],
+    ) -> AskBriefingRequestModel:
+        dashboard_health = self.build_dashboard_health(
+            topics=topics,
+            pending_reviews=pending_reviews,
+            sources=sources,
+        )
+        focus_topic = topic or (topics[0] if topics else None)
+        return AskBriefingRequestModel(
+            scope="ask_turn",
+            topicId=topic.id if topic else None,
+            topicTitle=topic.title if topic else None,
+            askTurnId=ask_turn_id,
+            askQuestion=ask_question,
+            askAnswer=ask_answer,
+            askKnowledgeGaps=ask_knowledge_gaps,
+            askUsedWebSources=ask_used_web_sources,
+            canWriteback=can_writeback,
+            pendingReviewCount=len(pending_reviews),
+            focusTopicTitle=focus_topic.title if focus_topic else None,
+            recentSourceTitles=[source.title for source in sources[:3]],
+            healthSignals=self.to_agent_briefing_signals(dashboard_health),
+            citations=[self.to_agent_citation(citation) for citation in citations],
+            suggestedQuestions=suggested_questions[:3],
+        )
+
+    def to_agent_briefing_signals(self, health: ResearchDashboardHealthResponse) -> list[AskBriefingSignalModel]:
+        return [
+            AskBriefingSignalModel(
+                type=signal.type,
+                title=signal.title,
+                summary=signal.summary,
+                href=self.health_signal_href(signal),
+            )
+            for signal in health.signals
+        ]
+
+    def health_signal_href(self, signal: ResearchHealthSignalResponse) -> str:
+        if signal.type == "RAW_BACKLOG":
+            return "/app/raw"
+        if signal.type == "REVIEW_BACKLOG":
+            return "/app/ingest"
+        if signal.type == "STALE_CLAIM":
+            return "/app/ingest"
+        if signal.type == "CONFLICTING_CLAIM":
+            return "/app/ingest"
+        if signal.type == "WRITEBACK_CANDIDATE":
+            return "/app/ask"
+        if signal.type == "UNSUPPORTED_CLAIM":
+            return f"/app/wiki/{signal.relatedId}" if signal.relatedId else "/app/wiki"
+        if signal.type in {"OPEN_QUESTIONS", "KNOWLEDGE_GAP"}:
+            return "/app/wiki" if signal.relatedId else "/app"
+        return "/app"
+
+    def decode_ask_briefing(self, raw: str | None) -> AskBriefingResponseModel | None:
+        if not raw or not raw.strip():
+            return None
+        decoded = json.loads(raw)
+        if not isinstance(decoded, dict) or not decoded:
+            return None
+        return AskBriefingResponseModel.model_validate(decoded)
+
     def materialize_writeback_sources(self, ask_turn: AskTurn, now: datetime) -> list[Source]:
         package = self.decode_writeback_package(ask_turn.writeback_package_json)
         if package is None:
@@ -1217,6 +1658,541 @@ class ResearchWorkspaceService:
 
     def derive_ask_writeback_open_question(self, ask_turn: AskTurn) -> str:
         return f"围绕 Ask 问题“{ask_turn.question}”还需要补哪些来源？"
+
+    def build_dashboard_health(
+        self,
+        *,
+        topics: list[Topic],
+        pending_reviews: list[ReviewItem],
+        sources: list[Source],
+    ) -> ResearchDashboardHealthResponse:
+        raw_backlog = [source for source in sources if self.is_raw_waiting_for_ingest(source)]
+        open_question_count = sum(len(self.split_segments(topic.open_questions)) for topic in topics)
+        unsupported_claim_topics = [topic for topic in topics if any(claim.provenance_status == "unsupported" for claim in topic.claims)]
+        unsupported_claim_count = sum(1 for topic in topics for claim in topic.claims if claim.provenance_status == "unsupported")
+        stale_claim_topics = [topic for topic in topics if self.topic_has_stale_claim(topic)]
+        stale_claim_count = sum(1 for topic in topics for claim in topic.claims if self.is_stale_claim(claim))
+        ask_turns = self.recent_ask_turns()
+        knowledge_gap_count = sum(len(self.decode_json_list(turn.knowledge_gaps_json)) for turn in ask_turns)
+        writeback_candidates = self.ask_writeback_candidates(ask_turns, pending_reviews)
+        signals: list[ResearchHealthSignalResponse] = []
+        first_raw = raw_backlog[0] if raw_backlog else None
+        first_review = pending_reviews[0] if pending_reviews else None
+        first_open_topic = next((topic for topic in topics if self.split_segments(topic.open_questions)), None)
+        first_unsupported_topic = unsupported_claim_topics[0] if unsupported_claim_topics else None
+        first_stale_topic = stale_claim_topics[0] if stale_claim_topics else None
+        first_gap_turn = next((turn for turn in ask_turns if self.decode_json_list(turn.knowledge_gaps_json)), None)
+        first_writeback = writeback_candidates[0] if writeback_candidates else None
+
+        if raw_backlog:
+            signals.append(
+                ResearchHealthSignalResponse(
+                    type="RAW_BACKLOG",
+                    severity="warning" if len(raw_backlog) >= 3 else "info",
+                    title=f"raw 里有 {len(raw_backlog)} 条材料等待编译",
+                    summary="这些来源还停在 raw / ingest 前半段，需要通过 ingest 判断是否进入 wiki。",
+                    relatedId=first_raw.id if first_raw else None,
+                    relatedTitle=first_raw.title if first_raw else None,
+                )
+            )
+        if pending_reviews:
+            signals.append(
+                ResearchHealthSignalResponse(
+                    type="REVIEW_BACKLOG",
+                    severity="warning" if len(pending_reviews) >= 3 else "info",
+                    title=f"ingest 队列有 {len(pending_reviews)} 条待审阅提案",
+                    summary="这些 AI 编译结果还没有被接受或忽略，wiki 的长期记忆仍未更新。",
+                    relatedId=first_review.id if first_review else None,
+                    relatedTitle=first_review.title if first_review else None,
+                )
+            )
+        if open_question_count:
+            signals.append(
+                ResearchHealthSignalResponse(
+                    type="OPEN_QUESTIONS",
+                    severity="info",
+                    title=f"wiki 里还有 {open_question_count} 个开放问题",
+                    summary="开放问题是下一轮 Ask、补 raw 或审 ingest 的优先线索。",
+                    relatedId=first_open_topic.id if first_open_topic else None,
+                    relatedTitle=first_open_topic.title if first_open_topic else None,
+                )
+            )
+        if unsupported_claim_count:
+            signals.append(
+                ResearchHealthSignalResponse(
+                    type="UNSUPPORTED_CLAIM",
+                    severity="warning",
+                    title=f"有 {unsupported_claim_count} 条 claim 缺少直接证据",
+                    summary="至少有一条关键结论还没有直接证据链支持，建议回到 wiki、raw 或 ingest 补证。",
+                    relatedId=first_unsupported_topic.id if first_unsupported_topic else None,
+                    relatedTitle=first_unsupported_topic.title if first_unsupported_topic else None,
+                )
+            )
+        if stale_claim_count:
+            signals.append(
+                ResearchHealthSignalResponse(
+                    type="STALE_CLAIM",
+                    severity="warning" if stale_claim_count < 3 else "critical",
+                    title=f"有 {stale_claim_count} 条常用 claim 需要重审",
+                    summary="这些 claim 最近仍被 Ask 使用，但验证时间过旧或证据仍偏弱，建议进入 ingest 复核。",
+                    relatedId=first_stale_topic.id if first_stale_topic else None,
+                    relatedTitle=first_stale_topic.title if first_stale_topic else None,
+                )
+            )
+        conflicting_claims = [claim for topic in topics for claim in self.conflicting_claims(topic)]
+        conflicting_claim_count = len(conflicting_claims)
+        first_conflicting_topic = next((topic for topic in topics if self.conflicting_claims(topic)), None)
+        if conflicting_claim_count:
+            signals.append(
+                ResearchHealthSignalResponse(
+                    type="CONFLICTING_CLAIM",
+                    severity="warning" if conflicting_claim_count < 3 else "critical",
+                    title=f"有 {conflicting_claim_count} 条 claim 彼此冲突",
+                    summary="同一主题里出现了方向相反的 claim，建议先回到 ingest 做一轮统一裁决。",
+                    relatedId=first_conflicting_topic.id if first_conflicting_topic else None,
+                    relatedTitle=first_conflicting_topic.title if first_conflicting_topic else None,
+                )
+            )
+        if first_gap_turn is not None:
+            gaps = self.decode_json_list(first_gap_turn.knowledge_gaps_json)
+            signals.append(
+                ResearchHealthSignalResponse(
+                    type="KNOWLEDGE_GAP",
+                    severity="warning",
+                    title=f"Ask 最近发现 {knowledge_gap_count} 个知识缺口",
+                    summary=gaps[0] if gaps else "最近问答提示当前知识库还有缺口。",
+                    relatedId=first_gap_turn.id,
+                    relatedTitle=first_gap_turn.question,
+                )
+            )
+        if first_writeback is not None:
+            signals.append(
+                ResearchHealthSignalResponse(
+                    type="WRITEBACK_CANDIDATE",
+                    severity="info",
+                    title=f"有 {len(writeback_candidates)} 条 Ask 回答可沉淀回 wiki",
+                    summary="这些回答已标记为可写回，但还没有明显进入 ingest 审阅队列。",
+                    relatedId=first_writeback.id,
+                    relatedTitle=first_writeback.question,
+                )
+            )
+
+        return ResearchDashboardHealthResponse(
+            rawBacklogCount=len(raw_backlog),
+            reviewBacklogCount=len(pending_reviews),
+            openQuestionCount=open_question_count,
+            knowledgeGapCount=knowledge_gap_count,
+            writebackCandidateCount=len(writeback_candidates),
+            unsupportedClaimCount=unsupported_claim_count,
+            staleClaimCount=stale_claim_count,
+            conflictingClaimCount=conflicting_claim_count,
+            signals=signals[:6],
+        )
+
+    def record_topic_claim_usage(self, topic: Topic, now: datetime) -> None:
+        for claim in topic.claims:
+            claim.usage_count = (claim.usage_count or 0) + 1
+            claim.last_used_at = now
+            self.db.add(claim)
+
+    def record_claim_usage_for_topic_ids(self, topic_ids: list[str], now: datetime) -> None:
+        if not topic_ids:
+            return
+        topics_by_id = {
+            topic.id: topic
+            for topic in self.db.scalars(
+                select(Topic)
+                .where(Topic.id.in_(topic_ids), Topic.workspace_id == self.require_workspace().id)
+                .options(selectinload(Topic.claims))
+            ).all()
+        }
+        for topic_id in topic_ids:
+            topic = topics_by_id.get(topic_id)
+            if topic is None:
+                continue
+            self.record_topic_claim_usage(topic, now)
+
+    def is_stale_claim(self, claim: TopicClaim) -> bool:
+        usage_count = claim.usage_count or 0
+        if usage_count < 3 or claim.last_used_at is None:
+            return False
+        if claim.provenance_status == "unsupported":
+            return True
+        if claim.last_verified_at is None:
+            return True
+        verification_expired = ensure_utc_datetime(claim.last_verified_at) <= datetime.now(UTC) - timedelta(days=30)
+        if claim.provenance_status == "partial":
+            return verification_expired
+        return verification_expired
+
+    def topic_has_stale_claim(self, topic: Topic) -> bool:
+        return any(self.is_stale_claim(claim) for claim in self.active_claims(topic.claims))
+
+    def conflicting_claims(self, topic: Topic) -> list[TopicClaim]:
+        return self.conflicting_claims_for_claims(self.active_claims(topic.claims))
+
+    def conflicting_claims_for_claims(self, claims: Iterable[TopicClaim]) -> list[TopicClaim]:
+        claims = [
+            claim
+            for claim in sorted(claims, key=lambda item: item.sort_order)
+            if self.blank_to_none(claim.statement) and self.is_active_claim_instance(claim)
+        ]
+        conflicting_ids: set[str] = set()
+        for index, claim in enumerate(claims):
+            for candidate in claims[index + 1 :]:
+                if self.claims_conflict(claim.statement, candidate.statement):
+                    conflicting_ids.add(claim.id)
+                    conflicting_ids.add(candidate.id)
+        return [claim for claim in claims if claim.id in conflicting_ids]
+
+    def active_claims(self, claims: Iterable[TopicClaim]) -> list[TopicClaim]:
+        return [claim for claim in sorted(claims, key=lambda item: item.sort_order) if self.is_active_claim_instance(claim)]
+
+    def is_active_claim_instance(self, claim: TopicClaim) -> bool:
+        state = inspect(claim)
+        return not state.deleted and not state.detached
+
+    def topic_claims(self, topic_id: str) -> list[TopicClaim]:
+        claims = self.db.scalars(
+            select(TopicClaim)
+            .where(TopicClaim.topic_id == topic_id)
+            .order_by(TopicClaim.sort_order)
+            .options(selectinload(TopicClaim.source))
+        ).all()
+        return self.active_claims(claims)
+
+    def claim_has_conflict(self, claim: TopicClaim, claims: list[TopicClaim]) -> bool:
+        statement = self.blank_to_none(claim.statement)
+        if statement is None:
+            return False
+        return any(
+            other.id != claim.id and self.claims_conflict(statement, other.statement)
+            for other in claims
+            if self.blank_to_none(other.statement)
+        )
+
+    def claims_conflict(self, left: str | None, right: str | None) -> bool:
+        normalized_left = self.blank_to_none(left)
+        normalized_right = self.blank_to_none(right)
+        if normalized_left is None or normalized_right is None:
+            return False
+        compact_left = re.sub(r"[，。；：！？、“”‘’（）()、,.!?;:\s]", "", normalized_left)
+        compact_right = re.sub(r"[，。；：！？、“”‘’（）()、,.!?;:\s]", "", normalized_right)
+        for negative, positive in self.CONFLICT_POLARITY_MARKERS:
+            if negative in compact_left and positive in compact_right:
+                if compact_left.replace(negative, "", 1) == compact_right.replace(positive, "", 1):
+                    return True
+            if negative in compact_right and positive in compact_left:
+                if compact_right.replace(negative, "", 1) == compact_left.replace(positive, "", 1):
+                    return True
+        left_core, left_negated = self.conflict_signature(normalized_left)
+        right_core, right_negated = self.conflict_signature(normalized_right)
+        if not left_core or not right_core:
+            return False
+        if left_core != right_core:
+            return False
+        return left_negated != right_negated
+
+    def conflict_signature(self, statement: str) -> tuple[str, bool]:
+        normalized = re.sub(r"[，。；：！？、“”‘’（）()、,.!?;:\s]", "", statement.strip())
+        if not normalized:
+            return "", False
+        negation_prefixes = sorted(self.CONFLICT_NEGATION_PREFIXES, key=len, reverse=True)
+        negated = False
+        core = normalized
+        changed = True
+        while changed and core:
+            changed = False
+            for prefix in negation_prefixes:
+                if core.startswith(prefix):
+                    core = core[len(prefix) :]
+                    negated = not negated
+                    changed = True
+                    break
+        for prefix in negation_prefixes:
+            if prefix in core:
+                core = core.replace(prefix, "")
+                negated = True
+        return core, negated
+
+    def claim_supporting_chunk_ids(
+        self,
+        claim: ProposalClaimResponse,
+        evidence_by_chunk_id: dict[str, ProposalEvidenceResponse],
+    ) -> list[str]:
+        supporting = [chunk_id for chunk_id in claim.citationChunkIds if chunk_id in evidence_by_chunk_id]
+        return self.dedupe_ids(supporting)
+
+    def claim_governance_values(
+        self,
+        claim: ProposalClaimResponse,
+        source: Source | None,
+        supporting_chunk_ids: list[str],
+    ) -> tuple[int, str]:
+        if supporting_chunk_ids:
+            return len(supporting_chunk_ids), "supported"
+        if claim.sourceId or source is not None:
+            return 1, "partial"
+        return 0, "unsupported"
+
+    def recent_ask_turns(self, limit: int = 20) -> list[AskTurn]:
+        workspace = self.require_workspace()
+        return self.db.scalars(
+            select(AskTurn)
+            .where(AskTurn.workspace_id == workspace.id)
+            .order_by(AskTurn.created_at.desc())
+            .limit(limit)
+            .options(selectinload(AskTurn.topic))
+        ).all()
+
+    def ask_writeback_candidates(self, ask_turns: list[AskTurn], pending_reviews: list[ReviewItem]) -> list[AskTurn]:
+        materialized_ask_ids = self.materialized_writeback_ask_ids(pending_reviews)
+        return [
+            turn
+            for turn in ask_turns
+            if turn.can_writeback
+            and turn.id not in materialized_ask_ids
+            and not self.has_obvious_writeback_review(turn, pending_reviews)
+        ]
+
+    def materialized_writeback_ask_ids(self, pending_reviews: list[ReviewItem]) -> set[str]:
+        materialized: set[str] = set()
+        for review in pending_reviews:
+            content_hash = review.content_hash or ""
+            if content_hash.startswith("ask-writeback|"):
+                parts = content_hash.split("|")
+                if len(parts) > 1 and parts[1]:
+                    materialized.add(parts[1])
+        return materialized
+
+    def has_obvious_writeback_review(self, ask_turn: AskTurn, pending_reviews: list[ReviewItem]) -> bool:
+        question = self.blank_to_none(ask_turn.question)
+        if question is None:
+            return False
+        for review in pending_reviews:
+            if "Ask" not in review.title and "Ask" not in review.summary:
+                continue
+            haystack = "\n".join(
+                value
+                for value in (
+                    review.title,
+                    review.summary,
+                    review.proposed_understanding,
+                    review.proposed_open_questions,
+                    review.proposed_claim,
+                )
+                if value
+            )
+            if question in haystack:
+                return True
+        return False
+
+    def ensure_claim_review_for_topic(self, topic_id: str) -> ReviewItemResponse | None:
+        topic = self.db.scalar(
+            select(Topic)
+            .where(Topic.id == topic_id, Topic.workspace_id == self.require_workspace().id)
+            .options(selectinload(Topic.sources), selectinload(Topic.claims), selectinload(Topic.thread_entries))
+        )
+        if topic is None:
+            raise ResourceNotFoundError(f"Topic not found: {topic_id}")
+        stale_claims = [claim for claim in sorted(topic.claims, key=lambda item: item.sort_order) if self.is_stale_claim(claim)]
+        if not stale_claims:
+            return None
+        review_hash = self.vault_service.content_hash(
+            "claim-rereview|"
+            + topic.id
+            + "|"
+            + "|".join(f"{claim.id}:{claim.usage_count}:{claim.provenance_status}" for claim in stale_claims)
+        )
+        existing = self.db.scalar(select(ReviewItem).where(ReviewItem.content_hash == review_hash, ReviewItem.status == "PENDING"))
+        if existing:
+            return self.to_review_response(existing)
+        primary_claim = stale_claims[0]
+        source = primary_claim.source or (topic.sources[0] if topic.sources else None)
+        proposed_open_questions = self.join_segments(
+            [
+                f"这条高频 claim 是否还成立，需要补哪条更新来源？",
+                f"为什么「{primary_claim.statement}」最近被频繁使用却还没有完成新一轮复核？",
+            ]
+        )
+        proposal_payload = ProposalPayloadResponse(
+            topicDecision=ProposalTopicDecisionResponse(
+                decision="PATCH",
+                targetTopicId=topic.id,
+                targetTopicTitle=topic.title,
+                proposedTopicTitle=None,
+            ),
+            summaryChanges=[f"针对高频使用但久未复核的 claim，补一轮更新证据并重审当前理解。"] if stale_claims else [],
+            claims=[
+                ProposalClaimResponse(
+                    statement=claim.statement,
+                    citationLabel=claim.citation_label,
+                    sourceId=claim.source_id,
+                    citationChunkIds=[],
+                    supportingChunkIds=[],
+                    evidenceCount=claim.evidence_count or 0,
+                    provenanceStatus=claim.provenance_status,
+                    lastVerifiedAt=claim.last_verified_at,
+                    usageCount=claim.usage_count or 0,
+                    lastUsedAt=claim.last_used_at,
+                    needsReview=self.is_stale_claim(claim),
+                )
+                for claim in stale_claims[:3]
+            ],
+            conflicts=[],
+            openQuestions=self.split_segments(proposed_open_questions),
+            explanation=f"这些 claim 最近仍在 Ask 中被调用，但验证时间过旧或证据仍偏弱，建议先进入 ingest 复核再决定是否更新 wiki。",
+            evidence=[
+                ProposalEvidenceResponse(
+                    sourceId=source.id,
+                    sourceTitle=source.title,
+                    sourceVaultPath=source.vault_path,
+                    locator=source.locator,
+                    excerpt=source.excerpt,
+                    chunkId=None,
+                    entityType="SOURCE",
+                    entityId=source.id,
+                    topicId=topic.id,
+                )
+            ]
+            if source
+            else [],
+        )
+        review = ReviewItem(
+            id=self.new_id("review"),
+            workspace=topic.workspace,
+            source=source,
+            target_topic=topic,
+            kind="TOPIC_PATCH",
+            proposal_kind="TOPIC_PATCH",
+            status="PENDING",
+            title="把高频使用的旧 claim 送入重审",
+            summary=f"主题「{topic.title}」里有 {len(stale_claims)} 条高频使用的 claim 需要重新复核。",
+            proposed_topic_title=None,
+            proposed_understanding="补一轮更新证据，再决定是否调整当前理解。",
+            proposed_open_questions=proposed_open_questions,
+            proposed_claim=primary_claim.statement,
+            proposed_vault_path=topic.vault_path,
+            proposal_payload_json=self.encode_json_payload(proposal_payload.model_dump()),
+            content_hash=review_hash,
+            created_at=datetime.now(UTC),
+        )
+        self.db.add(review)
+        self.db.flush()
+        return self.to_review_response(review)
+
+    def ensure_conflict_review_for_topic(self, topic_id: str) -> ReviewItemResponse | None:
+        self.db.flush()
+        self.db.expire_all()
+        topic = self.db.scalar(
+            select(Topic)
+            .where(Topic.id == topic_id, Topic.workspace_id == self.require_workspace().id)
+            .options(selectinload(Topic.sources), selectinload(Topic.claims), selectinload(Topic.thread_entries))
+        )
+        if topic is None:
+            raise ResourceNotFoundError(f"Topic not found: {topic_id}")
+        claims = self.db.scalars(
+            select(TopicClaim)
+            .where(TopicClaim.topic_id == topic.id)
+            .order_by(TopicClaim.sort_order)
+            .options(selectinload(TopicClaim.source))
+        ).all()
+        conflicting_claims = self.conflicting_claims_for_claims(claims)
+        if not conflicting_claims:
+            return None
+        canonical_claim = sorted(
+            conflicting_claims,
+            key=lambda item: (
+                item.evidence_count or 0,
+                1 if item.provenance_status == "supported" else 0,
+                ensure_utc_datetime(item.last_verified_at) if item.last_verified_at else datetime.fromtimestamp(0, UTC),
+                -(item.sort_order or 0),
+            ),
+            reverse=True,
+        )[0]
+        conflicting_candidates = [claim for claim in conflicting_claims if claim.id != canonical_claim.id]
+        review_hash = self.vault_service.content_hash(
+            "claim-conflict|"
+            + topic.id
+            + "|"
+            + "|".join(sorted(f"{claim.id}:{claim.statement}" for claim in conflicting_claims))
+        )
+        existing = self.db.scalar(select(ReviewItem).where(ReviewItem.content_hash == review_hash, ReviewItem.status == "PENDING"))
+        if existing:
+            return self.to_review_response(existing)
+        source = canonical_claim.source or (topic.sources[0] if topic.sources else None)
+        conflict_summaries = [
+            f"「{canonical_claim.statement}」与「{claim.statement}」当前在同一主题里彼此冲突，需要统一裁决。"
+            for claim in conflicting_candidates[:3]
+        ]
+        proposal_payload = ProposalPayloadResponse(
+            topicDecision=ProposalTopicDecisionResponse(
+                decision="PATCH",
+                targetTopicId=topic.id,
+                targetTopicTitle=topic.title,
+                proposedTopicTitle=None,
+            ),
+            summaryChanges=["移除互相打架的旧 claim，只保留当前证据更强的一版判断。"] if conflicting_candidates else [],
+            claims=[
+                ProposalClaimResponse(
+                    statement=canonical_claim.statement,
+                    citationLabel=canonical_claim.citation_label,
+                    sourceId=canonical_claim.source_id,
+                    citationChunkIds=[],
+                    supportingChunkIds=[],
+                    evidenceCount=canonical_claim.evidence_count or 0,
+                    provenanceStatus=canonical_claim.provenance_status,
+                    lastVerifiedAt=canonical_claim.last_verified_at,
+                    usageCount=canonical_claim.usage_count or 0,
+                    lastUsedAt=canonical_claim.last_used_at,
+                    needsReview=self.is_stale_claim(canonical_claim),
+                    hasConflict=True,
+                )
+            ],
+            conflicts=conflict_summaries,
+            openQuestions=[
+                "这组互相冲突的 claim 哪一条更符合当前证据？",
+                "是否还需要补一条更直接的来源来彻底结束这组冲突？",
+            ],
+            explanation="同一主题里出现了方向相反的 claim。建议先进入 ingest 做一轮裁决，只保留当前证据更强的一版。",
+            evidence=[
+                ProposalEvidenceResponse(
+                    sourceId=source.id,
+                    sourceTitle=source.title,
+                    sourceVaultPath=source.vault_path,
+                    locator=source.locator,
+                    excerpt=source.excerpt,
+                    chunkId=None,
+                    entityType="SOURCE",
+                    entityId=source.id,
+                    topicId=topic.id,
+                )
+            ]
+            if source
+            else [],
+        )
+        review = ReviewItem(
+            id=self.new_id("review"),
+            workspace=topic.workspace,
+            source=source,
+            target_topic=topic,
+            kind="TOPIC_PATCH",
+            proposal_kind="TOPIC_PATCH",
+            status="PENDING",
+            title="处理彼此冲突的 claim",
+            summary=f"主题「{topic.title}」里有 {len(conflicting_claims)} 条 claim 彼此冲突，建议统一裁决。",
+            proposed_topic_title=None,
+            proposed_understanding="统一冲突 claim，只保留当前证据更强的一版判断。",
+            proposed_open_questions=self.join_segments(proposal_payload.openQuestions),
+            proposed_claim=canonical_claim.statement,
+            proposed_vault_path=topic.vault_path,
+            proposal_payload_json=self.encode_json_payload(proposal_payload.model_dump()),
+            content_hash=review_hash,
+            created_at=datetime.now(UTC),
+        )
+        self.db.add(review)
+        self.db.flush()
+        return self.to_review_response(review)
 
     def is_raw_waiting_for_ingest(self, source: Source) -> bool:
         return source.status in {"RAW", "INGEST_PENDING"}
@@ -1348,7 +2324,7 @@ class ResearchWorkspaceService:
         return self.encode_json_payload(value)
 
     def encode_json_payload(self, value: object) -> str:
-        return json.dumps(value, ensure_ascii=False)
+        return json.dumps(value, ensure_ascii=False, default=str)
 
     def decode_json_list(self, raw: str | None) -> list[str]:
         if not raw or not raw.strip():

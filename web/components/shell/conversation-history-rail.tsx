@@ -9,6 +9,15 @@ type ConversationHistoryRailProps = {
 
 function getHistoryItems(snapshot: ResearchDashboard) {
   const items = [];
+  const firstSignal = snapshot.health.signals[0];
+
+  if (firstSignal) {
+    items.push({
+      href: "/app",
+      title: "知识健康",
+      preview: firstSignal.title
+    });
+  }
 
   if (snapshot.focusTopic) {
     items.push({
@@ -58,7 +67,7 @@ export function ConversationHistoryRail({ pathname, snapshot }: ConversationHist
         <div className="flex items-center justify-between gap-3">
           <div>
             <h2 className="font-headline text-base font-bold text-ink-text">最近对话</h2>
-            <p className="mt-1 text-sm text-ink-muted">先回到最近的脉络，再继续整理资料与结论。</p>
+            <p className="mt-1 text-sm text-ink-muted">先看知识健康，再回到最近的脉络继续修复。</p>
           </div>
           <span className="rounded-full bg-ink-low px-3 py-1 text-xs text-ink-muted">{historyItems.length} 条</span>
         </div>

@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { readAskHistory, writeAskHistory, mergeAskHistoryEntry, ASK_HISTORY_STORAGE_KEY } from "@/lib/ask-history";
-import { PRIMARY_SECTIONS, buildStarterHistory } from "@/lib/app-shell";
+import { researchDashboardFixture } from "@/lib/mock/research-fixtures";
+import { PRIMARY_SECTIONS, buildStarterHistory, getAppRouteChrome, getPrimarySectionForPathname } from "@/lib/app-shell";
 
 describe("app shell primitives", () => {
   afterEach(() => {
@@ -12,6 +13,68 @@ describe("app shell primitives", () => {
   it("exposes Chinese primary sections in product order", () => {
     expect(PRIMARY_SECTIONS.map((item) => item.label)).toEqual(["问答", "资料", "审阅", "知识库"]);
     expect(PRIMARY_SECTIONS.map((item) => item.href)).toEqual(["/app", "/app/raw", "/app/ingest", "/app/wiki"]);
+    expect(PRIMARY_SECTIONS.flatMap((item) => item.matchers)).not.toEqual(
+      expect.arrayContaining(["/app/inbox", "/app/sources", "/app/review", "/app/topics"])
+    );
+  });
+
+  it("matches /app and /app/ask as the same ask-first primary section", () => {
+    expect(getPrimarySectionForPathname("/app")?.label).toBe("问答");
+    expect(getPrimarySectionForPathname("/app/ask")?.label).toBe("问答");
+    expect(getPrimarySectionForPathname("/app/raw")?.label).toBe("资料");
+    expect(getPrimarySectionForPathname("/app/wiki/topic-001")?.label).toBe("知识库");
+    expect(getPrimarySectionForPathname("/app/topics")).toBeUndefined();
+  });
+
+  it("derives route-specific header chrome from the current snapshot", () => {
+    expect(getAppRouteChrome("/app", researchDashboardFixture)).toMatchObject({
+      title: "问答",
+      subtitle: expect.stringContaining("Ask 现在是主入口"),
+      contextItems: expect.arrayContaining([{ label: "当前模式", value: "Ask-first" }])
+    });
+    expect(getAppRouteChrome("/app/raw", researchDashboardFixture)).toMatchObject({
+      title: "资料",
+      contextItems: expect.arrayContaining([{ label: "等待编译", value: "3 条" }])
+    });
+    expect(getAppRouteChrome("/app/ingest", researchDashboardFixture)).toMatchObject({
+      title: "审阅",
+      contextItems: expect.arrayContaining([{ label: "待审阅", value: "3 条" }])
+    });
+    expect(getAppRouteChrome("/app/wiki/topic-001", researchDashboardFixture)).toMatchObject({
+      title: "知识库",
+      contextItems: expect.arrayContaining([
+        { label: "开放问题", value: "3 个" },
+        { label: "高风险 claim", value: "2 条" }
+      ])
+    });
+    expect(getAppRouteChrome("/app/ask", researchDashboardFixture)).toMatchObject({
+      title: "问答",
+      contextItems: expect.arrayContaining([{ label: "可写回", value: "1 条" }])
+    });
+  });
+
+  it("uses global claim risk counts for wiki chrome instead of only the focus topic", () => {
+    const snapshot = {
+      ...researchDashboardFixture,
+      health: {
+        ...researchDashboardFixture.health,
+        unsupportedClaimCount: 2,
+        staleClaimCount: 1,
+        conflictingClaimCount: 4
+      },
+      focusTopic: {
+        ...researchDashboardFixture.focusTopic!,
+        unsupportedClaimCount: 0,
+        staleClaimCount: 0
+      }
+    };
+
+    expect(getAppRouteChrome("/app/wiki", snapshot)).toMatchObject({
+      contextItems: expect.arrayContaining([
+        { label: "高风险 claim", value: "3 条" },
+        { label: "冲突 claim", value: "4 条" }
+      ])
+    });
   });
 
   it("includes topicId in starter history href when focus topic is provided", () => {
@@ -33,7 +96,7 @@ describe("app shell primitives", () => {
     const merged = mergeAskHistoryEntry(starter, {
       id: "ask-topic-001",
       title: "这个主题当前最稳定的理解是什么？",
-      href: "/app?q=%E8%BF%99%E4%B8%AA%E4%B8%BB%E9%A2%98%E5%BD%93%E5%89%8D%E6%9C%80%E7%A8%B3%E5%AE%9A%E7%9A%84%E7%90%86%E8%A7%A3%E6%98%AF%E4%BB%80%E4%B9%88%EF%BC%9F&topicId=topic-001",
+      href: "/app/ask?q=%E8%BF%99%E4%B8%AA%E4%B8%BB%E9%A2%98%E5%BD%93%E5%89%8D%E6%9C%80%E7%A8%B3%E5%AE%9A%E7%9A%84%E7%90%86%E8%A7%A3%E6%98%AF%E4%BB%80%E4%B9%88%EF%BC%9F&topicId=topic-001",
       topicTitle: "Inkvault repositioning",
       preview: "当前最稳定的理解是 wiki 是新的核心对象。",
       updatedAt: "2026-05-03T03:00:00Z"
@@ -48,7 +111,7 @@ describe("app shell primitives", () => {
     const current = Array.from({ length: 12 }, (_, index) => ({
       id: `ask-${index + 1}`,
       title: `Question ${index + 1}`,
-      href: index === 5 ? "/app?q=shared-question" : `/app?q=question-${index + 1}`,
+      href: index === 5 ? "/app/ask?q=shared-question" : `/app/ask?q=question-${index + 1}`,
       topicTitle: "Inkvault repositioning",
       preview: `Preview ${index + 1}`,
       updatedAt: `2026-05-03T0${index}:00:00Z`
@@ -57,14 +120,14 @@ describe("app shell primitives", () => {
     const merged = mergeAskHistoryEntry(current, {
       id: "ask-latest",
       title: "Shared question",
-      href: "/app?q=shared-question",
+      href: "/app/ask?q=shared-question",
       topicTitle: "Inkvault repositioning",
       preview: "Latest preview",
       updatedAt: "2026-05-03T13:00:00Z"
     });
 
     expect(merged[0]?.id).toBe("ask-latest");
-    expect(merged.filter((item) => item.href === "/app?q=shared-question")).toHaveLength(1);
+    expect(merged.filter((item) => item.href === "/app/ask?q=shared-question")).toHaveLength(1);
     expect(merged).toHaveLength(12);
   });
 
@@ -90,7 +153,7 @@ describe("app shell primitives", () => {
         {
           id: "ask-001",
           title: "Question",
-          href: "/app?q=Question",
+          href: "/app/ask?q=Question",
           topicTitle: "Inkvault repositioning",
           preview: "Preview",
           updatedAt: "2026-05-03T03:00:00Z"

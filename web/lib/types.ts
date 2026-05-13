@@ -10,12 +10,29 @@ export type ResearchThreadRole = "USER" | "ASSISTANT" | "SYSTEM";
 
 export type ResearchAskMode = "vault" | "vault_plus_web";
 
+export type ResearchClaimProvenanceStatus = "supported" | "partial" | "unsupported";
+
+export type ResearchHealthSignalType =
+  | "RAW_BACKLOG"
+  | "REVIEW_BACKLOG"
+  | "OPEN_QUESTIONS"
+  | "KNOWLEDGE_GAP"
+  | "UNSUPPORTED_CLAIM"
+  | "STALE_CLAIM"
+  | "CONFLICTING_CLAIM"
+  | "WRITEBACK_CANDIDATE";
+
+export type ResearchHealthSignalSeverity = "info" | "warning" | "critical";
+
 export type ResearchTopicSummary = {
   id: string;
   title: string;
   summary: string;
   sourceCount: number;
   openQuestionCount: number;
+  unsupportedClaimCount: number;
+  staleClaimCount: number;
+  conflictingClaimCount: number;
   vaultPath?: string | null;
   updatedAt: string;
 };
@@ -74,6 +91,15 @@ export type ResearchProposalClaim = {
   statement: string;
   citationLabel: string;
   sourceId?: string | null;
+  citationChunkIds?: string[];
+  supportingChunkIds?: string[];
+  evidenceCount?: number;
+  provenanceStatus?: ResearchClaimProvenanceStatus;
+  lastVerifiedAt?: string | null;
+  usageCount?: number;
+  lastUsedAt?: string | null;
+  needsReview?: boolean;
+  hasConflict?: boolean;
 };
 
 export type ResearchProposalEvidence = {
@@ -91,10 +117,30 @@ export type ResearchDashboard = {
     inboxSources: number;
     totalSources: number;
   };
+  health: {
+    rawBacklogCount: number;
+    reviewBacklogCount: number;
+    openQuestionCount: number;
+    knowledgeGapCount: number;
+    writebackCandidateCount: number;
+    unsupportedClaimCount: number;
+    staleClaimCount: number;
+    conflictingClaimCount: number;
+    signals: ResearchHealthSignal[];
+  };
   focusTopic: ResearchTopicSummary | null;
   recentSources: ResearchSourceRecord[];
   pendingReviews: ResearchReviewItem[];
   suggestedQuestions: string[];
+};
+
+export type ResearchHealthSignal = {
+  type: ResearchHealthSignalType;
+  severity: ResearchHealthSignalSeverity;
+  title: string;
+  summary: string;
+  relatedId?: string | null;
+  relatedTitle?: string | null;
 };
 
 export type ResearchTopicSourceLink = {
@@ -111,6 +157,13 @@ export type ResearchTopicClaim = {
   statement: string;
   sourceId?: string | null;
   citationLabel: string;
+  evidenceCount?: number;
+  provenanceStatus?: ResearchClaimProvenanceStatus;
+  lastVerifiedAt?: string | null;
+  usageCount?: number;
+  lastUsedAt?: string | null;
+  needsReview?: boolean;
+  hasConflict?: boolean;
 };
 
 export type ResearchTopicThreadEntry = {
@@ -136,11 +189,17 @@ export type ResearchTopicDetail = {
 };
 
 export type ResearchAskCitation = {
-  sourceId: string;
+  id?: string;
+  entityType?: string;
+  entityId?: string;
+  sourceId?: string | null;
+  topicId?: string | null;
   title: string;
-  kind: ResearchSourceKind;
+  kind?: ResearchSourceKind;
   locator?: string | null;
   vaultPath?: string | null;
+  snippet?: string;
+  chunkId?: string;
 };
 
 export type ResearchAskWebSource = {
@@ -181,9 +240,14 @@ export type ResearchTextImportRequest = {
 export type ResearchAskResponse = {
   id: string;
   topicId?: string | null;
+  parentAskTurnId?: string | null;
+  threadRootAskTurnId?: string;
+  lineageAskTurnIds?: string[];
   question: string;
   answer: string;
   confidence: number;
+  retrievalMode?: string;
+  usedChunkIds?: string[];
   followUpQuestions: string[];
   knowledgeGaps: string[];
   usedWikiIds: string[];
@@ -193,4 +257,46 @@ export type ResearchAskResponse = {
   canWriteback: boolean;
   citations: ResearchAskCitation[];
   createdAt: string;
+};
+
+export type ResearchReviewDecision = {
+  reviewId: string;
+  status: string;
+  topicId?: string | null;
+};
+
+export type ResearchAskBriefingScope = "workspace" | "topic" | "ask_turn";
+
+export type ResearchAskBriefingGap = {
+  title: string;
+  detail: string;
+  href: string;
+};
+
+export type ResearchAskBriefingAction = {
+  kind: string;
+  label: string;
+  description: string;
+  href: string;
+};
+
+export type ResearchAskBriefingSignal = {
+  type: string;
+  title: string;
+  summary: string;
+  href: string;
+};
+
+export type ResearchAskBriefing = {
+  scope: ResearchAskBriefingScope;
+  topicId?: string | null;
+  topicTitle?: string | null;
+  askTurnId?: string | null;
+  summary: string;
+  confidence: number;
+  knowledgeGaps: ResearchAskBriefingGap[];
+  nextActions: ResearchAskBriefingAction[];
+  suggestedQuestions: string[];
+  supportingSignals: ResearchAskBriefingSignal[];
+  generatedAt: string;
 };
