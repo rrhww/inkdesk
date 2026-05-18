@@ -47,6 +47,9 @@ test("ask-first workspace becomes the authenticated home experience", async () =
 
   assert.match(html, /研究问答/);
   assert.match(html, /先看当前缺什么证据，再决定下一步/);
+  assert.match(html, /今日研究桌/);
+  assert.match(html, /今日批注/);
+  assert.match(html, /本轮研究日期/);
   assert.match(html, /判断面板/);
   assert.match(html, /建议提问/);
   assert.match(html, /下一步动作/);
@@ -94,9 +97,11 @@ test("sidebar becomes a history-first research rail", async () => {
   assert.match(html, /当前主题/);
   assert.match(html, /待审阅/);
   assert.match(html, /最新资料/);
+  assert.match(html, /研究索引/);
+  assert.match(html, /今日研究桌/);
+  assert.match(html, /桌面标签/);
   assert.doesNotMatch(html, /任务与计划/);
   assert.doesNotMatch(html, /发布/);
-  assert.doesNotMatch(html, /标签/);
   assert.doesNotMatch(html, /设置/);
   assert.match(html, /aria-current="page"/);
 });
@@ -201,6 +206,9 @@ test("ingest, ask, and raw pages form the new core workflow", async () => {
   assert.match(ingestHtml, /接受写入 wiki/);
   assert.match(ingestHtml, /忽略提案/);
   assert.match(askHtml, /研究问答/);
+  assert.match(askHtml, /研究记录/);
+  assert.match(askHtml, /已入 vault/);
+  assert.match(askHtml, /未入 vault/);
   assert.match(askHtml, /当前最稳定的理解/);
   assert.match(askHtml, /name="mode"/);
   assert.match(askHtml, /显式联网补料/);

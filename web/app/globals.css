@@ -17,16 +17,24 @@ body {
 body {
   @apply bg-ink-bg text-ink-text font-label;
   background:
-    radial-gradient(circle at top left, rgba(107, 216, 203, 0.08), transparent 26%),
-    linear-gradient(180deg, #fbfcfc 0%, #f4f6f6 100%);
+    radial-gradient(circle at top left, rgba(35, 71, 61, 0.07), transparent 24%),
+    radial-gradient(circle at bottom right, rgba(139, 93, 59, 0.08), transparent 20%),
+    repeating-linear-gradient(0deg, rgba(111, 104, 93, 0.028) 0 1px, transparent 1px 5px),
+    repeating-linear-gradient(90deg, rgba(111, 104, 93, 0.018) 0 1px, transparent 1px 7px),
+    linear-gradient(180deg, #f7f2e9 0%, #f0e8dc 100%);
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: rgba(35, 71, 61, 0.18);
 }
 
 a,
 button,
 input,
-textarea {
+textarea,
+select {
   @apply transition-all duration-200;
 }
 
@@ -36,7 +44,63 @@ textarea {
 }
 
 .paper-card {
-  @apply rounded-[28px] bg-white shadow-paper;
+  @apply rounded-[30px] border border-black/10 bg-ink-surface shadow-paper;
+  background:
+    linear-gradient(180deg, rgba(255, 253, 248, 0.98) 0%, rgba(249, 243, 234, 0.97) 100%),
+    repeating-linear-gradient(0deg, rgba(111, 104, 93, 0.025) 0 1px, transparent 1px 5px),
+    repeating-linear-gradient(90deg, rgba(111, 104, 93, 0.015) 0 1px, transparent 1px 7px);
+}
+
+.desk-panel {
+  @apply rounded-[24px] border border-black/10 bg-white;
+  background-color: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 10px 22px rgba(77, 60, 31, 0.06);
+}
+
+.desk-lift {
+  box-shadow: 0 10px 22px rgba(77, 60, 31, 0.05);
+}
+
+.desk-lift:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 30px rgba(77, 60, 31, 0.09);
+}
+
+.stamp {
+  @apply inline-flex items-center rounded-md bg-ink-primary px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-white;
+}
+
+.stamp-soft {
+  @apply inline-flex items-center rounded-md border border-ink-primary/20 bg-ink-primarySoft px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-ink-primary;
+}
+
+.slip {
+  @apply inline-flex items-center rounded-full border border-black/10 bg-white px-3 py-1.5 text-[11px] uppercase tracking-[0.18em] text-ink-muted;
+  background-color: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 6px 14px rgba(77, 60, 31, 0.05);
+}
+
+.note-block {
+  @apply rounded-[24px] border px-4 py-4 text-sm leading-7 text-ink-text;
+  border-color: rgba(139, 93, 59, 0.18);
+  background:
+    linear-gradient(180deg, rgba(248, 237, 214, 0.94) 0%, rgba(244, 229, 199, 0.88) 100%),
+    repeating-linear-gradient(0deg, rgba(139, 93, 59, 0.03) 0 1px, transparent 1px 5px);
+}
+
+.desk-field {
+  @apply w-full rounded-[20px] border border-black/10 bg-white px-4 py-3 text-sm leading-7 text-ink-text outline-none;
+  background-color: rgba(255, 255, 255, 0.82);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.desk-field:focus {
+  @apply ring-2 ring-ink-primary/20;
+  border-color: rgba(35, 71, 61, 0.22);
+}
+
+.desk-rule {
+  @apply border-black/10;
 }
 
 .public-eyebrow {
@@ -146,9 +210,20 @@ textarea {
 }
 
 .reading-prose p {
-  @apply text-[1.1rem] leading-[1.9] text-[#313738];
+  @apply text-[1.08rem] leading-[1.95] text-[#34302a];
 }
 
 .reading-prose blockquote {
   @apply border-l-4 border-ink-primary bg-ink-low px-6 py-5 text-[1.45rem] italic text-ink-text;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
 }

@@ -17,23 +17,19 @@ function healthSignal(page: Page) {
     .first();
 }
 
-test("root entry now redirects into the private LLM Wiki login", async ({ page }) => {
+test("private entry, owner login, and ask-first workspace stay connected", async ({ page }) => {
+  test.setTimeout(90_000);
+
   await page.goto("/");
-
   await expect(page).toHaveURL(/\/login$/);
   await expect(page.getByRole("heading", { name: "进入私有 LLM Wiki" })).toBeVisible();
-});
 
-test("unauthenticated access to /app redirects to /login", async ({ page }) => {
   await page.goto("/app/wiki");
-
   await expect(page).toHaveURL(/\/login$/);
   await expect(page.getByRole("heading", { name: "进入私有 LLM Wiki" })).toBeVisible();
-});
 
-test("owner can log in and reach the private system", async ({ page }) => {
   await loginAsOwner(page);
-  await expect(page.getByRole("heading", { name: "研究问答" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "问答" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "判断面板" })).toBeVisible();
   await expect(page.getByText("建议提问", { exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: "问答", exact: true })).toBeVisible();
@@ -41,23 +37,15 @@ test("owner can log in and reach the private system", async ({ page }) => {
   await expect(page.getByRole("link", { name: "健康", exact: true })).toHaveCount(0);
   await expect(page.getByText("设置")).toHaveCount(0);
   await expect(healthSignal(page)).toBeVisible();
-});
-
-test("ask compatibility alias reuses the ask-first workspace and keeps claim governance visible", async ({ page }) => {
-  await loginAsOwner(page);
 
   await page.goto("/app/ask");
-
   await expect(page).toHaveURL(/\/app\/ask$/);
-  await expect(page.getByRole("heading", { name: "研究问答" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "问答" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "判断面板" })).toBeVisible();
   await expect(healthSignal(page)).toBeVisible();
-});
 
-test("legacy product routes are no longer compatibility entrances", async ({ page }) => {
   await page.goto("/app/topics");
-
   await expect(page).toHaveURL(/\/app\/topics$/);
-  await expect(page.getByRole("heading", { name: "这个页面当前不存在" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "返回登录入口" })).toHaveAttribute("href", "/login");
+  await expect(page.getByRole("heading", { name: "这条 wiki 路径当前不存在" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "回到 Ask-first 工作区" })).toHaveAttribute("href", "/app");
 });

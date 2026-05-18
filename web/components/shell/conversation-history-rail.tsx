@@ -51,9 +51,16 @@ export function ConversationHistoryRail({ pathname, snapshot }: ConversationHist
 
   return (
     <div className="flex h-full flex-col">
-      <div className="rounded-[28px] bg-white p-4 shadow-paper">
+      <div className="paper-card px-4 py-4">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <div className="text-[11px] uppercase tracking-[0.2em] text-ink-muted">今日研究桌</div>
+            <p className="mt-2 text-sm leading-7 text-ink-muted">从最靠前的线索卡片继续，不让研究上下文掉地上。</p>
+          </div>
+          <span className="stamp">Ask-first</span>
+        </div>
         <button
-          className="flex w-full items-center justify-center gap-2 rounded-full bg-ink-primary px-4 py-3 text-sm font-semibold text-white"
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-ink-primary px-4 py-3 text-sm font-semibold text-white shadow-paper"
           type="button"
         >
           <span aria-hidden="true" className="material-symbols-outlined text-base">
@@ -63,13 +70,14 @@ export function ConversationHistoryRail({ pathname, snapshot }: ConversationHist
         </button>
       </div>
 
-      <div className="mt-6 flex-1 rounded-[32px] bg-white/92 p-4 shadow-paper">
-        <div className="flex items-center justify-between gap-3">
+      <div className="paper-card mt-6 flex-1 px-4 py-4">
+        <div className="flex items-start justify-between gap-3">
           <div>
-            <h2 className="font-headline text-base font-bold text-ink-text">最近对话</h2>
-            <p className="mt-1 text-sm text-ink-muted">先看知识健康，再回到最近的脉络继续修复。</p>
+            <div className="slip">桌面标签</div>
+            <h2 className="mt-3 font-headline text-2xl font-bold tracking-[-0.03em] text-ink-text">最近对话</h2>
+            <p className="mt-2 text-sm leading-7 text-ink-muted">先看知识健康，再回到最近的脉络继续修复。</p>
           </div>
-          <span className="rounded-full bg-ink-low px-3 py-1 text-xs text-ink-muted">{historyItems.length} 条</span>
+          <span className="slip">{historyItems.length} 条</span>
         </div>
 
         <div className="mt-4 space-y-3">
@@ -80,15 +88,18 @@ export function ConversationHistoryRail({ pathname, snapshot }: ConversationHist
               <Link
                 key={`${item.href}-${item.title}`}
                 aria-current={active ? "page" : undefined}
-                className={`block rounded-[24px] border px-4 py-3 transition ${
+                className={`desk-lift block rounded-[24px] border px-4 py-4 transition ${
                   active
-                    ? "border-ink-primary bg-ink-low text-ink-text"
-                    : "border-black/5 text-ink-muted hover:border-ink-primary/30 hover:bg-ink-low/70"
+                    ? "border-ink-primary/40 bg-ink-primarySoft/90 text-ink-text"
+                    : "border-black/10 bg-white/70 text-ink-muted hover:border-ink-primary/30 hover:bg-white"
                 }`}
                 href={item.href}
               >
-                <div className="text-xs uppercase tracking-[0.18em]">{item.title}</div>
-                <div className="mt-2 text-sm font-medium text-ink-text">{item.preview}</div>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="text-[11px] uppercase tracking-[0.2em]">{item.title}</div>
+                  <span className={active ? "stamp-soft" : "slip"}>{active ? "当前页" : "线索"}</span>
+                </div>
+                <div className="mt-3 font-headline text-xl font-bold tracking-[-0.03em] text-ink-text">{item.preview}</div>
               </Link>
             );
           })}

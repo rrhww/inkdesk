@@ -19,12 +19,23 @@ function resolveChromiumExecutablePath() {
     .at(-1);
 
   if (!chromiumDir) {
-    return undefined;
+    return resolveSystemChromiumExecutablePath();
   }
 
   const executablePath = path.join(browserRoot, chromiumDir.name, "chrome-win64", "chrome.exe");
 
-  return existsSync(executablePath) ? executablePath : undefined;
+  return existsSync(executablePath) ? executablePath : resolveSystemChromiumExecutablePath();
+}
+
+function resolveSystemChromiumExecutablePath() {
+  const candidates = [
+    path.join(process.env["ProgramFiles(x86)"] ?? "", "Microsoft", "Edge", "Application", "msedge.exe"),
+    path.join(process.env.ProgramFiles ?? "", "Microsoft", "Edge", "Application", "msedge.exe"),
+    path.join(process.env.ProgramFiles ?? "", "Google", "Chrome", "Application", "chrome.exe"),
+    path.join(process.env["ProgramFiles(x86)"] ?? "", "Google", "Chrome", "Application", "chrome.exe")
+  ];
+
+  return candidates.find((candidate) => candidate && existsSync(candidate));
 }
 
 const chromiumExecutablePath = resolveChromiumExecutablePath();

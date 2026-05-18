@@ -11,9 +11,9 @@ type PageShellProps = {
 
 export function PageShell({ eyebrow, title, description, children }: PageShellProps) {
   return (
-    <main className="mx-auto max-w-shell px-6 py-10 lg:px-8">
+    <main className="mx-auto max-w-shell px-5 py-8 lg:px-8 lg:py-9">
       <SectionHeading eyebrow={eyebrow} title={title} description={description} />
-      {children}
+      <div className="mt-6 lg:mt-7">{children}</div>
     </main>
   );
 }

@@ -21,14 +21,14 @@ export function AppChrome({ children, logoutAction, snapshot }: AppChromeProps) 
   return (
     <div className="min-h-screen">
       <AppSidebarContent pathname={pathname} snapshot={snapshot} />
-      <div className="lg:ml-72">
+      <div className="lg:ml-80">
         <AppHeader
           title={chrome.title}
           subtitle={chrome.subtitle}
           contextItems={chrome.contextItems}
           action={
             <form action={logoutAction}>
-              <button className="rounded-sm bg-ink-low px-4 py-3 font-headline text-sm font-semibold text-ink-text" type="submit">
+              <button className="rounded-full border border-black/10 bg-white/70 px-4 py-3 text-sm font-semibold text-ink-text" type="submit">
                 退出
               </button>
             </form>

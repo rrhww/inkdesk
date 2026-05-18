@@ -48,8 +48,10 @@ describe("workbench components", () => {
     expect(screen.queryByRole("link", { name: "健康" })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: /知识健康/ })).toHaveAttribute("href", "/app");
     expect(screen.getByText("raw 里有 3 条材料等待编译")).toBeInTheDocument();
-    expect(screen.getByText("最近对话")).toBeInTheDocument();
+    expect(screen.getByText("研究索引")).toBeInTheDocument();
+    expect(screen.getByText("今日研究桌")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "新建对话" })).toBeInTheDocument();
+    expect(screen.getByText("桌面标签")).toBeInTheDocument();
   });
 
   it("renders claim governance metadata inside review cards", () => {

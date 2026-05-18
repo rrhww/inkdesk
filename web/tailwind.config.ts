@@ -10,31 +10,31 @@ const config: Config = {
     extend: {
       colors: {
         ink: {
-          bg: "#f8f9fa",
-          surface: "#ffffff",
-          low: "#f3f4f5",
-          high: "#e7e8e9",
-          line: "#bcc9c6",
-          text: "#191c1d",
-          muted: "#687573",
-          primary: "#00685f",
-          primarySoft: "#e8f6f4",
-          tertiary: "#924628",
-          errorSoft: "#ffdad6",
+          bg: "#f3ede2",
+          surface: "#fffdf8",
+          low: "#ece3d4",
+          high: "#ded1bd",
+          line: "#c6b79f",
+          text: "#23201b",
+          muted: "#6f685d",
+          primary: "#23473d",
+          primarySoft: "#dee9e2",
+          tertiary: "#8b5d3b",
+          errorSoft: "#f7dfd9",
           errorText: "#93000a"
         }
       },
       fontFamily: {
-        headline: ["var(--font-manrope)"],
+        headline: ["var(--font-newsreader)"],
         body: ["var(--font-newsreader)"],
         label: ["var(--font-inter)"]
       },
       boxShadow: {
-        paper: "0 18px 40px rgba(25, 28, 29, 0.06)"
+        paper: "0 18px 40px rgba(77, 60, 31, 0.12), 0 2px 6px rgba(35, 32, 27, 0.06)"
       },
       maxWidth: {
         reading: "52rem",
-        shell: "72rem"
+        shell: "78rem"
       }
     }
   },

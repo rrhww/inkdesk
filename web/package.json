@@ -8,8 +8,8 @@
   "scripts": {
     "dev": "next dev",
     "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",
-    "build": "next build",
-    "start": "next start",
+    "build": "next build --webpack && node scripts/ensure-prerender-manifest.mjs",
+    "start": "node scripts/ensure-prerender-manifest.mjs && next start",
     "lint": "eslint .",
     "test:smoke": "node --import tsx --test tests/owner-session.test.ts tests/owner-auth.test.ts tests/research-api.test.tsx tests/research-pages.test.tsx",
     "unit": "vitest run",
