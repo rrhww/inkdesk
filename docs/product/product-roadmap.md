@@ -47,11 +47,15 @@ context_pack -> agent work -> deposit
 
 截至 2026-05-22：
 
-- owner 登录、本地 `/app` 工作区、raw、ingest、wiki、ask 已有实现。
-- Ask writeback、claim 证据状态、usage、stale/conflict 信号已有实现。
-- 本地 Docker 栈已加入仓库：Next.js、FastAPI、PostgreSQL + pgvector。
-- 后端 `python -m pytest` 通过，前端 `npm run typecheck` 通过。
-- 阶段一主体成立，后续重点转向“回答沉淀”体验。
+- [x] owner 登录、本地 `/app` 工作区、raw、ingest、wiki、ask
+- [x] Ask writeback、claim 证据状态、usage、stale/conflict 信号
+- [x] 本地 Docker 栈：Next.js、FastAPI、PostgreSQL + pgvector
+- [x] 后端 `python -m pytest` 与前端 `npm run typecheck`
+- [x] 阶段一主体成立，产品重点转向“回答沉淀”体验
+- [ ] 每个回答固定提供“沉淀这次回答”
+- [ ] 支持完整回答与选中片段两种沉淀入口
+- [ ] 后台 deposit orchestration 与专项子 Agent 流水线
+- [ ] MCP / CLI / Skill 接入外部 Agent
 
 ## 阶段二：回答沉淀主形态
 
