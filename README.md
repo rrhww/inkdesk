@@ -1,179 +1,141 @@
 # Inkvault
 
-> 一个面向单人研究工作的、私有的、vault-first 知识系统。
+> 一个单人使用、私有、vault-first 的研究记忆系统。
 
-Inkvault 的核心目标，不是做一个“会自动帮你写答案”的笔记工具，而是构建一个**可回溯、可审阅、可恢复**的研究记忆系统。
-
-它围绕一条很明确的主循环展开：
+Inkvault 围绕一条核心闭环展开：
 
 ```text
 raw -> ingest -> wiki -> ask
 ```
 
-- `raw/`：保存原始研究材料，例如网页、PDF、迁移进来的笔记
-- `ingest`：AI 生成提案，人来审核接受或拒绝
-- `wiki/`：保存已经确认的长期知识
-- `ask`：优先基于 `wiki` 提问，必要时回到 `raw`，并把新的理解重新带回审阅流程
+- `raw/` 保存网页、PDF 和迁移笔记等原始研究材料。
+- `ingest` 是 AI 生成提案、再由人审核的工作流。
+- `wiki/` 保存已接受的长期知识页。
+- `ask` 先基于 wiki、再基于 raw 进行追问，并可把当前回答回写成新的审阅提案。
 
-## Why Inkvault
+Vault 是事实源。数据库负责索引文件、跟踪工作流状态和缓存读模型，但最终被接受的知识必须始终能从 vault markdown 中恢复出来。
 
-很多知识工具擅长保存“整理后的结果”，但不擅长保存结果是如何形成的。
+## 产品形态
 
-Inkvault 想解决的是另一类问题：
+- 单人私有工作区，通过隐藏的 owner 登录入口访问。
+- 登录后进入 Ask-first 研究工作台。
+- AI 可以建议新建或补丁 wiki，但不会静默改写正式知识。
+- 每一条被接受的 claim 都必须保留回溯到 raw 来源的证据链。
 
-- 原始材料和最终知识之间经常断链
-- AI 可以快速生成内容，但不应该静默修改可信知识
-- 研究过程需要不断回看来源、修正理解、沉淀长期记忆
-- 最终留下来的知识，应该能从 vault 中被恢复出来，而不是只存在数据库里
-
-所以 Inkvault 不是把 AI 放在最前面，而是把 **vault** 放在最前面，把 AI 放进一个**可审核的工作流**里。
-
-## Core Model
-
-Inkvault 的设计核心有四个层次：
-
-### 1. Raw
-
-`raw/` 保存原始资料，是研究过程的输入层。
-
-它可以是网页、PDF、导入的旧笔记，重点不是“整洁”，而是完整保留上下文和来源。
-
-### 2. Ingest
-
-`ingest` 是候选知识生成层。
-
-AI 可以基于原始资料提出摘要、结构化理解、wiki 新建建议或补丁建议，但这些内容都只是“待审核提案”，不能直接成为长期知识。
-
-### 3. Wiki
-
-`wiki/` 是已接受知识层。
-
-只有经过人工确认的内容才会进入 wiki，成为系统中的长期记忆。wiki 不是聊天记录，也不是临时缓存，而是被明确接受的知识结果。
-
-### 4. Ask
-
-`ask` 是研究使用层。
-
-提问时优先基于 `wiki` 回答，在需要时再回到 `raw`。如果一次问答产生了新的稳定理解，它应该能够重新进入 `ingest`，再经过审核回写到 `wiki`。
-
-## Design Principles
-
-### Vault-first
-
-Vault 是事实来源和最终落点。数据库负责索引、状态跟踪和读模型缓存，但已接受知识必须能够从 vault markdown 中恢复。
-
-### Human-reviewed knowledge
-
-AI 可以提议，但不能静默改写 canonical knowledge。真正进入长期记忆的内容，必须经过人工接受。
-
-### Provenance matters
-
-每一个被接受的结论，都应该能追溯回原始材料，而不是只保留“结论本身”。
-
-### Ask over accepted knowledge
-
-系统优先基于已经确认的知识工作，而不是每次都直接对原始资料做一次新的生成。
-
-### Single-owner by design
-
-当前产品模型面向单一拥有者的私有研究空间，不以多用户协作为第一目标。
-
-## Current App Shape
-
-当前应用大致包含这些界面：
+## 当前页面结构
 
 - `/`：根据 owner session 跳转到 `/login` 或 `/app`
-- `/login`：隐藏式 owner 登录
-- `/app`：ask-first 研究入口
-- `/app/raw`：原始材料列表
-- `/app/ingest`：等待审核的 AI 提案
-- `/app/wiki`：已接受知识页列表
-- `/app/wiki/[id]`：单篇 wiki 详情，包含 understanding、claims、questions 和 sources
-- `/app/ask`：兼容别名路由
+- `/login`：隐藏 owner 登录入口
+- `/app`：Ask-first 研究入口
+- `/app/raw`：vault 中的原始材料
+- `/app/ingest`：等待接受 / 驳回的 AI 提案
+- `/app/wiki`：已接受的知识页
+- `/app/wiki/[id]`：单个 wiki 页面详情，包含 understanding、claims、questions 和 sources
+- `/app/ask`：Ask 工作区的兼容别名
 
-一些旧路由如 `/app/inbox`、`/app/review`、`/app/topics`、`/app/sources` 当前主要用于兼容跳转。
+像 `/app/inbox`、`/app/review`、`/app/topics`、`/app/sources` 这样的旧路由，当前都不再是正式产品入口。
 
-## Status
+## 技术栈
 
-Inkvault 目前处于**持续演进中的早期阶段**。
+- 前端：`Next.js 16`、`React 19`、`TypeScript`、`Tailwind CSS`
+- 后端：`FastAPI`、`Python 3.12`、`SQLAlchemy`、`LangGraph`
+- 存储：`PostgreSQL + pgvector` 负责索引和工作流状态，挂载的 vault 文件负责 raw/wiki 真相层
+- 测试：`node:test`、`Vitest`、`Playwright`、`pytest`
 
-当前重点不是做“大而全”的知识平台，而是先把下面几件事打磨扎实：
+## 快速启动
 
-- vault 作为知识源的边界
-- AI 提案到人工审核的工作流
-- wiki 作为长期知识载体的结构
-- ask-first 的研究使用体验
-- 来源可追溯和知识可恢复这两条底线
+仓库现在提供一套可直接运行的本地 Docker 栈：
 
-如果你现在看到一些命名、路由或结构仍在调整中，这是项目当前阶段的一部分。
+- `inkvault-local-postgres`
+- `inkvault-local-server`
+- `inkvault-local-web`
 
-## Tech Stack
+先准备环境变量：
 
-- Frontend: `Next.js 15`, `React 19`, `TypeScript`, `Tailwind CSS`
-- Backend: `FastAPI`, `Python 3.12`, `SQLAlchemy`, `LangGraph`
-- Storage: PostgreSQL + local vault markdown
-- Testing: `node:test`, `Vitest`, `Playwright`, `pytest`
-
-## Run Locally
-
-先准备环境文件：
-
-```powershell
-Copy-Item infra/.env.example infra/.env
-Copy-Item web/.env.local.example web/.env.local
+```bash
+cp infra/.env.example infra/.env
 ```
 
-设置必要环境变量：
+然后在 `infra/.env` 里至少填写：
 
-```powershell
-$env:INKVAULT_AUTH_SECRET='replace-with-a-long-random-secret'
-$env:INKVAULT_VAULT_ROOT='C:\path\to\inkvault-vault'
-$env:INKVAULT_AGENT_PROVIDER_PROFILE='openai' # or 'deepseek'
+```env
+INKVAULT_AUTH_SECRET=换成一个足够长的随机字符串
+INKVAULT_AGENT_RUNTIME=langgraph
+INKVAULT_AGENT_PROVIDER_PROFILE=openai
+OPENAI_API_KEY=sk-xxxx
+INKVAULT_AGENT_MODEL=gpt-4.1-mini
+INKVAULT_EMBEDDING_PROVIDER_PROFILE=openai
+INKVAULT_EMBEDDING_MODEL=text-embedding-3-small
+INKVAULT_ENABLE_WEB_ASSIST=true
 ```
 
-启动基础服务：
+如果你用 DeepSeek，可以改成：
 
-```powershell
-docker compose --env-file infra/.env -f infra/docker-compose.yml up -d
+```env
+INKVAULT_AGENT_RUNTIME=langgraph
+INKVAULT_AGENT_PROVIDER_PROFILE=deepseek
+DEEPSEEK_API_KEY=sk-xxxx
+INKVAULT_AGENT_MODEL=deepseek-v4-flash
 ```
 
-启动后端：
+克隆并启动：
 
-```powershell
-cd server
-python -m pip install -e .[dev]
-python -m uvicorn inkvault_server.main:app --host 0.0.0.0 --port 8080
+```bash
+git clone <你的仓库地址>
+cd inkdesk
+docker compose --env-file infra/.env -f infra/docker-compose.local-docker.yml up -d --build
 ```
 
-启动前端：
+启动后访问：
 
-```powershell
-cd web
-npm install
-npm run dev
+- 应用入口：`http://localhost:3000/login`
+- 后端健康检查：`http://localhost:8080/actuator/health`
+
+默认本地账号：
+
+- 邮箱：`owner@inkvault.local`
+- 密码：`inkvault-owner`
+
+停止容器但保留数据：
+
+```bash
+docker compose --env-file infra/.env -f infra/docker-compose.local-docker.yml down
 ```
 
-打开：
+重置到干净的本地 demo 状态：
 
-```text
-http://localhost:3000/login
+```bash
+docker compose --env-file infra/.env -f infra/docker-compose.local-docker.yml down -v
 ```
 
-Demo owner credentials:
+## 这个 Demo 包含什么
 
-- email: `owner@inkvault.local`
-- password: `inkvault-owner`
+- 私有 owner 登录
+- `/app` 的 Ask-first 工作区
+- `raw -> ingest -> wiki -> ask` 研究闭环
+- 可直接体验的本地 seed 数据
+- 通过 `.env` 注入的真实模型配置
+- 已经容器化的前端、后端和 PostgreSQL
 
-## Verification
+## 这个 Demo 不是什么
 
-后端测试：
+- 不是公开发布平台
+- 不是生产部署方案
+- 不是多用户系统
+- 不是托管 SaaS
+
+如果要看偏生产部署的说明，见 [docs/ops/deploy-guide.md](docs/ops/deploy-guide.md)。
+
+## 验证
+
+后端：
 
 ```powershell
 cd server
 python -m pytest
 ```
 
-前端检查：
+前端：
 
 ```powershell
 cd web
@@ -181,30 +143,8 @@ npm test
 npm run typecheck
 npm run lint
 npm run build
+npm run e2e
+npm run e2e:fullstack
 ```
 
-## Roadmap
-
-接下来会优先继续打磨这些方向：
-
-- raw -> ingest -> wiki -> ask 主循环的一致性
-- wiki 页面结构和可追溯性
-- 审核流程中的提案质量与可读性
-- ask-first 体验和 grounded answer 边界
-- 命名、路由和公开文档的统一
-
-## Feedback
-
-如果你对下面这些问题感兴趣，欢迎提 issue：
-
-- vault-first 知识系统是否成立
-- AI 提案 + 人工审核这个工作流是否合理
-- wiki 结构是否足够清晰
-- ask 与 wiki / raw 的边界应该怎么定义
-- 当前 README 是否准确表达了项目设计
-```
-
-这版的重点是把“为什么存在”“系统主循环”“当前阶段”三件事讲清楚，避免现在这种只有技术信息、没有叙事骨架的状态。参考的是你的公开仓库页和当前 README：[repo](https://github.com/rrhww/inkdesk)、[current README](https://raw.githubusercontent.com/rrhww/inkdesk/main/README.md)。
-
-下一步最值得做的不是继续润色文字，而是两件事一起补上：把仓库 `Description` 改成一句清晰定义，再加 `Topics`。我可以下一条直接给你这两个字段的推荐内容。
-```
+注意：`npm run e2e` 和 `npm run e2e:fullstack` 需要串行运行，不能并行，因为两者都会触发 Next.js 的 build/start 流程。

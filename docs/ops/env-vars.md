@@ -32,6 +32,11 @@
 
 ## 后端变量
 
+### `INKVAULT_ENV`
+
+- 用途：声明当前运行环境
+- 示例：`local`
+
 ### `INKVAULT_DB_URL`
 
 - 用途：Python 主后端的数据库连接地址
@@ -56,6 +61,11 @@
 
 - 用途：owner session 时长
 - 示例：`PT8H`
+
+### `INKVAULT_AUTH_ALLOW_LEGACY_OWNER_COOKIE`
+
+- 用途：控制是否兼容旧 owner cookie
+- 示例：`true`
 
 ### `INKVAULT_AGENT_RUNTIME`
 
@@ -83,6 +93,16 @@
 - 用途：显式覆盖当前 provider profile 使用的基础地址
 - 说明：主要用于 `openai_compatible` / `custom` 场景
 
+### `INKVAULT_AGENT_CONNECT_TIMEOUT_SECONDS`
+
+- 用途：控制 LLM 请求连接超时
+- 示例：`2`
+
+### `INKVAULT_AGENT_READ_TIMEOUT_SECONDS`
+
+- 用途：控制 LLM 请求读取超时
+- 示例：`20`
+
 ### `OPENAI_API_KEY`
 
 - 用途：`openai` profile 的默认模型服务密钥
@@ -95,6 +115,11 @@
 
 - 用途：兼容旧配置的基础地址别名
 - 说明：当未设置 `INKVAULT_AGENT_BASE_URL` 时，`openai` / `openai_compatible` 仍会读取它；`deepseek` profile 未显式覆盖时默认使用 `https://api.deepseek.com`
+
+### `INKVAULT_ENABLE_WEB_ASSIST`
+
+- 用途：控制 Ask 的 `vault_plus_web` 是否允许联网补料
+- 示例：`true`
 
 ### `INKVAULT_ENABLE_LOCAL_SEED`
 
@@ -154,4 +179,5 @@
 
 - Vault 文件是长期真相，DB 不是唯一真相
 - 当前只准备 `MinIO` 基础设施，不接入主路径附件上传
+- `web/.env.local.example` 只放开发模板，不放真实密钥
 - 如果新增新的运行变量，必须先更新本文件和对应 `.example` 模板

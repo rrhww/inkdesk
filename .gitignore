@@ -20,6 +20,7 @@ target/
 .env
 .env.*
 !.env.example
+!.env.local.example
 
 # Logs
 *.log
@@ -56,3 +57,4 @@ __pycache__/
 # Local vault data
 inkvault-vault/
 server/inkvault-vault/
+server/*.db

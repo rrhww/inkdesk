@@ -2,164 +2,128 @@
 
 ## 目标
 
-定义当前 MVP 需要稳定下来的核心实体，为个人知识健康系统提供统一语言。
+统一当前 vault-first 私有 LLM Wiki 的业务语言，避免再混用旧的 `notes / plans / publish / public` 术语。
 
 ## 核心角色
 
 ### Owner
 
-系统主人，也是唯一使用者。
+当前唯一主要用户。
 
 职责：
 
-- 登录隐藏入口
-- 导入研究材料
+- 登录私有工作区
+- 导入原始材料到 `raw/`
 - 审阅 AI 提案
-- 维护正式 wiki
-- 基于现有知识继续 Ask
-- 处理知识健康信号
+- 维护 `wiki/` 长期记忆
+- 发起 Ask、追问、决定是否 writeback
 
 ## 核心实体
 
-### RawSource
+### Workspace
 
-进入系统的原始材料。
+单 owner 工作区。
 
-字段关注点：
+职责：
 
-- 标题
-- 来源类型
-- locator / URL
-- 摘录
-- vault 路径
-- 导入状态
+- 承载 owner 的所有研究数据
+- 作为 source、topic、review、ask 的逻辑归属边界
 
-### IngestReview
+### Source
 
-AI 基于 raw 材料或 Ask 诊断生成的认知变更提案。
+原始材料，也就是 `raw/` 中的来源对象。
 
-字段关注点：
+典型来源：
 
-- 提案类型
-- 目标 topic 决策
-- explanation
-- claims
-- evidence
-- open questions
-- health signal 来源
-- 审阅状态
+- 网页
+- PDF
+- 手动文本
+- 从 legacy note 迁移出的历史内容
 
-补充说明：
+关键语义：
 
-- proposal claim 需要暴露 `supportingChunkIds`、`evidenceCount`、`provenanceStatus`
-- 这样 owner 在 ingest 就能先看清“这条判断有没有直接证据”
+- 先进入 `raw`
+- 可以被编译进一个或多个 topic
+- 必须保留可回溯定位信息
 
-### WikiPage
+### ReviewItem
 
-已经被接受并进入正式知识层的当前理解页面。
+由 AI 生成、等待人工决策的提案。
 
-字段关注点：
+关键语义：
 
-- 标题
-- current understanding
-- claims
-- open questions
-- 关联来源
-- vault 路径
-- 健康摘要
+- 是 `ingest` 页面上的主对象
+- 可以创建新 topic，也可以 patch 现有 topic
+- 未接受前不能直接改写 wiki
+
+### Topic
+
+已沉淀的知识页，也就是 `wiki/` 中的核心对象。
+
+关键语义：
+
+- 有 summary、current understanding、open questions
+- 通过 claims 和 sources 保留证据链
+- 最终内容可以从 vault Markdown 恢复
+
+### TopicClaim
+
+知识页中的关键论点。
+
+关键语义：
+
+- 对应一句可引用的稳定判断
+- 应尽量能追溯到 source
+
+### TopicThreadEntry
+
+知识页的研究过程片段。
+
+关键语义：
+
+- 保存提炼过程、补充说明和研究痕迹
+- 帮助 owner 理解当前知识页是如何形成的
 
 ### AskTurn
 
-一次研究问答及其诊断快照。
+一次研究问答与其上下文快照。
 
-字段关注点：
+关键语义：
 
-- question
-- answer
-- mode
-- context ask turn ids
-- used wiki ids
-- used source ids
-- used web sources
-- knowledge gaps
-- writeback package
-- health signals
+- 支持 topic scoped 和 global ask
+- 支持追问链
+- 记录引用、知识缺口、follow-up questions 与 writeback 包
 
-补充说明：
+### RetrievalChunk
 
-- AskTurn 还会绑定 ask-scoped judgment payload
-- 这个 payload 负责保存“当前缺什么证据、下一步该做什么”的结构化判断结果
+为 Ask 和检索准备的 chunk 级索引对象。
 
-### HealthSignal
+关键语义：
 
-一次 Ask、ingest、wiki 或 raw 状态暴露出来的知识健康信号。
+- 是内部检索基础设施，不直接面向 UI
+- 可支持 lexical fallback 与 embedding/hybrid retrieval
 
-字段关注点：
+### LegacyNoteBridge
 
-- signal type
-- severity
-- related raw source
-- related wiki page
-- related claim
-- related ask turn
-- summary
-- suggested action
-- status
+由 `content_nodes` 和 `note_documents` 组成的迁移兼容层，不是新主产品对象。
 
-当前重点信号包括：
+关键语义：
 
-- `RAW_BACKLOG`
-- `REVIEW_BACKLOG`
-- `OPEN_QUESTIONS`
-- `KNOWLEDGE_GAP`
-- `UNSUPPORTED_CLAIM`
-- `WRITEBACK_CANDIDATE`
-
-### Claim
-
-wiki 页面中的最小知识断言。
-
-字段关注点：
-
-- statement
-- source links
-- evidence strength
-- last verified at
-- usage count
-- health status
-
-当前治理语义：
-
-- `supported`：已有直接证据链
-- `partial`：已绑定来源，但缺少直接证据链
-- `unsupported`：没有足够直接证据，不应被当作稳定结论
-
-### WorkspaceSetting
-
-系统级工作区配置。
-
-字段关注点：
-
-- owner 级基础配置
-- vault 根目录
-- Agent profile
-- 与研究工作流相关的运行设置
+- 用于接住旧内容
+- 用于初始化 demo 数据和过渡期研究编译
 
 ## 派生视图
 
-以下内容可以作为前端或服务层派生视图，不要求一开始独立建模为复杂实体：
+以下内容目前主要作为服务层或前端聚合视图存在：
 
-- Research dashboard snapshot
-- Ask 推荐问题
-- 待审阅数量摘要
-- 主题聚焦上下文
-- Knowledge health summary
+- Today Vault Panel
+- suggestedQuestions
+- Ask thread view
+- ingest queue summary
 
 ## 边界说明
 
-- RawSource 是所有正式知识的 provenance 起点
-- IngestReview 是认知变更的人工确认闸门
-- WikiPage 是正式当前理解层，不允许 AI 静默改写
-- Claim 是知识健康治理的核心原子
-- AskTurn 是研究诊断快照，不是通用聊天系统会话模型
-- HealthSignal 是 Inkvault 区别于普通 llm-wiki 闭环的产品核心
+- 当前没有访客角色，也没有公开阅读面
+- 当前没有 plans / publish / settings 主路径
+- Ask 是研究入口，不等于自治 Agent 执行系统
+- Vault Markdown 是长期真相，数据库和 UI 都要围绕它对齐

@@ -13,7 +13,8 @@
 
 ## 项目根目录
 
-- 本地仓库根目录固定为 `E:\dev\projects\inkvault`
+- 当前项目仓库根目录是 `inkdesk/`
+- 不再在文档里固定某一台机器的绝对本地路径
 
 ## 当前开发策略
 
@@ -49,10 +50,10 @@ MVP 阶段采用单人开发简化流程：
 ## 建议的提交信息风格
 
 - `docs: 补齐 MVP 产品与设计文档`
-- `feat: 初始化前端项目骨架`
-- `feat: 实现笔记编辑接口`
+- `feat: 打通 raw 到 ingest 的导入链路`
+- `feat: 增加 Ask writeback 提案能力`
 - `chore: 增加本地 docker compose 配置`
-- `fix: 修复 Ask 追问上下文丢失问题`
+- `fix: 修复 wiki 来源映射错误`
 
 ## 什么时候再引入分支策略
 

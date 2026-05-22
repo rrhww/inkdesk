@@ -49,8 +49,12 @@ test.describe("local full-stack loop", () => {
 
     await page.goto("/app/wiki");
     await expect(page.getByRole("heading", { name: "沉淀后的知识页面" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "打开 wiki" }).first()).toBeVisible();
-    await page.getByRole("link", { name: "打开 wiki" }).first().click();
+    await expect(page.getByRole("heading", { name: "将 Inkvault 重定位为私有研究型 LLM Wiki" })).toBeVisible();
+    await page
+      .getByRole("heading", { name: "将 Inkvault 重定位为私有研究型 LLM Wiki" })
+      .locator("..")
+      .getByRole("link", { name: "打开 wiki" })
+      .click();
 
     await expect(page.getByText("Current Understanding", { exact: true })).toBeVisible();
     await expect(page.getByText("Key Claims", { exact: true })).toBeVisible();
@@ -60,7 +64,7 @@ test.describe("local full-stack loop", () => {
     await expect(page.getByText(/最近使用/).first()).toBeVisible();
     await expect(page.getByText(/证据 1 条/).first()).toBeVisible();
     await expect(page.getByText(/最近验证 \d{4}-\d{2}-\d{2}/).first()).toBeVisible();
-    await expect(page.getByText(/当前最重要的理解是：把产品中心收回到 raw \/ ingest \/ wiki/)).toHaveCount(0);
+    await expect(page.getByText(/把产品中心收回到 raw \/ ingest \/ wiki/).first()).toBeVisible();
 
     await page.goto("/app/ask");
     await expect(page.getByRole("heading", { name: "研究问答" })).toBeVisible();

@@ -4,9 +4,7 @@
 
 每次完成一轮 Stitch 探索后，在这里记录最终保留方向和淘汰原因。
 
-当前已确认的 HTML 方向稿结论，详见：
-
-- `docs/design/html-direction-review.md`
+当前仓库里的 Stitch 记录已经转为历史归档；如需理解现状，请以 `docs/` 中仍然保留的产品、设计和架构文档为准。
 
 ## 记录模板
 
@@ -40,4 +38,4 @@
 
 ### 参考文档
 
-- 看图评估清单：`docs/design/stitch-review-checklist.md`
+- 当前不再维护独立的 Stitch 审核清单；如需继续使用这份模板，请先根据现有页面清单和路由边界自行补充判断标准。

@@ -2,212 +2,151 @@
 
 ## 1. 产品背景
 
-Inkvault 被重新定义为一个面向 AI 时代的个人知识健康系统。
+Inkvault 当前不是一个公开发布平台，也不是一个带完整计划系统的超级工作台。
 
-它的出发点不是“让 AI 基于资料回答”，而是解决一个更深的问题：
+它已经收敛成一个更聚焦的产品：
 
-- AI 回答越来越多，但很少进入长期知识
-- 回答看起来像知识，却缺少证据边界
-- 个人知识库会过时、重复、冲突，但工具很少主动暴露
-- 用户有专业资料，却不知道这些资料是否真正被消化成可靠理解
+- 单人私有
+- vault-first
+- 围绕研究记忆组织工作的 LLM Wiki
 
-因此，Inkvault 的 MVP 不能只证明 `raw -> ingest -> wiki -> ask` 闭环可用，还要证明：
-
-**每一次 Ask 都能反过来产生知识健康信号。**
+当前最重要的问题不是“展示给访客看什么”，而是“如何把原始材料稳定沉淀成可持续追问的长期知识”。
 
 ## 2. 产品定位
 
-Inkvault 的当前官方定位是：
+Inkvault 当前 MVP 的正式定位是：
 
-- 一个单人私有、vault-first、以知识健康为核心的 AI 研究系统
+- 一个以 `raw -> ingest -> wiki -> ask` 为主路径的私有研究记忆系统
 
-它以 llm-wiki 的材料、提案、wiki、问答闭环为基础，但产品创新点前移到知识治理：
+它的核心不是“直接让 AI 写最终答案”，而是：
 
-- 哪些 raw 没有被编译
-- 哪些回答值得沉淀
-- 哪些 claim 缺少证据
-- 哪些 wiki 仍有开放问题
-- 哪些 Ask 暴露了旧知识不足
+1. 收集原始材料
+2. 让 AI 先提出可审阅提案
+3. 由 owner 决定哪些知识进入 wiki
+4. 再围绕已沉淀的知识持续追问
 
 ## 3. 目标用户
 
 ### 主要用户
 
-- 有持续专业材料和长期判断需求的单人研究者
+- owner，也就是你自己
+- 使用目标：把网页、PDF、旧笔记和研究问答整理进一个长期可追溯的私人知识系统
 
-主要目标：
+### 当前非目标用户
 
-- 让 AI 基于自己的专业资料回答
-- 把高价值回答沉淀为正式理解
-- 看清每条理解的来源和证据边界
-- 知道自己的知识系统哪里还不健康
-- 在持续使用中让知识越来越可信
-
-### 非目标用户
-
-- 泛笔记用户
 - 公开访客
-- 团队协作者
-- 只需要临时聊天的用户
+- 协作者
+- 团队成员
+
+当前产品没有公开阅读面，也没有多人协作角色。
 
 ## 4. MVP 目标
 
-MVP 要跑通一条新的最小闭环：
+MVP 只需要跑通一条主链路：
 
-```text
-raw -> ingest -> wiki -> ask -> health -> ingest
-```
+1. owner 通过 `/login` 登录
+2. 原始材料进入 `raw/`
+3. 系统生成 `ingest` 审阅提案
+4. owner 接受后沉淀到 `wiki/`
+5. owner 在 `ask` 上基于已有 wiki 和 raw 继续研究
 
-具体目标：
-
-1. 主人能导入 raw 材料
-2. 系统能生成 ingest 提案
-3. 主人能接受提案进入 wiki
-4. Ask 能基于 wiki / raw 回答
-5. Ask 能产出用于判断的 knowledge gaps 与 health signals
-6. 高价值 Ask 能生成新的 ingest 提案
-7. 用户能在 `/app` 的 Ask-first 首屏看懂当前缺口与下一步动作
-
-如果只做到第 4 步，产品仍然只是 llm-wiki 闭环。MVP 必须做到第 5 到第 7 步，才能体现 Inkvault 自己的产品命题。
+如果这条链路可稳定运行，MVP 就成立。
 
 ## 5. 核心价值
 
-- 对用户来说：不是多一个聊天工具，而是知道自己的知识系统是否可靠
-- 对知识层来说：正式知识不只是可追溯，还要有健康状态
-- 对 Ask 来说：问答不只是消费知识，而是测试知识
-- 对 AI 协作来说：AI 不是作者，而是诊断者和提案生成器
+- 对 owner：把“资料收集、知识沉淀、研究追问”放进同一条闭环
+- 对系统：让 AI 参与研究，但不允许它静默改写长期知识
+- 对未来：保留 Ask 深化、自动化和更强检索能力的扩展空间
 
 ## 6. MVP 范围内
 
-### 主人入口与私有工作区
+### 私有入口
 
-- 不公开的 `/login`
-- 单主人登录
-- `/app` Ask-first 私有研究工作区入口
-- `/app/ask` 兼容问答别名，复用同一工作区页面
-- 根路由根据登录态跳转 `/login` 或 `/app`
+- `/login`
+- 单 owner 登录
+- `/app` 私有首页
+- `/` 根据登录态重定向到 `/login` 或 `/app`
 
-### 核心研究模块
+### 研究主路径
 
-- `问答 / Ask`
-- `资料 / Raw`
-- `审阅 / Ingest`
-- `知识库 / Wiki`
-- `判断摘要 / Briefing` 与最小 `Health` 信号展示
+- `raw`：原始材料导入与索引
+- `ingest`：AI 提案审阅
+- `wiki`：知识页列表与详情
+- `ask`：研究问答、追问、writeback 提案
 
-### 核心系统能力
+### 支撑能力
 
-- 导入网页、PDF、文本材料到 raw
-- 为 raw 生成 AI 编译提案
-- 人工 accept / reject 提案
-- 将已接受提案写入 wiki
-- 围绕 wiki/raw 发起 Ask
-- 在 `/app` 首屏和问后阶段生成 briefing summary、knowledge gaps、next actions、suggested questions
-- Ask 输出 knowledge gaps、writeback candidates、source coverage 等健康信号
-- 将高价值 Ask 生成可审阅 ingest 提案
+- Vault Markdown 持久化
+- PostgreSQL 索引与队列
+- owner session
+- 本地全栈验收与自动化测试
 
-## 7. 最小知识健康信号
+## 7. MVP 范围外
 
-MVP 不做复杂评分系统，但必须有可见的健康信号。
-
-第一代判断中枢只做两件事：暴露当前知识缺口、给出下一步动作。当前这些内容优先通过 Ask-first briefing 展示，而不是单独做一个 dashboard 首页。
-
-第一批 health signals：
-
-- `raw backlog`：已有 raw 但尚未进入有效提案或 wiki
-- `review backlog`：待审阅提案数量与最近提案
-- `open questions`：wiki 中仍未解决的问题
-- `knowledge gaps`：Ask 暴露的证据缺口
-- `writeback candidates`：Ask 回答中值得沉淀的候选内容
-
-后续可以再扩展：
-
-- unsupported claims
-- stale claims
-- duplicate topics
-- conflicting claims
-
-## 8. MVP 范围外
-
-- 公开阅读产品线
-- 发布模块
-- plans / 任务执行系统
+- 公开文章与公开首页
+- plans 主路径
+- search 主路径
+- settings 主路径
 - 多人协作
-- 通用第二大脑
-- all-in-one AI 工具箱
-- 完整知识健康评分
-- 自动修改 wiki
-- 真正长时自治的 agent 执行 loop
+- 自治 Agent 执行系统
+- 面向公众的营销站
 
-## 9. 核心流程
+## 8. 核心流程
 
-### 流程一：导入并形成候选知识
+### 流程一：导入原始材料
 
-1. 主人进入 `资料`
-2. 导入网页、PDF 或文本
-3. 系统把材料保存为 raw markdown
-4. 系统生成或等待生成 ingest 提案
-5. health 显示 raw backlog 状态
+1. owner 在 `/app/raw` 提交网页、PDF 或文本
+2. 后端写入 `raw/` vault 文件并建立索引
+3. 材料进入待编译状态
 
-### 流程二：审阅认知变更
+### 流程二：审阅 AI 提案
 
-1. 主人进入 `审阅`
-2. 查看 AI 基于 raw 或 Ask 生成的提案
-3. 判断这是新知识、补丁、开放问题还是低证据推测
-4. 接受后写入 wiki，拒绝后不进入正式知识
+1. owner 打开 `/app/ingest`
+2. 查看 AI 对 source 的编译结果或补丁建议
+3. 决定接受或拒绝
 
-### 流程三：Ask 作为知识体检
+### 流程三：沉淀到 wiki
 
-1. 主人进入 `/app` 或 `/app/ask`
-2. 先看到当前缺什么证据，再围绕 wiki / raw 提问
-3. 系统回答问题，并刷新问后判断，展示引用来源和知识缺口
-4. 如果答案值得沉淀，系统提示 writeback candidate
-5. 用户决定是否生成 ingest 提案
+1. 被接受的提案写入或更新 `wiki/`
+2. 页面保留 current understanding、claims、questions、sources
+3. 数据可从 vault 恢复，不依赖数据库独占保存
 
-### 流程四：通过 Ask-first 工作区查看知识健康
+### 流程四：继续追问
 
-1. 主人进入 `/app`
-2. 在首屏 briefing 或问后判断面板里看到 raw backlog、review backlog、open questions、knowledge gaps
-3. 从知识缺口和下一步动作跳转到对应页面或继续追问
-4. 通过审阅或继续提问修正知识系统
+1. owner 在 `/app/ask` 发起研究问题
+2. 系统优先读取 wiki，再补充 raw
+3. 如 owner 显式允许，可短暂联网补料
+4. 如答案值得沉淀，owner 可把 Ask 结果转成新的 ingest 提案
 
-## 10. 产品原则
+## 9. 产品原则
 
-- health first：MVP 必须体现知识健康，而不是只跑通问答
-- claim first：正式知识应围绕 claims、sources、questions 组织
-- review before write：AI 只能提案，不能静默写 wiki
-- ask as diagnostic：Ask 同时给用户答案和给系统诊断
-- vault first：长期真相始终落在 vault markdown
-- single-owner simplicity：先把单人知识健康闭环做扎实
+- Vault 为底：长期真相必须能回到 Markdown 文件
+- 审阅优先：AI 只能提议，不能静默写正式知识
+- 私有优先：先把 owner 的闭环做稳，再考虑对外表达
+- 研究优先：Ask 服务于知识深化，不服务于花哨聊天
+- 低复杂度优先：MVP 只做当前主路径，不恢复旧模块叙事
 
-## 11. 成功标准
+## 10. 成功标准
 
-MVP 达成以下条件即可视为成功：
+满足以下条件即可认为 MVP 可用：
 
-- 主人能通过 `/login` 进入系统
-- `raw` 能稳定接收网页、PDF 和文本材料
-- `ingest` 能稳定展示并处理 AI 提案
-- `wiki` 能保存已确认的当前理解、claims、questions 和 sources
-- `ask` 能围绕 wiki/raw 给出带来源的回答
-- `/app` 首屏能展示 briefing summary、suggested questions、knowledge gaps 和 next actions
-- Ask 能明确输出 knowledge gaps
-- Ask 能标记或生成 writeback candidate
-- 提问后判断面板会刷新为本轮 Ask 的判断结果
-- 用户能看到至少三类知识健康信号
-- 高价值 Ask 能进入 ingest，而不是停留在聊天记录里
+- `/login` 可登录
+- `/app/raw` 可导入并读取来源
+- `/app/ingest` 可接受 / 拒绝提案
+- `/app/wiki` 与 `/app/wiki/[id]` 可稳定展示知识页和来源
+- `/app/ask` 可返回带引用的回答
+- Ask writeback 只生成提案，不会直接改写 wiki
 
-## 12. 阶段边界
+## 11. 阶段边界
 
-### MVP 完成标准
+### 当前阶段完成标准
 
-- 完成 `raw -> ingest -> wiki -> ask -> health -> ingest` 闭环
-- 完成私有登录与研究工作区主路径
-- 完成最小知识健康信号展示
-- 完成 Ask 到 ingest 的可审阅回写
+- 本地全栈闭环成立
+- 文档与代码对齐
+- 旧 public / plans / note editor 方向退出主规范
 
-### MVP 之后的演进
+### 下一阶段优先项
 
-- 第一优先：unsupported claims 与 claim-level provenance
-- 第二优先：stale claims 与知识重审
-- 第三优先：duplicate / conflicting topic 发现
-- 第四优先：更强 retrieval、evidence ranking 与自动化导入
+- Ask-first 工作区体验
+- 更稳定的 retrieval 与证据链
+- 更清晰的 source/topic 演化流程

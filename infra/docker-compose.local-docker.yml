@@ -1,0 +1,78 @@
+services:
+  local-postgres:
+    build:
+      context: .
+      dockerfile: docker/postgres-pgvector.Dockerfile
+    container_name: inkvault-local-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-inkvault}
+      POSTGRES_USER: ${POSTGRES_USER:-inkvault}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-inkvault}
+    ports:
+      - "${POSTGRES_PORT:-15432}:5432"
+    volumes:
+      - inkvault-local-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U inkvault -d inkvault"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  local-server:
+    build:
+      context: ../server
+      dockerfile: ../infra/docker/local-server.Dockerfile
+    container_name: inkvault-local-server
+    restart: unless-stopped
+    depends_on:
+      local-postgres:
+        condition: service_healthy
+    environment:
+      INKVAULT_ENV: ${INKVAULT_ENV:-local}
+      INKVAULT_DB_URL: postgresql+psycopg://${POSTGRES_USER:-inkvault}:${POSTGRES_PASSWORD:-inkvault}@local-postgres:5432/${POSTGRES_DB:-inkvault}
+      INKVAULT_VAULT_ROOT: /app/inkvault-vault
+      INKVAULT_AUTH_SECRET: ${INKVAULT_AUTH_SECRET:-replace-with-a-long-random-secret}
+      INKVAULT_AUTH_SESSION_DURATION: ${INKVAULT_AUTH_SESSION_DURATION:-PT8H}
+      INKVAULT_AUTH_ALLOW_LEGACY_OWNER_COOKIE: ${INKVAULT_AUTH_ALLOW_LEGACY_OWNER_COOKIE:-true}
+      INKVAULT_AGENT_RUNTIME: ${INKVAULT_AGENT_RUNTIME:-langgraph}
+      INKVAULT_AGENT_PROVIDER_PROFILE: ${INKVAULT_AGENT_PROVIDER_PROFILE:-openai}
+      INKVAULT_AGENT_MODEL: ${INKVAULT_AGENT_MODEL:-}
+      INKVAULT_AGENT_API_KEY: ${INKVAULT_AGENT_API_KEY:-}
+      INKVAULT_AGENT_BASE_URL: ${INKVAULT_AGENT_BASE_URL:-}
+      INKVAULT_AGENT_CONNECT_TIMEOUT_SECONDS: ${INKVAULT_AGENT_CONNECT_TIMEOUT_SECONDS:-2}
+      INKVAULT_AGENT_READ_TIMEOUT_SECONDS: ${INKVAULT_AGENT_READ_TIMEOUT_SECONDS:-20}
+      INKVAULT_EMBEDDING_PROVIDER_PROFILE: ${INKVAULT_EMBEDDING_PROVIDER_PROFILE:-openai}
+      INKVAULT_EMBEDDING_MODEL: ${INKVAULT_EMBEDDING_MODEL:-text-embedding-3-small}
+      INKVAULT_EMBEDDING_API_KEY: ${INKVAULT_EMBEDDING_API_KEY:-}
+      INKVAULT_EMBEDDING_BASE_URL: ${INKVAULT_EMBEDDING_BASE_URL:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      INKVAULT_ENABLE_WEB_ASSIST: ${INKVAULT_ENABLE_WEB_ASSIST:-true}
+      INKVAULT_ENABLE_LOCAL_SEED: ${INKVAULT_ENABLE_LOCAL_SEED:-true}
+    ports:
+      - "${INKVAULT_SERVER_PORT:-8080}:8080"
+    volumes:
+      - inkvault-local-vault-data:/app/inkvault-vault
+
+  local-web:
+    build:
+      context: ../web
+      dockerfile: ../infra/docker/local-web.Dockerfile
+      args:
+        NEXT_PUBLIC_API_BASE_URL: http://localhost:${INKVAULT_SERVER_PORT:-8080}
+    container_name: inkvault-local-web
+    restart: unless-stopped
+    depends_on:
+      local-server:
+        condition: service_started
+    environment:
+      INKVAULT_API_BASE_URL: http://local-server:8080
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:${INKVAULT_SERVER_PORT:-8080}
+    ports:
+      - "${INKVAULT_WEB_PORT:-3000}:3000"
+
+volumes:
+  inkvault-local-postgres-data:
+  inkvault-local-vault-data:

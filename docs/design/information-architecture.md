@@ -2,103 +2,105 @@
 
 ## 目标
 
-这份文档固定 Inkvault 当前 MVP 的私有研究工作台结构，确保产品、设计和前端对页面边界保持一致。
+固定当前 vault-first 私有 LLM Wiki 的路由与页面边界。
 
 ## 顶层结构
 
-Inkvault 的当前主产品是一个单人私有 Ask-first 研究工作区，围绕 `raw -> ingest -> wiki -> ask` 运转：
+当前产品只有一个私有工作区和一个登录入口：
 
 ```mermaid
 graph TD
-    A["Inkvault"] --> B["登录入口 /login"]
-    A --> C["Ask-first 工作区 /app"]
-    C --> C1["问答主入口 /app 或 /app/ask"]
-    C --> C2["资料 /app/raw"]
-    C --> C3["审阅 /app/ingest"]
-    C --> C4["知识库 /app/wiki"]
-    C --> C5["知识页详情 /app/wiki/[id]"]
+    A["Inkvault"] --> B["入口分流 /"]
+    B --> C["未登录 -> /login"]
+    B --> D["已登录 -> /app"]
+    D --> D1["Today Vault Panel /app"]
+    D --> D2["Ask /app/ask"]
+    D --> D3["Raw /app/raw"]
+    D --> D4["Ingest /app/ingest"]
+    D --> D5["Wiki /app/wiki"]
+    D5 --> D6["Wiki Detail /app/wiki/[id]"]
 ```
 
 ## 路由规则
 
-### 根路由行为
+### 根路由
 
-- 未登录访问 `/`：跳转到 `/login`
-- 已登录访问 `/`：自动进入 `/app`
+- `/`
+  - 未登录：重定向到 `/login`
+  - 已登录：重定向到 `/app`
 
 ### 登录路由
 
 - `/login`
-  - 目标：主人隐藏登录入口
-  - 职责：进入私有研究工作区
+  - 目标：owner 登录入口
+  - 边界：只负责登录，不承载公开内容展示
 
-### 主系统路由
+### 私有工作区
 
 - `/app`
-  - 目标：作为主人进入后的第一屏
-  - 职责：直接进入 Ask-first 研究入口，展示 briefing hero、建议问题、提问区与判断面板
+  - 目标：认证后的首页
+  - 职责：显示 Today Vault Panel、当前研究状态和进入各主模块的入口
+
 - `/app/ask`
-  - 目标：兼容旧问答直达入口
-  - 职责：复用 `/app` 同一 Ask-first 页面，实现提问、追问、知识缺口、引用来源、联网补料与回写动作
+  - 目标：研究问答与追问
+  - 职责：围绕 wiki 与 raw 发起问题、查看回答、继续追问、生成 writeback 提案
+
 - `/app/raw`
-  - 目标：导入和管理原始材料
-  - 职责：承接网页、PDF、文本等研究输入
+  - 目标：管理原始材料
+  - 职责：导入网页、PDF、文本，查看 raw 索引状态
+
 - `/app/ingest`
-  - 目标：审阅 AI 编译提案
-  - 职责：作为 raw 到 wiki 的人工确认闸门
+  - 目标：审阅 AI 提案
+  - 职责：接受或拒绝 topic create / patch
+
 - `/app/wiki`
-  - 目标：浏览已沉淀知识页
-  - 职责：承载已经确认的长期知识
+  - 目标：浏览知识页列表
+  - 职责：查看已沉淀主题与摘要
+
 - `/app/wiki/[id]`
-  - 目标：查看单个 wiki 页面
-  - 职责：展示 current understanding、claims、open questions 和来源
+  - 目标：查看单个知识页详情
+  - 职责：阅读 understanding、claims、questions、sources 与研究线程
+
+## 兼容路由
+
+以下旧路由仍保留，但只做兼容跳转：
+
+- `/app/inbox` -> `/app/raw`
+- `/app/review` -> `/app/ingest`
+- `/app/topics` -> `/app/wiki`
+- `/app/sources` -> `/app/raw`
 
 ## 导航关系
 
-### 主导航
+当前主导航围绕四个一级对象组织：
 
-一级导航固定为：
+- 问答
+- 资料
+- 审阅
+- 知识库
 
-- `问答`
-- `资料`
-- `审阅`
-- `知识库`
+它们对应的产品语言分别是：
 
-### 导航原则
-
-- `问答` 是产品第一入口
-- 不再提供独立 `健康` 导航，健康信号通过 Ask-first briefing 和工作区上下文呈现
-- `资料` 承担原始材料导入与浏览
-- `审阅` 承担 AI 提案 accept / reject
-- `知识库` 承担已确认知识的浏览与复用
+- `ask`
+- `raw`
+- `ingest`
+- `wiki`
 
 ## 主链路
 
 ```mermaid
 flowchart LR
-    A["主人访问 /login"] --> B["进入 /app"]
-    B --> C["问答"]
-    B --> D["资料"]
-    B --> E["审阅"]
-    B --> F["知识库"]
-    D --> E
-    E --> F
-    F --> C
-    C --> E
+    A["/login"] --> B["/app"]
+    B --> C["/app/raw"]
+    C --> D["/app/ingest"]
+    D --> E["/app/wiki"]
+    E --> F["/app/ask"]
+    F --> D
 ```
 
 ## 页面边界
 
-- 登录页不承担公开品牌展示职责
-- `/app` 不再承载 dashboard 聚合首页，而是直接承载 Ask-first 首屏判断与提问入口
-- `问答` 负责研究入口与判断摘要，不负责替代 raw / ingest / wiki 的独立职责
-- `资料` 只表示“尚未沉淀的原始材料”
-- `审阅` 只表示“AI 建议变更，等待你确认”
-- `知识库` 只表示“已确认、可复用的正式知识”
-
-## 后续衔接点
-
-- 更深的 Ask 能力优先落在 `/app`
-- 更复杂的检索和 evidence 组织优先增强 `问答` 与 `知识库`
-- 更强的自动化研究流程优先围绕 `raw / ingest / ask` 扩展
-- `GET /api/admin/home` 继续作为 shell 与 briefing 的事实输入，不恢复为 `/app` 主内容
+- 当前没有公开访客页
+- 当前没有 `plans`、`search`、`publish`、`settings` 主路径
+- `ask` 是研究入口，不替代 `raw`、`ingest` 或 `wiki`
+- `wiki` 是沉淀结果，不是原始材料仓

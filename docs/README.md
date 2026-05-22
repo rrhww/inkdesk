@@ -1,34 +1,39 @@
 # 文档索引
 
-`docs/` 是 Inkvault 项目的正式事实来源。Inkvault 的当前定义已经收敛为：
+`docs/` 用来解释当前代码已经实现、正在维护、仍值得继续扩展的内容。
 
-- 一个单人私有、vault-first、以知识健康为核心的 AI 研究系统
-- 一条明确的主闭环：`raw -> ingest -> wiki -> ask -> health -> ingest`
+当前产品边界已经收敛为：
+
+- 单人私有
+- vault-first
+- 围绕 `raw -> ingest -> wiki -> ask` 的 LLM Wiki
+
+旧的“公开输出层 / plans / note editor”方向已经退出主路径；相关过时文档已删除或收缩，不再作为项目规范来源。
 
 ## 分层说明
 
-- `product/`：产品定位、用户故事、长期路线
-- `design/`：信息架构、页面规格、视觉与原型流程
+- `product/`：当前产品定位、用户故事、阶段路线
+- `design/`：当前路由结构、页面清单、视觉令牌
 - `architecture/`：系统边界、领域模型、接口、数据库与技术决策
-- `delivery/`：阶段排期、开发环境、协作与上线检查
-- `ops/`：部署、环境变量、备份与恢复
-- `superpowers/`：开发期设计稿、执行计划和历史规格归档
+- `delivery/`：本地开发、协作方式、验收与提交流程
+- `ops/`：环境变量、部署、备份恢复
+- `superpowers/`：仍有参考价值的实现计划与设计稿，只作研发归档，不作为产品主规范
 
 ## 推荐阅读顺序
 
-### 第一步，理解产品
+### 第一步，理解当前产品
 
-- `product/product-vision.md`
 - `product/mvp-prd.md`
 - `product/user-stories.md`
 - `product/product-roadmap.md`
 
-### 第二步，理解设计
+### 第二步，理解当前界面与路由
 
 - `design/information-architecture.md`
-- `design/page-briefs.md`
+- `design/page-inventory.md`
+- `design/design-tokens.md`
 
-### 第三步，理解技术实现
+### 第三步，理解实现边界
 
 - `architecture/system-overview.md`
 - `architecture/domain-model.md`
@@ -37,21 +42,25 @@
 - `architecture/tech-decisions.md`
 - `architecture/tooling-and-mcp.md`
 
-### 第四步，理解交付与上线
+### 第四步，理解如何跑起来
 
-- `delivery/development-plan.md`
-- `delivery/mvp-roadmap.md`
 - `delivery/dev-setup.md`
-- `delivery/repository-workflow.md`
+- `delivery/local-fullstack-acceptance.md`
 - `delivery/release-checklist.md`
-- `ops/deploy-guide.md`
 - `ops/env-vars.md`
+- `ops/deploy-guide.md`
 - `ops/backup-restore.md`
+
+### 第五步，理解协作约定
+
+- `delivery/repository-workflow.md`
+- `delivery/fullstack-mentorship-plan.md`
+- `delivery/growth-engineer-training-manual.md`
+- `delivery/mentorship-progress-log.md`
 
 ## 文档维护原则
 
-- 文档全部使用中文，技术名词、接口、路径保留英文
-- 当前主叙事以 `product/product-vision.md` 和 `raw -> ingest -> wiki -> ask -> health -> ingest` 为准
-- 历史方案、旧路线和设计归档放在历史文档中，不作为当前产品定义
-- 同一项决策只能有一个主归属文档，避免重复和冲突
-- 文档更新优先于实现更新，聊天记录不作为项目规范
+- 文档全部使用中文，接口、路径、命令保留英文
+- 同一项事实只保留一个主归属文档，避免复制粘贴式维护
+- 当前代码与运行方式优先于历史方案；过时方案应删除或显式归档
+- 聊天记录不是规范，真正生效的是仓库里的文档和代码

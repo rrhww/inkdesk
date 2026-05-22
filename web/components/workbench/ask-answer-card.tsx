@@ -122,8 +122,11 @@ export function AskAnswerCard({ answer, mode, renderFollowUpHref, writebackActio
       <div className="mt-6 text-[11px] uppercase tracking-[0.2em] text-ink-muted">引用来源</div>
       <div className="mt-4 space-y-3">
         {answer.citations.length > 0 ? (
-          answer.citations.map((citation) => (
-            <div key={citation.sourceId} className="rounded-[22px] bg-ink-low px-4 py-4">
+          answer.citations.map((citation, index) => (
+            <div
+              key={citation.chunkId ?? citation.id ?? `${citation.sourceId ?? citation.title}-${citation.locator ?? index}`}
+              className="rounded-[22px] bg-ink-low px-4 py-4"
+            >
               <div className="font-headline text-xl font-bold tracking-tight text-ink-text">{citation.title}</div>
               <div className="mt-2 break-words text-sm text-ink-muted">{citation.locator || "未记录 locator"}</div>
               {citation.vaultPath ? <div className="mt-2 break-words text-sm text-ink-primary">{citation.vaultPath}</div> : null}

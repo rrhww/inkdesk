@@ -2,7 +2,7 @@
 
 ## 目标
 
-这份文档定义 Inkvault MVP 的基础视觉规则，保证 Figma 和前端实现使用同一套颜色、间距、字体和组件尺度。
+这份文档定义 Inkvault 当前私有研究工作区的基础视觉规则，保证页面实现使用同一套颜色、间距、字体和组件尺度。
 
 ## 视觉方向
 
@@ -48,8 +48,8 @@ Inkvault 的视觉方向固定为：
 
 ### 字号层级
 
-- `font-size-display`：公开首页和重要标题
-- `font-size-h1`：文章页主标题
+- `font-size-display`：首页主卡片或重要标题
+- `font-size-h1`：模块页主标题
 - `font-size-h2`
 - `font-size-h3`
 - `font-size-body-lg`
@@ -105,6 +105,5 @@ MVP 不追求过大的圆角，整体风格偏克制。
 
 ## 后续衔接点
 
-- 组件规范在 Figma 中维护
 - 页面细节由 `design/page-inventory.md` 约束
-- 设计交付流程见 `design/figma-links.md` 和 `design/design-workflow.md`
+- 路由与页面职责见 `design/information-architecture.md`

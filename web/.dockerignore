@@ -1,0 +1,6 @@
+node_modules
+.next
+.env.local
+playwright-report
+test-results
+npm-debug.log*

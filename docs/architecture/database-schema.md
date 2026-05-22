@@ -2,288 +2,261 @@
 
 ## 目标
 
-这份文档用于说明 Inkvault 当前研究闭环的数据库建模方向，包括表职责、关键字段建议、关系约束和索引方向。
+这份文档描述当前仓库已经落地的数据库模型，而不是历史设想。
+
+当前数据库主要承担三类职责：
+
+- owner / workspace / 会话相关索引
+- `raw -> ingest -> wiki -> ask` 工作流状态
+- retrieval 索引与兼容性迁移支撑
+
+长期真相仍然是 vault 中的 Markdown；数据库负责索引、队列、缓存与追踪。
 
 ## 建模原则
 
-- vault 文件是真相，数据库是索引与状态层
-- raw、ingest、wiki、ask 分层清晰
-- 提案与正式知识分离
-- Ask 结果以研究状态快照持久化
-- 尽量为重建与幂等保留结构
+- Vault 文件优先，数据库不是唯一真相
+- AI 写入必须先经过 `review_items`
+- `topics` 与 `sources` 是当前主产品对象
+- 旧 `content_nodes` / `note_documents` 仅作为 legacy note 迁移桥接层保留
+- schema 以 `server/src/main/resources/db/migration/*.sql` 和 `server/inkvault_server/models.py` 为准
 
-## 表清单
+## 当前表清单
 
-- `owners`
+### 核心身份与空间
+
+- `users`
 - `workspaces`
-- `workspace_settings`
+
+### 迁移兼容层
+
+- `content_nodes`
+- `note_documents`
+
+### 研究主路径
+
 - `sources`
-- `wiki_pages`
-- `wiki_claims`
-- `wiki_open_questions`
-- `reviews`
+- `topics`
+- `topic_sources`
+- `topic_claims`
+- `topic_thread_entries`
+- `review_items`
 - `ask_turns`
+- `retrieval_chunks`
 
 ## 逐表说明
 
-### `owners`
+### `users`
 
-用途：
-保存系统唯一拥有者账号信息。
+用途：owner 账号。
 
-关键字段建议：
+关键字段：
 
-- `id`
+- `username`
 - `email`
 - `password_hash`
 - `status`
-- `created_at`
-- `updated_at`
-
-索引方向：
-
-- `email` 唯一索引
 
 ### `workspaces`
 
-用途：
-保存当前研究工作区信息。
+用途：单 owner 工作区容器。
 
-关键字段建议：
+关键字段：
 
-- `id`
-- `owner_id`
+- `owner_user_id`
 - `name`
-- `created_at`
-- `updated_at`
+- `slug`
 
-索引方向：
+### `content_nodes`
 
-- `owner_id`
+用途：保留旧 note tree 结构，用于 legacy note 迁移与兼容种子数据。
 
-### `workspace_settings`
+说明：
 
-用途：
-保存工作区运行设置。
+- 不是当前主产品里的“知识库页面”来源
+- 当前前端不再直接围绕 `notes` 工作流开发
 
-关键字段建议：
+### `note_documents`
 
-- `workspace_id`
-- `vault_root`
-- `agent_provider_profile`
-- `agent_runtime`
-- `web_assist_enabled`
-- `updated_at`
+用途：为 `content_nodes` 提供旧 Markdown 正文。
 
-索引方向：
+说明：
 
-- `workspace_id` 唯一索引
+- 主要用于迁移期把 legacy note 编译成 `raw` 来源
 
 ### `sources`
 
-用途：
-保存 raw 材料索引。
+用途：`raw/` 中的原始材料索引。
 
-关键字段建议：
+关键字段：
 
-- `id`
-- `workspace_id`
+- `legacy_note_id`
 - `kind`
+- `status`
 - `title`
 - `locator`
 - `excerpt`
-- `status`
+- `body`
 - `vault_path`
 - `content_hash`
-- `created_at`
-- `updated_at`
 
 说明：
 
-- 对应进入 `raw/` 的网页、PDF、文本或迁移材料
-- `content_hash` 用于去重
+- `kind` 当前覆盖 `TEXT`、`WEB`、`PDF` 等来源类型
+- `status` 用来区分待编译、已关联、已忽略等状态
+- `vault_path` 指向 `raw/` 下的真实文件
 
-索引方向：
+### `topics`
 
-- `workspace_id`
-- `status`
-- `locator`
+用途：`wiki/` 知识页索引。
+
+关键字段：
+
+- `title`
+- `slug`
+- `summary`
+- `current_understanding`
+- `open_questions`
+- `vault_path`
 - `content_hash`
 
-### `wiki_pages`
+说明：
 
-用途：
-保存正式 wiki 页面索引。
+- 当前一个 topic 对应一篇已沉淀的 wiki 页面
+- 长期真相仍然落在 `wiki/*.md`
 
-关键字段建议：
+### `topic_sources`
 
-- `id`
-- `workspace_id`
-- `title`
-- `summary`
-- `understanding`
-- `vault_path`
-- `created_at`
-- `updated_at`
+用途：topic 与 source 的多对多关联表。
 
-索引方向：
+说明：
 
-- `workspace_id`
-- `title`
-- `vault_path`
+- 用于溯源，说明某个知识页由哪些原始材料支撑
 
-### `wiki_claims`
+### `topic_claims`
 
-用途：
-保存 wiki 页面的关键结论及来源关联。
+用途：保存知识页中的关键论点及其引用标签。
 
-关键字段建议：
+关键字段：
 
-- `id`
-- `wiki_page_id`
 - `statement`
 - `citation_label`
-- `source_id`
-- `evidence_count`
-- `provenance_status`
-- `last_verified_at`
-- `updated_at`
 - `sort_order`
-
-说明：
-
-- `evidence_count` 用于表示当前 claim 直接证据条数
-- `provenance_status` 当前取值为 `supported | partial | unsupported`
-- `last_verified_at` 用于记录这条 claim 最近一次被当前证据链验证的时间
-- 这些字段直接支撑 wiki 页面、ingest 审阅卡片和 Ask-first 判断面板里的治理提示
-
-索引方向：
-
-- `wiki_page_id`
 - `source_id`
-- `provenance_status`
 
-### `wiki_open_questions`
+### `topic_thread_entries`
 
-用途：
-保存 wiki 页面的开放问题。
+用途：保存知识页的研究过程线程。
 
-关键字段建议：
+关键字段：
 
-- `id`
-- `wiki_page_id`
-- `question`
+- `role`
+- `content`
 - `sort_order`
-
-索引方向：
-
-- `wiki_page_id`
-
-### `reviews`
-
-用途：
-保存 ingest 提案及其审阅状态。
-
-关键字段建议：
-
-- `id`
-- `workspace_id`
 - `source_id`
-- `target_wiki_page_id`
+
+### `review_items`
+
+用途：`ingest/` 审阅队列。
+
+关键字段：
+
+- `source_id`
+- `target_topic_id`
 - `kind`
+- `proposal_kind`
+- `status`
 - `title`
 - `summary`
+- `proposed_*`
 - `proposal_payload_json`
-- `status`
-- `created_at`
-- `resolved_at`
+- `content_hash`
 
 说明：
 
-- `proposal_payload_json` 保存 topic 决策、claims、evidence、open questions 等结构化提案内容
-
-索引方向：
-
-- `workspace_id`
-- `status`
-- `source_id`
-- `target_wiki_page_id`
+- 所有 AI 提案都必须先进入这里
+- 接受后才允许写入或更新 wiki
 
 ### `ask_turns`
 
-用途：
-保存 Ask 研究状态快照。
+用途：保存 Ask 历史、引用和 writeback 包。
 
-关键字段建议：
+关键字段：
 
-- `id`
-- `workspace_id`
-- `parent_ask_turn_id`
 - `topic_id`
+- `parent_ask_turn_id`
+- `thread_root_ask_turn_id`
+- `mode`
 - `question`
 - `answer`
-- `mode`
 - `confidence`
-- `used_wiki_ids_json`
-- `used_source_ids_json`
+- `retrieval_mode`
+- `used_wiki_ids`
+- `used_source_ids`
+- `used_chunk_ids`
 - `used_web_sources_json`
 - `knowledge_gaps_json`
 - `follow_up_questions_json`
+- `can_writeback`
 - `writeback_package_json`
-- `judgment_payload_json`
-- `created_at`
+- `citation_source_ids`
 
 说明：
 
-- AskTurn 既是回答记录，也是追问上下文恢复与 writeback 幂等的基础
-- `judgment_payload_json` 只保存与该轮 Ask 绑定的 ask-scoped briefing 结果
-- 首屏 `workspace` briefing 不落库；旧 AskTurn 若没有 judgment payload，可按请求时现算返回
+- 除迁移 SQL 外，应用启动时也会执行 schema upgrade，补齐新列
 
-索引方向：
+### `retrieval_chunks`
 
-- `workspace_id`
-- `parent_ask_turn_id`
-- `topic_id`
-- `created_at desc`
+用途：保存用于检索的 chunk 级索引。
 
-## 关系约束
+关键字段：
 
-- `workspaces.owner_id -> owners.id`
-- `workspace_settings.workspace_id -> workspaces.id`
+- `entity_type`
+- `entity_id`
+- `chunk_ordinal`
+- `text`
+- `content_hash`
+- `embedding_json`
+
+说明：
+
+- 当前兼容 lexical fallback 与 embedding/hybrid retrieval
+- PostgreSQL 会确保 `vector` 扩展存在，但当前模型仍把 embedding 以 JSON 形式保存
+
+## 主要关系
+
+- `workspaces.owner_user_id -> users.id`
+- `content_nodes.workspace_id -> workspaces.id`
+- `note_documents.note_id -> content_nodes.id`
 - `sources.workspace_id -> workspaces.id`
-- `wiki_pages.workspace_id -> workspaces.id`
-- `wiki_claims.wiki_page_id -> wiki_pages.id`
-- `wiki_claims.source_id -> sources.id`
-- `wiki_open_questions.wiki_page_id -> wiki_pages.id`
-- `reviews.workspace_id -> workspaces.id`
-- `reviews.source_id -> sources.id`
-- `reviews.target_wiki_page_id -> wiki_pages.id`
+- `sources.legacy_note_id -> content_nodes.id`
+- `topics.workspace_id -> workspaces.id`
+- `topic_sources.topic_id -> topics.id`
+- `topic_sources.source_id -> sources.id`
+- `topic_claims.topic_id -> topics.id`
+- `topic_claims.source_id -> sources.id`
+- `topic_thread_entries.topic_id -> topics.id`
+- `topic_thread_entries.source_id -> sources.id`
+- `review_items.workspace_id -> workspaces.id`
+- `review_items.source_id -> sources.id`
+- `review_items.target_topic_id -> topics.id`
 - `ask_turns.workspace_id -> workspaces.id`
-- `ask_turns.parent_ask_turn_id -> ask_turns.id`
+- `ask_turns.topic_id -> topics.id`
 
-## 搜索策略说明
+## 已淘汰表
 
-当前阶段优先使用 PostgreSQL 与 vault 元数据完成：
+以下旧产品阶段的表已在迁移中退出主路径：
 
-- wiki 标题与理解检索
-- raw 标题、摘录与 locator 检索
-- 与 topic 相关的简单相关性召回
+- `plans`
+- `plan_notes`
+- `tags`
+- `note_tags`
+- `publications`
+- `workspace_settings`
 
-暂不把数据库设计成复杂向量平台，原因是：
-
-- 当前数据规模较小
-- 产品重点是闭环与可追溯，不是大规模检索基础设施
-- 先保证行为清晰，再决定是否扩展更复杂索引
-
-## 为什么当前不拆更复杂模型
-
-- 当前没有多人协作，不需要权限体系
-- 当前没有公开发布面，不需要 publication 模型
-- 当前没有任务系统，不需要 plans 模型
-- 当前没有长时自治 agent，不需要复杂调度模型
+它们不应再出现在当前产品设计和接口说明里。
 
 ## 后续衔接点
 
-- 业务实体说明见 `architecture/domain-model.md`
-- Ask 研究路径见 `architecture/system-overview.md`
-- 运行与 provider 配置见 `ops/env-vars.md`
+- 业务语言见 `architecture/domain-model.md`
+- 接口边界见 `architecture/api-draft.md`
+- 运行边界见 `architecture/tech-decisions.md`

@@ -69,11 +69,14 @@ Copy-Item infra/.env.example infra/.env
 Copy-Item web/.env.local.example web/.env.local
 ```
 
+`web/.env.local` 在只看本地 fixtures 时可以留空；如果要跑真实后端或 `npm run e2e:fullstack`，至少填一个 API 基地址。
+
 2. 设置后端关键变量
 
 ```powershell
 $env:INKVAULT_AUTH_SECRET='replace-with-a-long-random-secret'
 $env:INKVAULT_VAULT_ROOT='C:\path\to\inkvault-vault'
+$env:INKVAULT_AGENT_PROVIDER_PROFILE='openai' # 或 deepseek
 ```
 
 3. 启动基础设施
@@ -106,7 +109,7 @@ npm run dev
 ## 推荐的本地服务职责
 
 - PostgreSQL：索引、提案、session、问答记录
-- MinIO：对象存储形态占位
+- MinIO：对象存储形态占位，当前主路径不依赖附件上传
 - Vault 目录：`raw/` 与 `wiki/` 长期真相
 - Docker Compose：基础设施启动入口
 

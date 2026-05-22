@@ -2,39 +2,41 @@
 
 ## 目标
 
-这份文档逐页说明当前 MVP 需要承载的页面目标、关键模块和状态，作为设计交付与前端实现的页面规格。
+逐页说明当前私有研究工作区需要承载的页面目标和状态。
 
 ## 页面清单
 
-| 页面 | 路由 | 主要目标 | 关键模块 | 关键状态 | 设计优先级 | 首批开发 |
-| --- | --- | --- | --- | --- | --- | --- |
-| 登录页 | `/login` | 主人进入系统 | 品牌区、登录表单、错误提示 | 默认、失败 | P0 | 是 |
-| 问答 | `/app` 或 `/app/ask` | 发起与延续研究问答，并先暴露当前缺口 | briefing hero、建议提问、输入区、消息流、判断面板、来源、知识缺口、下一步动作、沉淀动作 | 空状态、有回答、继续追问、显式联网补料、失败 | P0 | 是 |
-| 资料 | `/app/raw` | 导入和浏览原始材料 | 导入入口、来源列表、状态、vault 规则说明 | 空状态、有材料 | P0 | 是 |
-| 审阅 | `/app/ingest` | 处理 AI 提案 | 提案摘要、topic 决策、claims、证据、accept/reject | 空状态、有待处理项 | P0 | 是 |
-| 知识库 | `/app/wiki` | 浏览已沉淀知识页 | 标题、摘要、来源数、开放问题数、详情入口 | 空状态、有知识页 | P0 | 是 |
-| 知识页详情 | `/app/wiki/[id]` | 查看单个 wiki 页面 | understanding、claims、open questions、sources | 默认、不存在 | P0 | 是 |
+| 页面 | 路由 | 主要目标 | 关键模块 | 关键状态 | 优先级 |
+| --- | --- | --- | --- | --- | --- |
+| 根路由分流 | `/` | 按登录态重定向 | session 检查、重定向 | 未登录、已登录 | P0 |
+| 登录页 | `/login` | 进入私有工作区 | 登录表单、错误提示 | 默认、失败 | P0 |
+| 首页 | `/app` | 展示 Today Vault Panel 与研究入口 | summary、focus topic、recent sources、pending reviews、suggested questions | 默认 | P0 |
+| Ask 页 | `/app/ask` | 发起研究问答与追问 | 提问表单、回答、知识缺口、follow-up、writeback | 空状态、有回答、联网补料、追问中 | P0 |
+| Raw 页 | `/app/raw` | 管理原始材料 | 来源列表、网页导入、文本导入、PDF 导入 | 空状态、有来源、导入中 | P0 |
+| Ingest 页 | `/app/ingest` | 审阅 AI 提案 | 提案列表、来源、topic 归属、接受/拒绝 | 有提案、提案已处理 | P0 |
+| Wiki 列表页 | `/app/wiki` | 浏览知识页 | topic 列表、摘要、来源数 | 空状态、有结果 | P0 |
+| Wiki 详情页 | `/app/wiki/[id]` | 阅读单个知识页 | current understanding、key claims、open questions、sources、research thread | 正常、主题不存在 | P0 |
 
-## 首批必须出高保真的页面
+## 兼容页面
 
-- 问答
-- 资料
-- 审阅
-- 知识库
-- 登录页
+以下页面不再作为独立产品面，只保留跳转：
+
+- `/app/inbox`
+- `/app/review`
+- `/app/topics`
+- `/app/sources`
 
 ## 页面状态要求
 
-- 登录页至少覆盖默认和失败状态
-- 问答空状态至少覆盖 briefing summary、suggested questions、knowledge gaps 和 next actions
-- 问答有回答状态至少覆盖引用来源、问后判断、继续追问和沉淀动作
-- 资料至少覆盖空状态和有材料状态
-- 审阅至少覆盖空状态和有待处理项状态
-- 知识库至少覆盖空状态和有知识页状态
+- 登录页覆盖默认和失败状态
+- 首页至少覆盖有聚合数据的默认状态
+- Raw 页覆盖导入表单与已有来源列表
+- Ingest 页覆盖待审阅和已处理反馈
+- Wiki 详情页覆盖 understanding / claims / questions / sources
+- Ask 页覆盖空状态、有答案、continueFromAskTurnId、`vault_plus_web`
 
-## 页面实现说明
+## 实现说明
 
-- 所有主路径页面共享统一私有壳层
-- `/app` 是 Ask-first 第一入口，`/app/ask` 作为兼容别名复用同一页面实现
-- `问答` 是第一入口，其余页面围绕研究闭环提供支撑
-- 不再为公开输出、plans、publish、settings 等旧路径提供当前页面定义
+- 当前没有公开首页和公开文章页
+- 当前没有 `plans`、`search`、`publish`、`settings` 页面
+- 页面文案应统一使用 `raw / ingest / wiki / ask` 语言

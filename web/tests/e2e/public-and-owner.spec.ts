@@ -55,6 +55,7 @@ test("ask compatibility alias reuses the ask-first workspace and keeps claim gov
 });
 
 test("legacy product routes are no longer compatibility entrances", async ({ page }) => {
+  await loginAsOwner(page);
   await page.goto("/app/topics");
 
   await expect(page).toHaveURL(/\/app\/topics$/);
