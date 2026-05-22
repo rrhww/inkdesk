@@ -54,7 +54,87 @@
 - 数据库调试
 - 前后端联调
 
-## 四、MCP 使用建议
+## 四、Inkvault 作为 Agent 知识底座
+
+Inkvault 的长期形态不是只在自己的 Web App 里回答问题，而是作为 Claude Code、Codex、Cursor 等外部 Agent 的通用知识底座。
+
+外部 Agent 接入 Inkvault 时，只需要理解两个动作：
+
+```text
+context_pack -> 任务前获取相关长期知识
+deposit -> 任务后把高价值回答或片段交给 Inkvault 沉淀
+```
+
+外部 Agent 不应该直接写 `wiki/`，也不需要理解 `claim / ingest / health / lint` 的完整内部协议。它们只把上下文和沉淀请求交给 Inkvault，由 Inkvault 的主 Agent 和专项子 Agent 完成后续逻辑。
+
+### 对外接口草案
+
+第一版建议同时提供 CLI 与 MCP server。
+
+CLI：
+
+```bash
+inkvault context --task "<当前任务>" --repo "<仓库路径>" --max-tokens 3000
+inkvault deposit --question "<用户问题>" --answer-file answer.md --repo "<仓库路径>"
+inkvault deposit-selection --text-file selection.md --reason "<为什么值得沉淀>"
+```
+
+MCP tools：
+
+- `inkvault.context_pack(task, repo, files, max_tokens)`：返回外部 Agent 可直接阅读的短上下文包。
+- `inkvault.search(query, scope, limit)`：搜索长期知识。
+- `inkvault.deposit_answer(question, answer, citations, source_context)`：沉淀一段完整回答。
+- `inkvault.deposit_selection(text, reason, source_context)`：沉淀用户选中的片段。
+- `inkvault.open_questions(scope)`：返回相关未解决问题。
+- `inkvault.decision_history(topic)`：返回某个主题的稳定判断和变更记录。
+
+### 外部 Agent 使用协议
+
+外部 Agent 在任务开始时：
+
+1. 判断任务是否依赖长期知识、产品方向、历史决策或仓库约定。
+2. 调用 `context_pack` 获取短上下文。
+3. 只把返回结果作为上下文，不自行改写 Inkvault 长期知识。
+
+外部 Agent 在任务结束时：
+
+1. 如果回答中有可长期复用的判断、方案、设计取舍或复盘，提示用户是否沉淀。
+2. 用户确认后调用 `deposit_answer` 或 `deposit_selection`。
+3. Inkvault 后台完成提取、证据绑定、topic 路由、冲突检测和质量门控。
+
+### Codex 接入形态
+
+Codex 推荐三层接入：
+
+- MCP server：提供 `context_pack` 和 `deposit` 工具。
+- Codex Skill：说明什么时候调用 Inkvault，什么时候建议用户沉淀。
+- 项目 `AGENTS.md`：声明本项目长期知识由 Inkvault 管理。
+
+项目级提示建议：
+
+```text
+When the task depends on product memory, project history, or durable decisions, call Inkvault for a context pack before proposing changes.
+After producing durable product, architecture, or workflow decisions, ask the user whether to deposit the answer into Inkvault.
+Never write long-term knowledge directly to repo docs unless the user explicitly asks; use Inkvault deposit first.
+```
+
+### Claude Code 接入形态
+
+Claude Code 推荐通过 MCP server 和 slash command 接入：
+
+- `/inkvault-context`：获取当前任务相关上下文。
+- `/deposit`：把当前回答或选中内容提交给 Inkvault 沉淀。
+
+用户体验应该保持简单：
+
+```text
+Claude Code 完成回答
+用户输入 /deposit
+Inkvault 后台沉淀
+必要时返回轻量冲突裁决卡片
+```
+
+## 五、开发期 MCP 使用建议
 
 ### 必备 MCP
 
@@ -70,7 +150,7 @@
 - `Playwright MCP`：页面流程检查和回归验证
 - `filesystem/fetch`：补充文档与文件上下文
 
-## 五、哪些是开发期依赖
+## 六、哪些是开发期依赖
 
 以下属于开发期工具，不是线上运行依赖：
 
@@ -87,7 +167,7 @@
 - 代码生成和辅助实现
 - 页面验证
 
-## 六、哪些不进入生产
+## 七、哪些不进入生产
 
 生产环境不需要把以下内容作为线上服务部署：
 
@@ -104,11 +184,15 @@
 - Nginx
 - Vault 存储目录
 
-## 七、工具链原则
+注意：Inkvault 自己未来提供的 MCP server / CLI bridge 属于产品接入层，不等同于开发期 MCP 工具。开发期 MCP 不进生产；产品化 Inkvault connector 可以作为独立本地服务或桌面侧桥接器交付。
+
+## 八、工具链原则
 
 - 优先选择能服务 `raw -> ingest -> wiki -> ask` 主路径的工具
 - 不把开发辅助工具强行带进生产环境
 - 工具链服务于产品边界，不反过来绑架架构
+- 外部 Agent 接入只暴露简单协议：取上下文、沉淀结果
+- 复杂知识治理保留在 Inkvault 内部，不泄漏给外部 Agent
 
 ## 后续衔接点
 

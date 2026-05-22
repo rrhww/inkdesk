@@ -2,7 +2,9 @@
 
 ## 目标
 
-统一当前 vault-first 私有 LLM Wiki 的业务语言，避免再混用旧的 `notes / plans / publish / public` 术语。
+统一当前 vault-first Agent Knowledge Runtime 的业务语言，避免再混用旧的 `notes / plans / publish / public` 术语。
+
+当前用户主路径是 `Ask -> 沉淀`。`raw / ingest / wiki / claim / health` 是系统内部协议，除必要裁决外不应强迫用户日常理解。
 
 ## 核心角色
 
@@ -14,9 +16,25 @@
 
 - 登录私有工作区
 - 导入原始材料到 `raw/`
-- 审阅 AI 提案
-- 维护 `wiki/` 长期记忆
-- 发起 Ask、追问、决定是否 writeback
+- 发起 Ask、追问、决定是否沉淀回答
+- 在必要时审阅 AI 提案或裁决冲突
+- 维护最终进入 `wiki/` 的长期记忆边界
+
+### ExternalAgent
+
+未来通过 MCP / CLI / Skill 接入 Inkvault 的外部 Agent。
+
+典型来源：
+
+- Claude Code
+- Codex
+- Cursor
+
+职责：
+
+- 任务前向 Inkvault 请求 context pack
+- 任务后在用户确认下提交 deposit 请求
+- 不直接写入 `wiki/` 或 vault 长期真相
 
 ## 核心实体
 
@@ -52,7 +70,7 @@
 
 关键语义：
 
-- 是 `ingest` 页面上的主对象
+- 是 `ingest` 页面上的主对象，也是后台沉淀失败或需要裁决时的落点
 - 可以创建新 topic，也可以 patch 现有 topic
 - 未接受前不能直接改写 wiki
 
@@ -92,7 +110,29 @@
 
 - 支持 topic scoped 和 global ask
 - 支持追问链
-- 记录引用、知识缺口、follow-up questions 与 writeback 包
+- 记录引用、知识缺口、follow-up questions 与 deposit/writeback 包
+- 是用户点击“沉淀这次回答”时的主要输入对象
+
+### DepositRequest
+
+一次沉淀请求。
+
+关键语义：
+
+- 可以来自 Inkvault Web App 的回答卡片
+- 可以来自外部 Agent 的 MCP / CLI 调用
+- 输入包括 question、answer、selection、citations、source_context、repo/task 信息
+- 由主 Agent 编排专项子 Agent 完成后续处理
+
+### DepositTrace
+
+后台沉淀流水线的执行痕迹。
+
+关键语义：
+
+- 记录 Insight Extractor、Evidence Binder、Topic Router、Conflict Checker、Patch Writer、Quality Gate 的关键输入输出
+- 用于调试、评测和后续策略升级
+- 不直接面向普通用户展示
 
 ### RetrievalChunk
 
@@ -120,10 +160,12 @@
 - suggestedQuestions
 - Ask thread view
 - ingest queue summary
+- deposit status / conflict confirmation card
 
 ## 边界说明
 
 - 当前没有访客角色，也没有公开阅读面
 - 当前没有 plans / publish / settings 主路径
-- Ask 是研究入口，不等于自治 Agent 执行系统
+- Ask 是研究和沉淀入口，不等于自治 Agent 执行系统
 - Vault Markdown 是长期真相，数据库和 UI 都要围绕它对齐
+- 外部 Agent 只允许通过 context/deposit 协议接入，不直接写长期知识

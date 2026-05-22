@@ -6,7 +6,10 @@
 
 - 单人私有
 - vault-first
-- 围绕 `raw -> ingest -> wiki -> ask` 的 LLM Wiki
+- Ask-first
+- 用户主路径是 `Ask -> 沉淀`
+- 内部闭环是 `raw -> ingest -> wiki -> ask -> health -> ingest`
+- 长期目标是作为 Claude Code、Codex、Cursor 等外部 Agent 的知识底座
 
 旧的“公开输出层 / plans / note editor”方向已经退出主路径；相关过时文档已删除或收缩，不再作为项目规范来源。
 
@@ -23,6 +26,7 @@
 
 ### 第一步，理解当前产品
 
+- `product/product-vision.md`
 - `product/mvp-prd.md`
 - `product/user-stories.md`
 - `product/product-roadmap.md`

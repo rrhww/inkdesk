@@ -2,7 +2,7 @@
 
 ## 目标
 
-固定当前 vault-first 私有 LLM Wiki 的后端接口边界。
+固定当前 vault-first Agent Knowledge Runtime 的后端接口边界。
 
 当前接口只服务以下主路径：
 
@@ -10,7 +10,9 @@
 - `raw` 原始材料导入与读取
 - `ingest` 提案审阅
 - `wiki` 知识页读取
-- `ask` 研究问答与 writeback 提案
+- `ask` 研究问答与 deposit / writeback 提案
+
+用户主路径是 `Ask -> 沉淀`。当前实现里沉淀先复用 Ask writeback；后续会抽象成独立 deposit API，并接入 MCP / CLI。
 
 ## 一、健康检查
 
@@ -126,6 +128,35 @@
 
 - 目标：把当前 Ask 结果转成一条新的 ingest 提案
 
+## 八、Deposit 接口规划
+
+### `POST /api/deposit/answer`
+
+- 目标：沉淀一段完整回答
+- 输入重点：
+  - question
+  - answer
+  - citations
+  - source context
+  - optional repo/task metadata
+- 当前状态：规划中，第一阶段由 `POST /api/ask/{ask_turn_id}/writeback` 承接
+
+### `POST /api/deposit/selection`
+
+- 目标：沉淀用户选中的片段
+- 输入重点：
+  - selected text
+  - reason
+  - source context
+  - optional repo/task metadata
+- 当前状态：规划中
+
+### `GET /api/context-pack`
+
+- 目标：给外部 Agent 返回当前任务相关的短上下文包
+- 典型调用方：Claude Code、Codex、Cursor 的 MCP / CLI connector
+- 当前状态：规划中
+
 ## 当前不提供
 
 - `plans` 接口
@@ -138,4 +169,5 @@
 
 - 会话 Cookie 固定为 `inkvault_owner_session`
 - AI 不能直接改写 wiki，只能先生成可审阅提案
+- 外部 Agent 不能直接写 vault，只能调用 context / deposit 协议
 - 未配置 API 基地址时，前端允许回退到本地 fixtures，但后端契约仍以本文件为准
