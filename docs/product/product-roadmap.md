@@ -2,7 +2,15 @@
 
 ## 目标
 
-这份路线图描述 Inkdesk 如何从当前私有研究闭环，演进成一个“回答后沉淀”的 Agent Knowledge Runtime。
+这份路线图描述 Inkdesk 如何按文章《AI研发自动化：Wiki知识库+技能包》的开发流程，从当前私有研究闭环演进成一个 LLM-Wiki + Skill Workbench + Agent Harness。
+
+主开发顺序固定为：
+
+```text
+Sources -> LLM-Wiki -> Schema -> Skills -> Agent Runtime -> Evaluation -> Harness
+```
+
+完整执行计划见 [Article-Flow Development Plan](../superpowers/plans/2026-06-04-article-flow-development-plan.md)。
 
 用户主路径保持极简：
 
@@ -10,7 +18,7 @@
 Ask -> 沉淀
 ```
 
-系统内部继续维护：
+当前系统内部已经具备前两层的雏形：
 
 ```text
 raw -> ingest -> wiki -> ask -> health -> ingest
@@ -22,13 +30,13 @@ raw -> ingest -> wiki -> ask -> health -> ingest
 context_pack -> agent work -> deposit
 ```
 
-## 阶段一：稳定当前研究闭环
+## 阶段一：Sources 与 LLM-Wiki 对齐
 
 ### 阶段目标
 
-- 把 `raw -> ingest -> wiki -> ask` 主路径做稳
-- 清理旧产品残留
-- 保证本地全栈与文档一致
+- 把 `raw -> ingest -> wiki -> ask` 主路径做稳，并明确对应文章里的 `Sources -> LLM-Wiki`
+- 让 Ask 回答能稳定回流成可审阅的 wiki 提案
+- 增加第一批 Wiki Health 检查，确保 LLM-Wiki 不只是文档堆积
 
 ### 核心能力
 
@@ -37,11 +45,15 @@ context_pack -> agent work -> deposit
 - ingest 审阅
 - wiki 页面沉淀
 - Ask 引用与 writeback
+- Ask deposit：整条回答与选中片段都能进入 ingest
+- Wiki Health：frontmatter、来源引用、断链、孤页等基础检查
 
 ### 完成标志
 
 - 闭环可本地跑通
 - 代码、测试和文档不再混入旧 public / plans / note editor 语义
+- 用户能从 Ask 触发沉淀，但 AI 仍不能静默改写 wiki
+- vault 中的 wiki 文件能被普通 Markdown 工具理解
 
 ### 当前进度
 
@@ -54,106 +66,134 @@ context_pack -> agent work -> deposit
 - [x] 阶段一主体成立，产品重点转向“回答沉淀”体验
 - [ ] 每个回答固定提供“沉淀这次回答”
 - [ ] 支持完整回答与选中片段两种沉淀入口
-- [ ] 后台 deposit orchestration 与专项子 Agent 流水线
-- [ ] MCP / CLI / Skill 接入外部 Agent
+- [ ] 基础 Wiki Health：缺 frontmatter、缺来源、断链、孤页
 
-## 阶段二：回答沉淀主形态
+### 当前执行任务
+
+先执行 [Ask-to-Deposit Main Flow Implementation Plan](../superpowers/plans/2026-06-04-ask-to-deposit-main-flow.md)。
+
+这不是偏离文章流程，而是在补齐文章流程里的 LLM-Wiki 写入通道：
+
+```text
+ask answer -> deposit -> ingest proposal -> review -> wiki patch
+```
+
+## 阶段二：Schema 层
 
 ### 阶段目标
 
-- 让每个回答都提供“沉淀这次回答”的主操作
-- 用户只决定是否沉淀，不负责后续知识整理逻辑
-- 让 Ask 成为长期知识增长入口，而不只是更强的聊天界面
+- 在 vault 中加入 agent-facing schema 文件
+- 明确 wiki、source、ingest、ask、health 的维护规则
+- 让 Inkdesk、Codex、Claude Code 或其他 Agent 都能读取同一套维护协议
 
 ### 核心能力
 
-- 对话历史侧栏
-- 更清晰的 Ask 上下文延续
-- 更顺手的 raw / ingest / wiki 跳转
-- 渐进式加载研究上下文：先读 topic index / summary，再读 topic 详情，必要时再下钻 source 证据
-- 每个回答卡片固定提供“沉淀这次回答”
-- 支持“沉淀选中内容”
-- 沉淀后给出轻量反馈：已沉淀、需要确认、暂不适合沉淀
-- 冲突、低证据、高风险覆盖旧判断时才打断用户
-
-### 当前执行顺序
-
-下一轮开发先执行 [Ask-to-Deposit Main Flow Implementation Plan](../superpowers/plans/2026-06-04-ask-to-deposit-main-flow.md)。
-
-执行判断：
-
-- 先把现有 Ask writeback 收敛成明确的 deposit 合同。
-- 保持 `/api/ask/{id}/writeback` 兼容，但新增 `/api/ask/{id}/deposit` 作为产品主语义。
-- 先支持“沉淀整条回答”，再支持“沉淀选中片段”。
-- 所有沉淀结果仍进入 ingest 审阅，不直接写 wiki。
-- 完成这一层后，再进入 `schema/`、`skills/`、Skill Workbench 和外部 Agent 接入。
+- 懒创建 `schema/`、`skills/`、`evals/`、`runs/`
+- `schema/vault-layout.md`
+- `schema/wiki-page-template.md`
+- `schema/source-citation-rules.md`
+- `schema/ingest-proposal-rules.md`
+- `schema/ask-answer-rules.md`
+- `schema/wiki-health-rules.md`
 
 ### 完成标志
 
-- 用户能从任意 Ask 回答触发沉淀。
-- 沉淀动作能生成新 topic、topic patch、open question 或冲突裁决。
-- 用户不需要进入复杂 ingest/health 页面也能完成主路径。
+- 新 vault 初始化后自动具备 schema 文件
+- schema 文件可在 Obsidian 或普通编辑器中阅读
+- 后端测试证明 schema 初始化幂等
 
-## 阶段三：专项子 Agent 沉淀流水线
+## 阶段三：Skills 与 Skill Workbench
 
 ### 阶段目标
 
-- 把沉淀按钮背后的逻辑拆成可追踪、可测试、可替换的专项子 Agent
-- 让系统自动完成“留下什么、放到哪里、是否冲突、怎么补证”
+- 把重复工作沉淀为显式 skill 文件
+- 在 UI 中浏览、审阅、运行和导出 skills
+- Skill 输出仍通过 proposal / review 进入 wiki
 
 ### 核心能力
 
-- Deposit Orchestrator：接收沉淀请求并编排子 Agent
-- Insight Extractor：从回答中提取可沉淀判断
-- Evidence Binder：绑定 raw / wiki / web source 证据
-- Topic Router：判断新建 topic、patch 旧 topic、open question
-- Conflict Checker：检查和旧 claim 是否冲突
-- Patch Writer：生成 vault/wiki patch
-- Quality Gate：判断自动写入、进入审阅、还是要求用户裁决
-- Trace：记录每一步输入输出，方便后续评测和修正
+- 初始 skills：Ingest Source、Patch Wiki Page、Answer From Wiki、Create Research Brief、Run Wiki Health Check、Extract Reusable Insight From Chat
+- Skill 列表页
+- Skill 详情页
+- Skill 文件导出
+- Skill 输出转 review proposal
 
 ### 完成标志
 
-- 同一个沉淀请求可以复现完整决策链。
-- 质量门控能阻止无证据、重复、明显冲突的沉淀直接进入 wiki。
-- 子 Agent 失败时不会污染正式知识。
+- skill 可作为文件检查，也可从 UI 启动
+- skill 具备输入、上下文、输出契约、安全规则和验证要求
+- skill 不能直接静默写 wiki
 
-## 阶段四：外部 Agent 知识底座
+## 阶段四：Agent Runtime Runs
 
 ### 阶段目标
 
-- 让 Claude Code、Codex、Cursor 等外部 Agent 接入 Inkdesk
-- 为外部 Agent 提供“任务前取上下文、任务后沉淀结果”的通用接口
+- 为 skill 执行建立可追踪 run 记录
+- 支持 LangGraph、本地执行器或未来外部 Agent runtime
+- 将运行输出、错误、提案和审阅状态记录下来
 
 ### 核心能力
 
-- `inkdesk context` CLI：根据 task/repo/files 返回短上下文包
-- `inkdesk deposit` CLI：接收回答、片段、引用和上下文，触发后台沉淀
-- `inkdesk-mcp`：暴露 `context_pack`、`deposit_answer`、`search`、`open_questions` 等工具
+- run records
+- `runs/` vault 输出约定
+- Agent Run Console
+- 记录输入、resolved context、runtime、output、error、review state
+- wiki-changing output 统一转 review proposal
+
+### 完成标志
+
+- 同一个 skill run 可以复现输入、上下文和输出
+- runtime 失败不污染正式 wiki
+- 所有 wiki 修改仍经过 review
+
+## 阶段五：Evaluation
+
+### 阶段目标
+
+- 在提高自治度前加入 golden tasks 与 rubrics
+- 让 schema、skills、wiki、runtime 变更可评测
+- 阻止 blind prompt drift
+
+### 核心能力
+
+- `evals/golden-tasks/`
+- rubric 文件
+- evaluation run records
+- isolated evaluation，不修改 canonical wiki
+- skill/wiki/schema 版本对比
+- promotion gate
+
+### 完成标志
+
+- evaluation run 可重复
+- 失败评测不能改变 accepted wiki
+- skill 或 schema 变更可在 promotion 前比较
+
+## 阶段六：Harness 与外部 Agent 接入
+
+### 阶段目标
+
+- 在评测和 review 足够可靠后，增加多步骤 harness
+- 接入 Claude Code、Codex、Cursor 等外部 Agent
+- 为外部 Agent 提供任务前 context pack 与任务后 deposit
+
+### 核心能力
+
+- staged run orchestration
+- gates between stages
+- retry / rollback records
+- manual approval checkpoints
+- `inkdesk context` CLI
+- `inkdesk deposit` CLI
+- `inkdesk-mcp`：`context_pack`、`deposit_answer`、`deposit_selection`、`search`、`open_questions`
 - Codex Skill / AGENTS.md 接入说明
 - Claude Code MCP / slash command 接入说明
-- 外部 Agent 不直接写 wiki，只调用 Inkdesk deposit
 
 ### 完成标志
 
-- Claude Code 或 Codex 能在任务前调用 Inkdesk 获取上下文。
-- 外部 Agent 的一段回答可以被提交给 Inkdesk 沉淀。
-- 外部接入复用同一套后台沉淀流水线。
-
-## 阶段五：评测、健康与自进化
-
-### 阶段目标
-
-- 让沉淀策略、检索策略、topic 路由策略可以被评测和升级
-- 让知识库越用越干净，而不是越自动越脏
-
-### 核心能力
-
-- 周期性 re-index / 体检
-- 规则化 lint / health-check：发现孤儿 topic、缺证据 claim、过时知识和待复核页面
-- 基于 owner 接受 / 拒绝 / 修改后接受结果沉淀评测样本
-- 对编译策略、沉淀策略和 MCP 输出设置 promotion gate
-- prompt / skill / workflow 级 trace，记录 Agent 在 ask、deposit、writeback 中的关键决策痕迹
+- 外部 Agent 能任务前取上下文
+- 外部 Agent 能任务后提交沉淀
+- 高自治度必须 opt-in，并且有 evaluation history 支撑
 
 ## 长期方向
 

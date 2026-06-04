@@ -101,28 +101,29 @@ Inkdesk 不是从零开始转向新形态。当前已经有一条可运行的私
 - [x] 本地 Docker 栈：Next.js、FastAPI、PostgreSQL、pgvector。
 - [x] 后端 `python -m pytest` 与前端 `npm run typecheck` 已作为当前基线验证。
 
-### 当前重点：回答沉淀主形态
+### 当前重点：按文章流程补齐 LLM-Wiki 写入通道
 
-阶段一已经成立，产品重点正在转向更极简的主路径：
+开发顺序按文章流程推进：
 
 ```text
-Ask -> 沉淀
+Sources -> LLM-Wiki -> Schema -> Skills -> Agent Runtime -> Evaluation -> Harness
 ```
 
-接下来优先补齐：
+当前处在 `Sources -> LLM-Wiki` 对齐阶段。已有 `raw -> ingest -> wiki -> ask`，接下来优先补齐 LLM-Wiki 的写入入口：
 
 - [ ] 每个回答固定提供“沉淀这次回答”。
 - [ ] 支持完整回答与选中片段两种沉淀入口。
 - [ ] 沉淀后生成新 wiki 页面、patch 旧页面、open question 或冲突裁决。
 - [ ] 用户不需要进入复杂 ingest/health 页面，也能完成主要记忆沉淀动作。
+- [ ] 增加基础 Wiki Health：缺 frontmatter、缺来源、断链、孤页。
 
-### 下一阶段：Skill Workbench 与 Agent 底座
+### 下一阶段：Schema 与 Skill Workbench
 
-在 Ask-to-Wiki 稳定之后，再把文章里的 Claude Code + Skill 仓库 + Obsidian 思路吸收到 Inkdesk 自己的结构里：
+LLM-Wiki 写入通道稳定后，继续按文章流程进入 Schema 与 Skills：
 
 - [ ] 在 vault 中加入 `schema/` 和 `skills/` 约定。
+- [ ] 初始化 `schema/vault-layout.md`、`schema/wiki-page-template.md`、`schema/source-citation-rules.md` 等维护规则。
 - [ ] 增加 Skill Workbench，用于浏览、运行、审阅、导出 skills。
-- [ ] 增加 Wiki Health，检查断链、缺失来源、缺失 frontmatter、短页、孤页等问题。
 - [ ] 增加 Evaluation Harness，用 golden tasks 对比 skill/wiki 版本效果。
 - [ ] 增加 MCP / CLI / Skill 接入，让 Claude Code、Codex、Cursor 等外部 Agent 能在任务前取上下文、任务后提交沉淀。
 - [ ] 只有当 review 与 evaluation 足够可靠后，再推进更高自治度的 Agent Harness。
@@ -232,6 +233,7 @@ npm run e2e:fullstack
 
 ## 相关设计文档
 
+- [Article-Flow Development Plan](docs/superpowers/plans/2026-06-04-article-flow-development-plan.md)
 - [LLM-Wiki + Skill Workbench Product Design](docs/superpowers/specs/2026-06-04-llm-wiki-skill-workbench-design.md)
 - [Product Vision](docs/product/product-vision.md)
 - [System Overview](docs/architecture/system-overview.md)
