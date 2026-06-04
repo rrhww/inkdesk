@@ -81,7 +81,7 @@ describe("app shell primitives", () => {
     const starter = buildStarterHistory({
       suggestedQuestions: ["raw 和 wiki 的边界是什么？"],
       focusTopicId: "topic-001",
-      focusTopicTitle: "Inkvault repositioning"
+      focusTopicTitle: "Inkdesk repositioning"
     });
 
     expect(starter[0]?.href).toBe("/app?q=raw%20%E5%92%8C%20wiki%20%E7%9A%84%E8%BE%B9%E7%95%8C%E6%98%AF%E4%BB%80%E4%B9%88%EF%BC%9F&topicId=topic-001");
@@ -90,20 +90,20 @@ describe("app shell primitives", () => {
   it("merges current ask turns ahead of starter history and removes duplicates", () => {
     const starter = buildStarterHistory({
       suggestedQuestions: ["raw 和 wiki 的边界是什么？"],
-      focusTopicTitle: "Inkvault repositioning"
+      focusTopicTitle: "Inkdesk repositioning"
     });
 
     const merged = mergeAskHistoryEntry(starter, {
       id: "ask-topic-001",
       title: "这个主题当前最稳定的理解是什么？",
       href: "/app/ask?q=%E8%BF%99%E4%B8%AA%E4%B8%BB%E9%A2%98%E5%BD%93%E5%89%8D%E6%9C%80%E7%A8%B3%E5%AE%9A%E7%9A%84%E7%90%86%E8%A7%A3%E6%98%AF%E4%BB%80%E4%B9%88%EF%BC%9F&topicId=topic-001",
-      topicTitle: "Inkvault repositioning",
+      topicTitle: "Inkdesk repositioning",
       preview: "当前最稳定的理解是 wiki 是新的核心对象。",
       updatedAt: "2026-05-03T03:00:00Z"
     });
 
     expect(merged[0]?.id).toBe("ask-topic-001");
-    expect(merged[0]?.topicTitle).toBe("Inkvault repositioning");
+    expect(merged[0]?.topicTitle).toBe("Inkdesk repositioning");
     expect(merged).toHaveLength(2);
   });
 
@@ -112,7 +112,7 @@ describe("app shell primitives", () => {
       id: `ask-${index + 1}`,
       title: `Question ${index + 1}`,
       href: index === 5 ? "/app/ask?q=shared-question" : `/app/ask?q=question-${index + 1}`,
-      topicTitle: "Inkvault repositioning",
+      topicTitle: "Inkdesk repositioning",
       preview: `Preview ${index + 1}`,
       updatedAt: `2026-05-03T0${index}:00:00Z`
     }));
@@ -121,7 +121,7 @@ describe("app shell primitives", () => {
       id: "ask-latest",
       title: "Shared question",
       href: "/app/ask?q=shared-question",
-      topicTitle: "Inkvault repositioning",
+      topicTitle: "Inkdesk repositioning",
       preview: "Latest preview",
       updatedAt: "2026-05-03T13:00:00Z"
     });
@@ -154,7 +154,7 @@ describe("app shell primitives", () => {
           id: "ask-001",
           title: "Question",
           href: "/app/ask?q=Question",
-          topicTitle: "Inkvault repositioning",
+          topicTitle: "Inkdesk repositioning",
           preview: "Preview",
           updatedAt: "2026-05-03T03:00:00Z"
         }

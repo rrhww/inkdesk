@@ -55,6 +55,6 @@ __pycache__/
 .venv/
 
 # Local vault data
-inkvault-vault/
-server/inkvault-vault/
+inkdesk-vault/
+server/inkdesk-vault/
 server/*.db

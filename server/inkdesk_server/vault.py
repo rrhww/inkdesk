@@ -6,12 +6,12 @@ from hashlib import sha256
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 
-from inkvault_server.core.config import Settings
-from inkvault_server.models import Source, Topic, TopicClaim
-from inkvault_server.time_utils import ensure_utc_datetime
+from inkdesk_server.core.config import Settings
+from inkdesk_server.models import Source, Topic, TopicClaim
+from inkdesk_server.time_utils import ensure_utc_datetime
 
 
-AGENTS_MD = """# Inkvault LLM Wiki Agents
+AGENTS_MD = """# Inkdesk LLM Wiki Agents
 
 This vault follows the raw -> ingest -> wiki workflow.
 
@@ -119,7 +119,7 @@ class VaultMarkdownService:
     def render_raw_source(self, source: Source, imported_at: datetime) -> str:
         locator = self.escape(source.locator)
         return f"""---
-inkvaultType: raw
+inkdeskType: raw
 sourceId: {source.id}
 kind: {source.kind}
 status: {source.status}
@@ -143,7 +143,7 @@ importedAt: {imported_at.astimezone(UTC).isoformat().replace("+00:00", "Z")}
 
         lines = [
             "---",
-            "inkvaultType: wiki",
+            "inkdeskType: wiki",
             f"topicId: {topic.id}",
             f"slug: {topic.slug}",
             f'title: "{self.escape(topic.title)}"',

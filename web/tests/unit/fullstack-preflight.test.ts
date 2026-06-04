@@ -71,6 +71,6 @@ describe("fullstack preflight helpers", () => {
     });
 
     expect(message).toContain("PostgreSQL 已经就绪");
-    expect(message).toContain("python -m uvicorn inkvault_server.main:app --host 0.0.0.0 --port 8080");
+    expect(message).toContain("python -m uvicorn inkdesk_server.main:app --host 0.0.0.0 --port 8080");
   });
 });

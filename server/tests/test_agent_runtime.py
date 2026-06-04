@@ -2,10 +2,10 @@ from __future__ import annotations
 
 
 def test_settings_resolve_deepseek_provider_profile_defaults(temp_app_env, monkeypatch):
-    from inkvault_server.core.config import get_settings
+    from inkdesk_server.core.config import get_settings
 
-    monkeypatch.setenv("INKVAULT_AGENT_RUNTIME", "langgraph")
-    monkeypatch.setenv("INKVAULT_AGENT_PROVIDER_PROFILE", "deepseek")
+    monkeypatch.setenv("INKDESK_AGENT_RUNTIME", "langgraph")
+    monkeypatch.setenv("INKDESK_AGENT_PROVIDER_PROFILE", "deepseek")
     monkeypatch.setenv("DEEPSEEK_API_KEY", "deepseek-test-key")
     get_settings.cache_clear()
 
@@ -20,12 +20,12 @@ def test_settings_resolve_deepseek_provider_profile_defaults(temp_app_env, monke
 
 
 def test_settings_resolve_embedding_provider_profile_defaults(temp_app_env, monkeypatch):
-    from inkvault_server.core.config import get_settings
+    from inkdesk_server.core.config import get_settings
 
-    monkeypatch.setenv("INKVAULT_EMBEDDING_PROVIDER_PROFILE", "openai")
-    monkeypatch.setenv("INKVAULT_EMBEDDING_MODEL", "text-embedding-3-small")
-    monkeypatch.setenv("INKVAULT_EMBEDDING_API_KEY", "embedding-test-key")
-    monkeypatch.setenv("INKVAULT_EMBEDDING_BASE_URL", "https://example.com/embeddings")
+    monkeypatch.setenv("INKDESK_EMBEDDING_PROVIDER_PROFILE", "openai")
+    monkeypatch.setenv("INKDESK_EMBEDDING_MODEL", "text-embedding-3-small")
+    monkeypatch.setenv("INKDESK_EMBEDDING_API_KEY", "embedding-test-key")
+    monkeypatch.setenv("INKDESK_EMBEDDING_BASE_URL", "https://example.com/embeddings")
     get_settings.cache_clear()
 
     settings = get_settings()
@@ -38,8 +38,8 @@ def test_settings_resolve_embedding_provider_profile_defaults(temp_app_env, monk
 
 
 def test_agent_runtime_answers_without_model_credentials(temp_app_env):
-    from inkvault_server.agents import AgentRuntime, AskRequestModel, CitationModel
-    from inkvault_server.core.config import get_settings
+    from inkdesk_server.agents import AgentRuntime, AskRequestModel, CitationModel
+    from inkdesk_server.core.config import get_settings
 
     runtime = AgentRuntime(get_settings())
     response = runtime.answer(
@@ -65,8 +65,8 @@ def test_agent_runtime_answers_without_model_credentials(temp_app_env):
 
 
 def test_agent_runtime_routes_vault_only_runs_directly_to_answer(temp_app_env):
-    from inkvault_server.agents import AgentRuntime, AskRequestModel, CitationModel
-    from inkvault_server.core.config import get_settings
+    from inkdesk_server.agents import AgentRuntime, AskRequestModel, CitationModel
+    from inkdesk_server.core.config import get_settings
 
     runtime = AgentRuntime(get_settings())
     assert runtime._ask_graph is not None
@@ -99,8 +99,8 @@ def test_agent_runtime_routes_vault_only_runs_directly_to_answer(temp_app_env):
 
 
 def test_agent_runtime_routes_vault_plus_web_through_web_branch_when_vault_evidence_is_thin(temp_app_env):
-    from inkvault_server.agents import AgentRuntime, AskRequestModel
-    from inkvault_server.core.config import get_settings
+    from inkdesk_server.agents import AgentRuntime, AskRequestModel
+    from inkdesk_server.core.config import get_settings
 
     runtime = AgentRuntime(get_settings(), web_assist_provider=lambda _query: [])
     request = AskRequestModel(
@@ -123,8 +123,8 @@ def test_agent_runtime_routes_vault_plus_web_through_web_branch_when_vault_evide
 
 
 def test_agent_runtime_uses_web_assist_when_initial_vault_answer_still_has_knowledge_gaps(temp_app_env, monkeypatch):
-    from inkvault_server import agents
-    from inkvault_server.core.config import get_settings
+    from inkdesk_server import agents
+    from inkdesk_server.core.config import get_settings
 
     captured_prompts: list[str] = []
     web_queries: list[str] = []
@@ -166,7 +166,7 @@ def test_agent_runtime_uses_web_assist_when_initial_vault_answer_still_has_knowl
             }
         ]
 
-    monkeypatch.setenv("INKVAULT_AGENT_RUNTIME", "langgraph")
+    monkeypatch.setenv("INKDESK_AGENT_RUNTIME", "langgraph")
     monkeypatch.setenv("OPENAI_API_KEY", "test-openai-key")
     get_settings.cache_clear()
     monkeypatch.setattr(agents, "ChatOpenAI", FakeChatOpenAI)
@@ -214,8 +214,8 @@ def test_agent_runtime_uses_web_assist_when_initial_vault_answer_still_has_knowl
 
 
 def test_agent_runtime_flows_concrete_web_evidence_and_writeback_package_from_answer(temp_app_env):
-    from inkvault_server.agents import AgentRuntime, AskRequestModel, AskWritebackPackageModel, WebCitationModel
-    from inkvault_server.core.config import get_settings
+    from inkdesk_server.agents import AgentRuntime, AskRequestModel, AskWritebackPackageModel, WebCitationModel
+    from inkdesk_server.core.config import get_settings
 
     web_source = WebCitationModel(
         url="https://example.com/evidence",
@@ -265,15 +265,15 @@ def test_agent_runtime_flows_concrete_web_evidence_and_writeback_package_from_an
 
 
 def test_agent_runtime_generates_deterministic_workspace_briefing_without_model_credentials(temp_app_env):
-    from inkvault_server.agents import AgentRuntime, AskBriefingRequestModel, AskBriefingSignalModel, CitationModel
-    from inkvault_server.core.config import get_settings
+    from inkdesk_server.agents import AgentRuntime, AskBriefingRequestModel, AskBriefingSignalModel, CitationModel
+    from inkdesk_server.core.config import get_settings
 
     runtime = AgentRuntime(get_settings())
     response = runtime.brief(
         AskBriefingRequestModel(
             scope="workspace",
             pendingReviewCount=3,
-            focusTopicTitle="Inkvault repositioning",
+            focusTopicTitle="Inkdesk repositioning",
             recentSourceTitles=["Research-first wiki note"],
             healthSignals=[
                 AskBriefingSignalModel(
@@ -319,8 +319,8 @@ def test_agent_runtime_generates_deterministic_workspace_briefing_without_model_
 
 
 def test_agent_runtime_uses_real_briefing_llm_with_structured_provider_when_credentials_present(temp_app_env, monkeypatch):
-    from inkvault_server import agents
-    from inkvault_server.core.config import get_settings
+    from inkdesk_server import agents
+    from inkdesk_server.core.config import get_settings
 
     captured: dict[str, object] = {"schemas": [], "methods": []}
 
@@ -365,7 +365,7 @@ def test_agent_runtime_uses_real_briefing_llm_with_structured_provider_when_cred
             captured["methods"].append(kwargs.get("method"))
             return FakeStructuredBriefingLLM()
 
-    monkeypatch.setenv("INKVAULT_AGENT_RUNTIME", "langgraph")
+    monkeypatch.setenv("INKDESK_AGENT_RUNTIME", "langgraph")
     monkeypatch.setenv("OPENAI_API_KEY", "test-openai-key")
     get_settings.cache_clear()
     monkeypatch.setattr(agents, "ChatOpenAI", FakeChatOpenAI)
@@ -375,7 +375,7 @@ def test_agent_runtime_uses_real_briefing_llm_with_structured_provider_when_cred
         agents.AskBriefingRequestModel(
             scope="workspace",
             pendingReviewCount=3,
-            focusTopicTitle="Inkvault repositioning",
+            focusTopicTitle="Inkdesk repositioning",
             recentSourceTitles=["Research-first wiki note"],
             healthSignals=[
                 agents.AskBriefingSignalModel(
@@ -398,8 +398,8 @@ def test_agent_runtime_uses_real_briefing_llm_with_structured_provider_when_cred
 
 
 def test_agent_runtime_falls_back_to_deterministic_briefing_when_provider_invoke_fails(temp_app_env, monkeypatch):
-    from inkvault_server import agents
-    from inkvault_server.core.config import get_settings
+    from inkdesk_server import agents
+    from inkdesk_server.core.config import get_settings
 
     class FailingStructuredBriefingLLM:
         def invoke(self, _prompt):
@@ -414,7 +414,7 @@ def test_agent_runtime_falls_back_to_deterministic_briefing_when_provider_invoke
                 return FailingStructuredBriefingLLM()
             return object()
 
-    monkeypatch.setenv("INKVAULT_AGENT_RUNTIME", "langgraph")
+    monkeypatch.setenv("INKDESK_AGENT_RUNTIME", "langgraph")
     monkeypatch.setenv("OPENAI_API_KEY", "test-openai-key")
     get_settings.cache_clear()
     monkeypatch.setattr(agents, "ChatOpenAI", FakeChatOpenAI)
@@ -424,13 +424,13 @@ def test_agent_runtime_falls_back_to_deterministic_briefing_when_provider_invoke
         agents.AskBriefingRequestModel(
             scope="ask_turn",
             askTurnId="ask-001",
-            topicTitle="Inkvault repositioning",
+            topicTitle="Inkdesk repositioning",
             askQuestion="这个主题当前最稳定的理解是什么？",
             askAnswer="当前最稳定的理解是 wiki 是新的核心对象。",
             askKnowledgeGaps=["当前还缺少最新外部资料。"],
             canWriteback=True,
             pendingReviewCount=1,
-            focusTopicTitle="Inkvault repositioning",
+            focusTopicTitle="Inkdesk repositioning",
             recentSourceTitles=["Research-first wiki note"],
             healthSignals=[],
             citations=[],
@@ -444,7 +444,7 @@ def test_agent_runtime_falls_back_to_deterministic_briefing_when_provider_invoke
 
 
 def test_ask_structured_output_normalizes_confidence_labels():
-    from inkvault_server.agents import AskStructuredOutput
+    from inkdesk_server.agents import AskStructuredOutput
 
     result = AskStructuredOutput(
         answer="answer",
@@ -458,7 +458,7 @@ def test_ask_structured_output_normalizes_confidence_labels():
 
 
 def test_compile_structured_output_joins_open_question_lists():
-    from inkvault_server.agents import CompileStructuredOutput
+    from inkdesk_server.agents import CompileStructuredOutput
 
     result = CompileStructuredOutput(
         kind="RESEARCH_PROPOSAL",
@@ -474,8 +474,8 @@ def test_compile_structured_output_joins_open_question_lists():
 
 
 def test_agent_runtime_compiles_without_model_credentials(temp_app_env):
-    from inkvault_server.agents import AgentRuntime, CitationModel, CompileRequestModel, SourceModel
-    from inkvault_server.core.config import get_settings
+    from inkdesk_server.agents import AgentRuntime, CitationModel, CompileRequestModel, SourceModel
+    from inkdesk_server.core.config import get_settings
 
     runtime = AgentRuntime(get_settings())
     response = runtime.compile(
@@ -506,8 +506,8 @@ def test_agent_runtime_compiles_without_model_credentials(temp_app_env):
 
 
 def test_agent_runtime_normalizes_unknown_compile_kind_from_provider(temp_app_env, monkeypatch):
-    from inkvault_server import agents
-    from inkvault_server.core.config import get_settings
+    from inkdesk_server import agents
+    from inkdesk_server.core.config import get_settings
 
     class FakeStructuredCompileLLM:
         def invoke(self, _prompt):
@@ -528,7 +528,7 @@ def test_agent_runtime_normalizes_unknown_compile_kind_from_provider(temp_app_en
         def with_structured_output(self, _schema, **_kwargs):
             return FakeStructuredCompileLLM()
 
-    monkeypatch.setenv("INKVAULT_AGENT_RUNTIME", "langgraph")
+    monkeypatch.setenv("INKDESK_AGENT_RUNTIME", "langgraph")
     monkeypatch.setenv("OPENAI_API_KEY", "test-openai-key")
     get_settings.cache_clear()
     monkeypatch.setattr(agents, "ChatOpenAI", FakeChatOpenAI)
@@ -552,8 +552,8 @@ def test_agent_runtime_normalizes_unknown_compile_kind_from_provider(temp_app_en
 
 
 def test_agent_runtime_uses_real_ask_llm_with_structured_provider_when_credentials_present(temp_app_env, monkeypatch):
-    from inkvault_server import agents
-    from inkvault_server.core.config import get_settings
+    from inkdesk_server import agents
+    from inkdesk_server.core.config import get_settings
 
     captured: dict[str, object] = {"schemas": [], "init_kwargs": [], "methods": []}
 
@@ -577,12 +577,12 @@ def test_agent_runtime_uses_real_ask_llm_with_structured_provider_when_credentia
             captured["methods"].append(kwargs.get("method"))
             return FakeStructuredAskLLM()
 
-    monkeypatch.setenv("INKVAULT_AGENT_RUNTIME", "langgraph")
+    monkeypatch.setenv("INKDESK_AGENT_RUNTIME", "langgraph")
     monkeypatch.setenv("OPENAI_API_KEY", "test-openai-key")
     monkeypatch.setenv("OPENAI_BASE_URL", "https://example.com/v1")
-    monkeypatch.setenv("INKVAULT_AGENT_MODEL", "gpt-test")
-    monkeypatch.setenv("INKVAULT_AGENT_CONNECT_TIMEOUT_SECONDS", "3.5")
-    monkeypatch.setenv("INKVAULT_AGENT_READ_TIMEOUT_SECONDS", "12.0")
+    monkeypatch.setenv("INKDESK_AGENT_MODEL", "gpt-test")
+    monkeypatch.setenv("INKDESK_AGENT_CONNECT_TIMEOUT_SECONDS", "3.5")
+    monkeypatch.setenv("INKDESK_AGENT_READ_TIMEOUT_SECONDS", "12.0")
     get_settings.cache_clear()
     monkeypatch.setattr(agents, "ChatOpenAI", FakeChatOpenAI)
 
@@ -626,8 +626,8 @@ def test_agent_runtime_uses_real_ask_llm_with_structured_provider_when_credentia
 def test_agent_runtime_backfills_langchain_llm_cache_for_real_provider(temp_app_env, monkeypatch):
     from types import SimpleNamespace
 
-    from inkvault_server import agents
-    from inkvault_server.core.config import get_settings
+    from inkdesk_server import agents
+    from inkdesk_server.core.config import get_settings
 
     class FakeChatOpenAI:
         def __init__(self, **_kwargs):
@@ -638,7 +638,7 @@ def test_agent_runtime_backfills_langchain_llm_cache_for_real_provider(temp_app_
 
     fake_langchain = SimpleNamespace(debug=False, verbose=False)
 
-    monkeypatch.setenv("INKVAULT_AGENT_RUNTIME", "langgraph")
+    monkeypatch.setenv("INKDESK_AGENT_RUNTIME", "langgraph")
     monkeypatch.setenv("OPENAI_API_KEY", "test-openai-key")
     get_settings.cache_clear()
     monkeypatch.setattr(agents, "ChatOpenAI", FakeChatOpenAI)
@@ -651,8 +651,8 @@ def test_agent_runtime_backfills_langchain_llm_cache_for_real_provider(temp_app_
 
 
 def test_agent_runtime_uses_json_mode_for_deepseek_structured_output(temp_app_env, monkeypatch):
-    from inkvault_server import agents
-    from inkvault_server.core.config import get_settings
+    from inkdesk_server import agents
+    from inkdesk_server.core.config import get_settings
 
     captured: dict[str, object] = {"calls": [], "init_kwargs": []}
 
@@ -664,8 +664,8 @@ def test_agent_runtime_uses_json_mode_for_deepseek_structured_output(temp_app_en
             captured["calls"].append((schema, kwargs.get("method")))
             return object()
 
-    monkeypatch.setenv("INKVAULT_AGENT_RUNTIME", "langgraph")
-    monkeypatch.setenv("INKVAULT_AGENT_PROVIDER_PROFILE", "deepseek")
+    monkeypatch.setenv("INKDESK_AGENT_RUNTIME", "langgraph")
+    monkeypatch.setenv("INKDESK_AGENT_PROVIDER_PROFILE", "deepseek")
     monkeypatch.setenv("DEEPSEEK_API_KEY", "deepseek-test-key")
     get_settings.cache_clear()
     monkeypatch.setattr(agents, "ChatOpenAI", FakeChatOpenAI)
@@ -683,8 +683,8 @@ def test_agent_runtime_uses_json_mode_for_deepseek_structured_output(temp_app_en
 
 
 def test_agent_runtime_normalizes_compile_language_and_card_title_for_chinese_sources(temp_app_env, monkeypatch):
-    from inkvault_server import agents
-    from inkvault_server.core.config import get_settings
+    from inkdesk_server import agents
+    from inkdesk_server.core.config import get_settings
 
     class FakeStructuredCompileLLM:
         def invoke(self, _prompt):
@@ -705,7 +705,7 @@ def test_agent_runtime_normalizes_compile_language_and_card_title_for_chinese_so
         def with_structured_output(self, _schema, **_kwargs):
             return FakeStructuredCompileLLM()
 
-    monkeypatch.setenv("INKVAULT_AGENT_RUNTIME", "langgraph")
+    monkeypatch.setenv("INKDESK_AGENT_RUNTIME", "langgraph")
     monkeypatch.setenv("OPENAI_API_KEY", "test-openai-key")
     get_settings.cache_clear()
     monkeypatch.setattr(agents, "ChatOpenAI", FakeChatOpenAI)
@@ -735,8 +735,8 @@ def test_agent_runtime_normalizes_compile_language_and_card_title_for_chinese_so
 
 
 def test_agent_runtime_falls_back_to_deterministic_ask_when_provider_invoke_fails(temp_app_env, monkeypatch):
-    from inkvault_server import agents
-    from inkvault_server.core.config import get_settings
+    from inkdesk_server import agents
+    from inkdesk_server.core.config import get_settings
 
     class FailingStructuredAskLLM:
         def invoke(self, _prompt):
@@ -749,7 +749,7 @@ def test_agent_runtime_falls_back_to_deterministic_ask_when_provider_invoke_fail
         def with_structured_output(self, _schema, **_kwargs):
             return FailingStructuredAskLLM()
 
-    monkeypatch.setenv("INKVAULT_AGENT_RUNTIME", "langgraph")
+    monkeypatch.setenv("INKDESK_AGENT_RUNTIME", "langgraph")
     monkeypatch.setenv("OPENAI_API_KEY", "test-openai-key")
     get_settings.cache_clear()
     monkeypatch.setattr(agents, "ChatOpenAI", FakeChatOpenAI)
@@ -775,8 +775,8 @@ def test_agent_runtime_falls_back_to_deterministic_ask_when_provider_invoke_fail
 
 
 def test_agent_runtime_uses_real_compile_llm_with_structured_provider_when_credentials_present(temp_app_env, monkeypatch):
-    from inkvault_server import agents
-    from inkvault_server.core.config import get_settings
+    from inkdesk_server import agents
+    from inkdesk_server.core.config import get_settings
 
     captured: dict[str, object] = {"schemas": [], "methods": [], "init_kwargs": []}
 
@@ -802,12 +802,12 @@ def test_agent_runtime_uses_real_compile_llm_with_structured_provider_when_crede
             captured["methods"].append(kwargs.get("method"))
             return FakeStructuredCompileLLM()
 
-    monkeypatch.setenv("INKVAULT_AGENT_RUNTIME", "langgraph")
+    monkeypatch.setenv("INKDESK_AGENT_RUNTIME", "langgraph")
     monkeypatch.setenv("OPENAI_API_KEY", "test-openai-key")
     monkeypatch.setenv("OPENAI_BASE_URL", "https://example.com/v1")
-    monkeypatch.setenv("INKVAULT_AGENT_MODEL", "gpt-test")
-    monkeypatch.setenv("INKVAULT_AGENT_CONNECT_TIMEOUT_SECONDS", "1.5")
-    monkeypatch.setenv("INKVAULT_AGENT_READ_TIMEOUT_SECONDS", "9.0")
+    monkeypatch.setenv("INKDESK_AGENT_MODEL", "gpt-test")
+    monkeypatch.setenv("INKDESK_AGENT_CONNECT_TIMEOUT_SECONDS", "1.5")
+    monkeypatch.setenv("INKDESK_AGENT_READ_TIMEOUT_SECONDS", "9.0")
     get_settings.cache_clear()
     monkeypatch.setattr(agents, "ChatOpenAI", FakeChatOpenAI)
 
@@ -866,8 +866,8 @@ def test_agent_runtime_uses_real_compile_llm_with_structured_provider_when_crede
 
 
 def test_agent_runtime_falls_back_to_deterministic_compile_when_provider_invoke_fails(temp_app_env, monkeypatch):
-    from inkvault_server import agents
-    from inkvault_server.core.config import get_settings
+    from inkdesk_server import agents
+    from inkdesk_server.core.config import get_settings
 
     class FailingStructuredCompileLLM:
         def invoke(self, _prompt):
@@ -880,7 +880,7 @@ def test_agent_runtime_falls_back_to_deterministic_compile_when_provider_invoke_
         def with_structured_output(self, _schema, **_kwargs):
             return FailingStructuredCompileLLM()
 
-    monkeypatch.setenv("INKVAULT_AGENT_RUNTIME", "langgraph")
+    monkeypatch.setenv("INKDESK_AGENT_RUNTIME", "langgraph")
     monkeypatch.setenv("OPENAI_API_KEY", "test-openai-key")
     get_settings.cache_clear()
     monkeypatch.setattr(agents, "ChatOpenAI", FakeChatOpenAI)
@@ -908,12 +908,12 @@ def test_agent_runtime_falls_back_to_deterministic_compile_when_provider_invoke_
 def test_research_workspace_service_flows_context_and_runtime_metadata_on_real_ask_path(temp_app_env):
     from sqlalchemy import select
 
-    from inkvault_server.agents import AskResponseModel, AskWritebackPackageModel, AskContextTurnModel, WebCitationModel
-    from inkvault_server.core.config import get_settings
-    from inkvault_server.db import init_db, session_scope
-    from inkvault_server.models import AskTurn
-    from inkvault_server.research import get_research_service
-    from inkvault_server.schemas import AskRequest
+    from inkdesk_server.agents import AskResponseModel, AskWritebackPackageModel, AskContextTurnModel, WebCitationModel
+    from inkdesk_server.core.config import get_settings
+    from inkdesk_server.db import init_db, session_scope
+    from inkdesk_server.models import AskTurn
+    from inkdesk_server.research import get_research_service
+    from inkdesk_server.schemas import AskRequest
 
     web_source = WebCitationModel(
         url="https://example.com/evidence",
@@ -981,11 +981,11 @@ def test_research_workspace_service_flows_context_and_runtime_metadata_on_real_a
 
 
 def test_research_workspace_service_falls_back_to_persisted_context_ids_when_runtime_returns_only_fabricated_ids(temp_app_env):
-    from inkvault_server.agents import AskResponseModel
-    from inkvault_server.core.config import get_settings
-    from inkvault_server.db import init_db, session_scope
-    from inkvault_server.research import get_research_service
-    from inkvault_server.schemas import AskRequest
+    from inkdesk_server.agents import AskResponseModel
+    from inkdesk_server.core.config import get_settings
+    from inkdesk_server.db import init_db, session_scope
+    from inkdesk_server.research import get_research_service
+    from inkdesk_server.schemas import AskRequest
 
     init_db()
     with session_scope() as db:
@@ -1020,12 +1020,12 @@ def test_research_workspace_service_falls_back_to_persisted_context_ids_when_run
 def test_research_workspace_service_materializes_web_sources_and_reuses_persisted_writeback_package(temp_app_env):
     from sqlalchemy import select
 
-    from inkvault_server.agents import AskResponseModel, AskWritebackPackageModel, WebCitationModel
-    from inkvault_server.core.config import get_settings
-    from inkvault_server.db import init_db, session_scope
-    from inkvault_server.models import Source
-    from inkvault_server.research import get_research_service
-    from inkvault_server.schemas import AskRequest
+    from inkdesk_server.agents import AskResponseModel, AskWritebackPackageModel, WebCitationModel
+    from inkdesk_server.core.config import get_settings
+    from inkdesk_server.db import init_db, session_scope
+    from inkdesk_server.models import Source
+    from inkdesk_server.research import get_research_service
+    from inkdesk_server.schemas import AskRequest
 
     web_source = WebCitationModel(
         url="https://example.com/web-evidence",
@@ -1078,10 +1078,10 @@ def test_research_workspace_service_materializes_web_sources_and_reuses_persiste
 
 
 def test_research_workspace_service_passes_compile_retrieval_context_to_runtime(temp_app_env):
-    from inkvault_server.agents import CompileResponseModel
-    from inkvault_server.core.config import get_settings
-    from inkvault_server.db import init_db, session_scope
-    from inkvault_server.research import get_research_service
+    from inkdesk_server.agents import CompileResponseModel
+    from inkdesk_server.core.config import get_settings
+    from inkdesk_server.db import init_db, session_scope
+    from inkdesk_server.research import get_research_service
 
     captured_request = None
 

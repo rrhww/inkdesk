@@ -22,7 +22,7 @@
 
 ### ExternalAgent
 
-未来通过 MCP / CLI / Skill 接入 Inkvault 的外部 Agent。
+未来通过 MCP / CLI / Skill 接入 Inkdesk 的外部 Agent。
 
 典型来源：
 
@@ -32,7 +32,7 @@
 
 职责：
 
-- 任务前向 Inkvault 请求 context pack
+- 任务前向 Inkdesk 请求 context pack
 - 任务后在用户确认下提交 deposit 请求
 - 不直接写入 `wiki/` 或 vault 长期真相
 
@@ -119,7 +119,7 @@
 
 关键语义：
 
-- 可以来自 Inkvault Web App 的回答卡片
+- 可以来自 Inkdesk Web App 的回答卡片
 - 可以来自外部 Agent 的 MCP / CLI 调用
 - 输入包括 question、answer、selection、citations、source_context、repo/task 信息
 - 由主 Agent 编排专项子 Agent 完成后续处理

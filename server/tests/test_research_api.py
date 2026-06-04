@@ -13,10 +13,10 @@ SAMPLE_PDF = b64decode(
 
 
 def owner_client(temp_app_env: Path) -> TestClient:
-    from inkvault_server.main import create_app
+    from inkdesk_server.main import create_app
 
     client = TestClient(create_app())
-    client.cookies.set("inkvault_owner_session", "owner")
+    client.cookies.set("inkdesk_owner_session", "owner")
     return client
 
 
@@ -158,8 +158,8 @@ def test_ask_briefing_endpoint_returns_topic_scoped_summary(temp_app_env):
 
 
 def test_dashboard_health_and_briefing_surface_unsupported_claims(temp_app_env):
-    from inkvault_server.db import session_scope
-    from inkvault_server.models import TopicClaim
+    from inkdesk_server.db import session_scope
+    from inkdesk_server.models import TopicClaim
 
     client = owner_client(temp_app_env)
     initial_reviews = client.get("/api/ingest").json()
@@ -190,8 +190,8 @@ def test_dashboard_health_and_briefing_surface_unsupported_claims(temp_app_env):
 def test_wiki_topic_summaries_surface_claim_risk_counts(temp_app_env):
     from datetime import UTC, datetime, timedelta
 
-    from inkvault_server.db import session_scope
-    from inkvault_server.models import TopicClaim
+    from inkdesk_server.db import session_scope
+    from inkdesk_server.models import TopicClaim
 
     client = owner_client(temp_app_env)
     initial_reviews = client.get("/api/ingest").json()
@@ -215,8 +215,8 @@ def test_wiki_topic_summaries_surface_claim_risk_counts(temp_app_env):
 
 
 def test_topic_scoped_ask_records_claim_usage_on_existing_claims(temp_app_env):
-    from inkvault_server.db import session_scope
-    from inkvault_server.models import TopicClaim
+    from inkdesk_server.db import session_scope
+    from inkdesk_server.models import TopicClaim
 
     client = owner_client(temp_app_env)
     initial_reviews = client.get("/api/ingest").json()
@@ -250,8 +250,8 @@ def test_topic_scoped_ask_records_claim_usage_on_existing_claims(temp_app_env):
 
 
 def test_global_ask_records_claim_usage_for_cited_topics(temp_app_env):
-    from inkvault_server.db import session_scope
-    from inkvault_server.models import TopicClaim
+    from inkdesk_server.db import session_scope
+    from inkdesk_server.models import TopicClaim
 
     client = owner_client(temp_app_env)
     initial_reviews = client.get("/api/ingest").json()
@@ -283,8 +283,8 @@ def test_global_ask_records_claim_usage_for_cited_topics(temp_app_env):
 def test_dashboard_health_surfaces_stale_claims_when_recently_used_claim_lacks_fresh_verification(temp_app_env):
     from datetime import UTC, datetime, timedelta
 
-    from inkvault_server.db import session_scope
-    from inkvault_server.models import TopicClaim
+    from inkdesk_server.db import session_scope
+    from inkdesk_server.models import TopicClaim
 
     client = owner_client(temp_app_env)
     initial_reviews = client.get("/api/ingest").json()
@@ -324,8 +324,8 @@ def test_dashboard_health_surfaces_stale_claims_when_recently_used_claim_lacks_f
 def test_dashboard_health_briefing_and_topic_detail_surface_conflicting_claims(temp_app_env):
     from datetime import UTC, datetime, timedelta
 
-    from inkvault_server.db import session_scope
-    from inkvault_server.models import TopicClaim
+    from inkdesk_server.db import session_scope
+    from inkdesk_server.models import TopicClaim
 
     client = owner_client(temp_app_env)
     initial_reviews = client.get("/api/ingest").json()
@@ -380,10 +380,10 @@ def test_dashboard_health_briefing_and_topic_detail_surface_conflicting_claims(t
 def test_used_stale_claim_materializes_re_review_item_without_creating_duplicate(temp_app_env):
     from datetime import UTC, datetime, timedelta
 
-    from inkvault_server.db import init_db, session_scope
-    from inkvault_server.models import TopicClaim
-    from inkvault_server.research import get_research_service
-    from inkvault_server.core.config import get_settings
+    from inkdesk_server.db import init_db, session_scope
+    from inkdesk_server.models import TopicClaim
+    from inkdesk_server.research import get_research_service
+    from inkdesk_server.core.config import get_settings
 
     init_db()
     with session_scope() as db:
@@ -421,11 +421,11 @@ def test_used_stale_claim_materializes_re_review_item_without_creating_duplicate
 def test_accepting_stale_claim_review_refreshes_existing_claim_and_clears_repeat_staleness(temp_app_env):
     from datetime import UTC, datetime, timedelta
 
-    from inkvault_server.db import init_db, session_scope
-    from inkvault_server.models import TopicClaim
-    from inkvault_server.research import get_research_service
-    from inkvault_server.core.config import get_settings
-    from inkvault_server.time_utils import ensure_utc_datetime
+    from inkdesk_server.db import init_db, session_scope
+    from inkdesk_server.models import TopicClaim
+    from inkdesk_server.research import get_research_service
+    from inkdesk_server.core.config import get_settings
+    from inkdesk_server.time_utils import ensure_utc_datetime
 
     init_db()
     with session_scope() as db:
@@ -470,8 +470,8 @@ def test_accepting_stale_claim_review_refreshes_existing_claim_and_clears_repeat
 def test_stale_claim_review_appears_in_ingest_after_health_materialization(temp_app_env):
     from datetime import UTC, datetime, timedelta
 
-    from inkvault_server.db import session_scope
-    from inkvault_server.models import TopicClaim
+    from inkdesk_server.db import session_scope
+    from inkdesk_server.models import TopicClaim
 
     client = owner_client(temp_app_env)
     initial_reviews = client.get("/api/ingest").json()
@@ -501,10 +501,10 @@ def test_stale_claim_review_appears_in_ingest_after_health_materialization(temp_
 def test_conflicting_claim_review_materializes_without_creating_duplicate(temp_app_env):
     from datetime import UTC, datetime, timedelta
 
-    from inkvault_server.db import init_db, session_scope
-    from inkvault_server.models import TopicClaim
-    from inkvault_server.research import get_research_service
-    from inkvault_server.core.config import get_settings
+    from inkdesk_server.db import init_db, session_scope
+    from inkdesk_server.models import TopicClaim
+    from inkdesk_server.research import get_research_service
+    from inkdesk_server.core.config import get_settings
 
     init_db()
     with session_scope() as db:
@@ -558,10 +558,10 @@ def test_conflicting_claim_review_materializes_without_creating_duplicate(temp_a
 def test_accepting_conflict_review_keeps_canonical_claim_and_clears_repeat_conflict(temp_app_env):
     from datetime import UTC, datetime, timedelta
 
-    from inkvault_server.db import init_db, session_scope
-    from inkvault_server.models import TopicClaim
-    from inkvault_server.research import get_research_service
-    from inkvault_server.core.config import get_settings
+    from inkdesk_server.db import init_db, session_scope
+    from inkdesk_server.models import TopicClaim
+    from inkdesk_server.research import get_research_service
+    from inkdesk_server.core.config import get_settings
 
     init_db()
     with session_scope() as db:
@@ -622,8 +622,8 @@ def test_accepting_conflict_review_keeps_canonical_claim_and_clears_repeat_confl
 def test_conflicting_claim_review_appears_in_ingest_after_health_materialization(temp_app_env):
     from datetime import UTC, datetime, timedelta
 
-    from inkvault_server.db import session_scope
-    from inkvault_server.models import TopicClaim
+    from inkdesk_server.db import session_scope
+    from inkdesk_server.models import TopicClaim
 
     client = owner_client(temp_app_env)
     initial_reviews = client.get("/api/ingest").json()
@@ -683,8 +683,8 @@ def test_ask_briefing_endpoint_returns_ask_turn_scoped_summary_and_persists_payl
     assert payload["askTurnId"] == ask_payload["id"]
     assert payload["knowledgeGaps"]
 
-    from inkvault_server.db import session_scope
-    from inkvault_server.models import AskTurn
+    from inkdesk_server.db import session_scope
+    from inkdesk_server.models import AskTurn
 
     with session_scope() as db:
         stored_turn = db.scalar(select(AskTurn).where(AskTurn.id == ask_payload["id"]))
@@ -699,8 +699,8 @@ def test_ask_briefing_endpoint_recomputes_missing_judgment_payload_for_legacy_tu
         json={"question": "现在有哪些待审阅的研究迁移项？", "mode": "vault"},
     ).json()
 
-    from inkvault_server.db import session_scope
-    from inkvault_server.models import AskTurn
+    from inkdesk_server.db import session_scope
+    from inkdesk_server.models import AskTurn
 
     with session_scope() as db:
         stored_turn = db.scalar(select(AskTurn).where(AskTurn.id == ask_payload["id"]))
@@ -723,7 +723,7 @@ def test_raw_import_and_wiki_accept_flow(temp_app_env):
         "/api/raw",
         json={
             "kind": "WEB",
-            "title": "将 Inkvault 重定位为私有研究型 LLM Wiki：外部评注",
+            "title": "将 Inkdesk 重定位为私有研究型 LLM Wiki：外部评注",
             "locator": "https://example.com/research-wiki",
             "excerpt": "来自网页的新证据，强调研究型知识编译而不是传统笔记。",
             "body": "网页正文：研究系统应先做主题编译，再做长期记忆。",
@@ -992,10 +992,10 @@ def test_compile_routes_similar_raw_to_existing_topic_via_chunk_retrieval(temp_a
 
 
 def test_compile_review_persists_structured_agent_payload_with_chunk_backlinks(temp_app_env):
-    from inkvault_server.agents import CompileClaimModel, CompileResponseModel
-    from inkvault_server.core.config import get_settings
-    from inkvault_server.db import init_db, session_scope
-    from inkvault_server.research import get_research_service
+    from inkdesk_server.agents import CompileClaimModel, CompileResponseModel
+    from inkdesk_server.core.config import get_settings
+    from inkdesk_server.db import init_db, session_scope
+    from inkdesk_server.research import get_research_service
 
     init_db()
     with session_scope() as db:
@@ -1053,10 +1053,10 @@ def test_compile_review_persists_structured_agent_payload_with_chunk_backlinks(t
 
 
 def test_accept_review_applies_all_structured_claims_and_open_questions_to_topic(temp_app_env):
-    from inkvault_server.agents import CompileClaimModel, CompileResponseModel
-    from inkvault_server.core.config import get_settings
-    from inkvault_server.db import init_db, session_scope
-    from inkvault_server.research import get_research_service
+    from inkdesk_server.agents import CompileClaimModel, CompileResponseModel
+    from inkdesk_server.core.config import get_settings
+    from inkdesk_server.db import init_db, session_scope
+    from inkdesk_server.research import get_research_service
 
     init_db()
     with session_scope() as db:
@@ -1118,10 +1118,10 @@ def test_accept_review_applies_all_structured_claims_and_open_questions_to_topic
 
 
 def test_accept_topic_create_review_applies_structured_payload_to_new_topic(temp_app_env):
-    from inkvault_server.agents import CompileClaimModel, CompileResponseModel
-    from inkvault_server.core.config import get_settings
-    from inkvault_server.db import init_db, session_scope
-    from inkvault_server.research import get_research_service
+    from inkdesk_server.agents import CompileClaimModel, CompileResponseModel
+    from inkdesk_server.core.config import get_settings
+    from inkdesk_server.db import init_db, session_scope
+    from inkdesk_server.research import get_research_service
 
     init_db()
     with session_scope() as db:
@@ -1183,8 +1183,8 @@ def test_accept_topic_create_review_applies_structured_payload_to_new_topic(temp
 
 
 def test_vault_plus_web_ask_surfaces_external_web_assist_results_but_keeps_writeback_explicit(temp_app_env, monkeypatch):
-    from inkvault_server.importers import WebAssistResult, WebRawImportService
-    from inkvault_server.core.config import get_settings
+    from inkdesk_server.importers import WebAssistResult, WebRawImportService
+    from inkdesk_server.core.config import get_settings
 
     def fake_assist(_self, query: str):
         assert query == "这个主题的最新变化是什么？"
@@ -1198,7 +1198,7 @@ def test_vault_plus_web_ask_surfaces_external_web_assist_results_but_keeps_write
             )
         ]
 
-    monkeypatch.setenv("INKVAULT_ENABLE_WEB_ASSIST", "true")
+    monkeypatch.setenv("INKDESK_ENABLE_WEB_ASSIST", "true")
     get_settings.cache_clear()
     monkeypatch.setattr(WebRawImportService, "assist_from_query", fake_assist)
     client = owner_client(temp_app_env)
@@ -1235,8 +1235,8 @@ def test_vault_plus_web_ask_surfaces_external_web_assist_results_but_keeps_write
 
 
 def test_repeated_ask_reconcile_keeps_chunk_index_idempotent(temp_app_env):
-    from inkvault_server.db import session_scope
-    from inkvault_server.models import RetrievalChunk
+    from inkdesk_server.db import session_scope
+    from inkdesk_server.models import RetrievalChunk
 
     client = owner_client(temp_app_env)
     initial_reviews = client.get("/api/ingest").json()
@@ -1264,7 +1264,7 @@ def test_repeated_ask_reconcile_keeps_chunk_index_idempotent(temp_app_env):
 
 
 def test_web_import_service_assist_from_query_builds_results_from_search_candidates(monkeypatch):
-    from inkvault_server.importers import ImportedRawMaterial, WebRawImportService
+    from inkdesk_server.importers import ImportedRawMaterial, WebRawImportService
 
     service = WebRawImportService()
     monkeypatch.setattr(

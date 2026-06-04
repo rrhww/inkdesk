@@ -6,8 +6,8 @@ import pytest
 
 
 def test_vault_service_initializes_raw_wiki_and_agents_file(temp_app_env: Path):
-    from inkvault_server.core.config import get_settings
-    from inkvault_server.vault import VaultService
+    from inkdesk_server.core.config import get_settings
+    from inkdesk_server.vault import VaultService
 
     service = VaultService(get_settings())
     service.ensure_initialized()
@@ -18,8 +18,8 @@ def test_vault_service_initializes_raw_wiki_and_agents_file(temp_app_env: Path):
 
 
 def test_vault_service_rejects_path_traversal(temp_app_env: Path):
-    from inkvault_server.core.config import get_settings
-    from inkvault_server.vault import VaultService
+    from inkdesk_server.core.config import get_settings
+    from inkdesk_server.vault import VaultService
 
     service = VaultService(get_settings())
     service.ensure_initialized()

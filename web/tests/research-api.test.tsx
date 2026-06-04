@@ -42,7 +42,7 @@ test("research helper calls the backend dashboard and preserves the vault-first 
     const url = new URL(String(input));
 
     if (url.pathname === "/api/admin/home") {
-      assert.equal((init?.headers as Record<string, string> | undefined)?.Cookie, "inkvault_owner_session=owner");
+      assert.equal((init?.headers as Record<string, string> | undefined)?.Cookie, "inkdesk_owner_session=owner");
 
       return createJsonResponse({
         summary: {
@@ -83,7 +83,7 @@ test("research helper calls the backend dashboard and preserves the vault-first 
               title: "wiki 里还有 2 个开放问题",
               summary: "开放问题提示下一轮需要补证的方向。",
               relatedId: "topic-001",
-              relatedTitle: "Inkvault repositioning"
+              relatedTitle: "Inkdesk repositioning"
             },
             {
               type: "UNSUPPORTED_CLAIM",
@@ -91,7 +91,7 @@ test("research helper calls the backend dashboard and preserves the vault-first 
               title: "有 1 条 claim 缺少直接证据",
               summary: "至少有一条关键结论还没有直接证据链支持。",
               relatedId: "topic-001",
-              relatedTitle: "Inkvault repositioning"
+              relatedTitle: "Inkdesk repositioning"
             },
             {
               type: "STALE_CLAIM",
@@ -99,7 +99,7 @@ test("research helper calls the backend dashboard and preserves the vault-first 
               title: "有 1 条常用 claim 需要重审",
               summary: "这条 claim 最近仍被 Ask 使用，但验证时间过旧或证据仍偏弱。",
               relatedId: "topic-001",
-              relatedTitle: "Inkvault repositioning"
+              relatedTitle: "Inkdesk repositioning"
             },
             {
               type: "CONFLICTING_CLAIM",
@@ -107,13 +107,13 @@ test("research helper calls the backend dashboard and preserves the vault-first 
               title: "有 2 条 claim 彼此冲突",
               summary: "同一主题里出现了方向相反的 claim，建议回到 ingest 统一裁决。",
               relatedId: "topic-001",
-              relatedTitle: "Inkvault repositioning"
+              relatedTitle: "Inkdesk repositioning"
             }
           ]
         },
         focusTopic: {
           id: "topic-001",
-          title: "Inkvault repositioning",
+          title: "Inkdesk repositioning",
           summary: "把产品中心收回到 Topic。",
           sourceCount: 3,
           openQuestionCount: 2,
@@ -141,22 +141,22 @@ test("research helper calls the backend dashboard and preserves the vault-first 
             kind: "TOPIC_PATCH",
             proposalKind: "TOPIC_PATCH",
             title: "把来源补充进现有主题",
-            summary: "提议把新来源编译进 Inkvault repositioning。",
+            summary: "提议把新来源编译进 Inkdesk repositioning。",
             sourceId: "source-001",
             sourceTitle: "Research-first wiki note",
             targetTopicId: "topic-001",
-            targetTopicTitle: "Inkvault repositioning",
+            targetTopicTitle: "Inkdesk repositioning",
             proposedTopicTitle: null,
             proposedUnderstanding: "Topic 应成为产品主对象。",
             proposedOpenQuestions: "迁移老笔记时，哪些内容应进入 Topic？",
             proposedClaim: "Topic 应成为产品主对象。",
-            proposedVaultPath: "wiki/inkvault-repositioning.md",
+            proposedVaultPath: "wiki/inkdesk-repositioning.md",
             sourceVaultPath: "raw/2026-04-13-research-first-wiki-note.md",
             proposalPayload: {
               topicDecision: {
                 decision: "PATCH",
                 targetTopicId: "topic-001",
-                targetTopicTitle: "Inkvault repositioning",
+                targetTopicTitle: "Inkdesk repositioning",
                 proposedTopicTitle: null
               },
               summaryChanges: ["Topic 应成为产品主对象。"],
@@ -172,7 +172,7 @@ test("research helper calls the backend dashboard and preserves the vault-first 
               ],
               conflicts: [],
               openQuestions: ["迁移老笔记时，哪些内容应进入 Topic？"],
-              explanation: "系统建议把这次 Ask / raw 结论补充进现有主题「Inkvault repositioning」，因为证据与当前主题最相关。",
+              explanation: "系统建议把这次 Ask / raw 结论补充进现有主题「Inkdesk repositioning」，因为证据与当前主题最相关。",
               evidence: [
                 {
                   sourceId: "source-001",
@@ -204,7 +204,7 @@ test("research helper calls the backend dashboard and preserves the vault-first 
     assert.equal(snapshot.focusTopic?.id, "topic-001");
     assert.equal(snapshot.focusTopic?.unsupportedClaimCount, 1);
     assert.equal(snapshot.focusTopic?.staleClaimCount, 1);
-    assert.equal(snapshot.pendingReviews[0]?.targetTopicTitle, "Inkvault repositioning");
+    assert.equal(snapshot.pendingReviews[0]?.targetTopicTitle, "Inkdesk repositioning");
     assert.equal(snapshot.pendingReviews[0]?.proposalPayload?.topicDecision.decision, "PATCH");
     assert.equal(snapshot.pendingReviews[0]?.proposalPayload?.claims[0]?.provenanceStatus, "supported");
     assert.equal(snapshot.pendingReviews[0]?.proposalPayload?.evidence[0]?.sourceVaultPath, "raw/2026-04-13-research-first-wiki-note.md");
@@ -264,9 +264,9 @@ test("research helper fetches wiki detail, raw list, ingest items, and grounded 
     if (url.pathname === "/api/wiki/topic-001") {
       return createJsonResponse({
         id: "topic-001",
-        title: "Inkvault repositioning",
+        title: "Inkdesk repositioning",
         summary: "把产品中心收回到 Topic。",
-        vaultPath: "wiki/inkvault-repositioning.md",
+        vaultPath: "wiki/inkdesk-repositioning.md",
         contentHash: "wiki-hash",
         currentUnderstanding: ["Topic 是新的核心对象。"],
         openQuestions: ["哪些旧笔记应先迁移？"],
@@ -332,22 +332,22 @@ test("research helper fetches wiki detail, raw list, ingest items, and grounded 
           kind: "TOPIC_PATCH",
           proposalKind: "TOPIC_PATCH",
           title: "把来源补充进现有主题",
-          summary: "提议把新来源编译进 Inkvault repositioning。",
+          summary: "提议把新来源编译进 Inkdesk repositioning。",
           sourceId: "source-001",
           sourceTitle: "Research-first wiki note",
           sourceVaultPath: "raw/2026-04-13-research-first-wiki-note.md",
           targetTopicId: "topic-001",
-          targetTopicTitle: "Inkvault repositioning",
+          targetTopicTitle: "Inkdesk repositioning",
           proposedTopicTitle: null,
           proposedUnderstanding: "Topic 应成为产品主对象。",
           proposedOpenQuestions: "迁移老笔记时，哪些内容应进入 Topic？",
           proposedClaim: "Topic 应成为产品主对象。",
-          proposedVaultPath: "wiki/inkvault-repositioning.md",
+          proposedVaultPath: "wiki/inkdesk-repositioning.md",
           proposalPayload: {
             topicDecision: {
               decision: "PATCH",
               targetTopicId: "topic-001",
-              targetTopicTitle: "Inkvault repositioning",
+              targetTopicTitle: "Inkdesk repositioning",
               proposedTopicTitle: null
             },
             summaryChanges: ["Topic 应成为产品主对象。"],
@@ -363,7 +363,7 @@ test("research helper fetches wiki detail, raw list, ingest items, and grounded 
             ],
             conflicts: [],
             openQuestions: ["迁移老笔记时，哪些内容应进入 Topic？"],
-            explanation: "系统建议把这次 Ask / raw 结论补充进现有主题「Inkvault repositioning」，因为证据与当前主题最相关。",
+            explanation: "系统建议把这次 Ask / raw 结论补充进现有主题「Inkdesk repositioning」，因为证据与当前主题最相关。",
             evidence: [
               {
                 sourceId: "source-001",
@@ -406,10 +406,10 @@ test("research helper fetches wiki detail, raw list, ingest items, and grounded 
     assert.equal(topic.keyClaims[0]?.needsReview, false);
     assert.equal(topic.keyClaims[0]?.hasConflict, true);
     assert.equal(topic.thread[0]?.role, "ASSISTANT");
-    assert.equal(topic.vaultPath, "wiki/inkvault-repositioning.md");
+    assert.equal(topic.vaultPath, "wiki/inkdesk-repositioning.md");
     assert.equal(sources[0]?.status, "INGEST_PENDING");
     assert.equal(sources[0]?.vaultPath, "raw/2026-04-13-research-first-wiki-note.md");
-    assert.equal(ingestItems[0]?.proposedVaultPath, "wiki/inkvault-repositioning.md");
+    assert.equal(ingestItems[0]?.proposedVaultPath, "wiki/inkdesk-repositioning.md");
     assert.equal(ingestItems[0]?.proposalPayload?.claims[0]?.statement, "Topic 应成为产品主对象。");
     assert.equal(answer.citations[0]?.sourceId, "source-001");
     assert.equal(answer.citations[0]?.vaultPath, "raw/2026-04-13-research-first-wiki-note.md");
@@ -493,7 +493,7 @@ test("research helper fetches ask briefing by scope", async () => {
         ...workspaceBriefing,
         scope: "topic",
         topicId: "topic-001",
-        topicTitle: "Inkvault repositioning"
+        topicTitle: "Inkdesk repositioning"
       });
     }
 
@@ -516,7 +516,7 @@ test("research helper fetches ask briefing by scope", async () => {
 
     assert.equal(workspace.scope, "workspace");
     assert.equal(topic.topicId, "topic-001");
-    assert.equal(topic.topicTitle, "Inkvault repositioning");
+    assert.equal(topic.topicTitle, "Inkdesk repositioning");
     assert.equal(askTurn.askTurnId, "ask-001");
     assert.equal(askTurn.nextActions[0]?.kind, "OPEN_INGEST");
   });
@@ -656,25 +656,25 @@ test("research helper can turn an explicit ask answer card into an ingest propos
         kind: "TOPIC_PATCH",
         proposalKind: "TOPIC_PATCH",
         title: "把 Ask 结论补充进现有主题",
-        summary: "把“这个主题当前最稳定的理解是什么？”的回答沉淀进 Inkvault repositioning。",
+        summary: "把“这个主题当前最稳定的理解是什么？”的回答沉淀进 Inkdesk repositioning。",
         sourceId: "source-001",
         sourceTitle: "Research-first wiki note",
         sourceVaultPath: "raw/2026-04-13-research-first-wiki-note.md",
         targetTopicId: "topic-001",
-        targetTopicTitle: "Inkvault repositioning",
+        targetTopicTitle: "Inkdesk repositioning",
         proposedTopicTitle: null,
         proposedUnderstanding: "当前最稳定的理解是 Topic 取代 Note 成为核心对象。",
         proposedOpenQuestions: "这条理解还缺哪条外部证据？",
         proposedClaim: "当前最稳定的理解是 Topic 取代 Note 成为核心对象。",
-        proposedVaultPath: "wiki/inkvault-repositioning.md",
+        proposedVaultPath: "wiki/inkdesk-repositioning.md",
         proposalPayload: {
           topicDecision: {
             decision: "PATCH",
             targetTopicId: "topic-001",
-            targetTopicTitle: "Inkvault repositioning",
+            targetTopicTitle: "Inkdesk repositioning",
             proposedTopicTitle: null
           },
-          summaryChanges: ["把 Ask 当前回答补充进 Inkvault repositioning 的 Current Understanding。"],
+          summaryChanges: ["把 Ask 当前回答补充进 Inkdesk repositioning 的 Current Understanding。"],
           claims: [
             {
               statement: "当前最稳定的理解是 Topic 取代 Note 成为核心对象。",
@@ -687,7 +687,7 @@ test("research helper can turn an explicit ask answer card into an ingest propos
           ],
           conflicts: [],
           openQuestions: ["这条理解还缺哪条外部证据？"],
-          explanation: "系统建议把这次 Ask 结论补充进现有主题「Inkvault repositioning」，因为当前回答已经命中了该主题的现有知识页。",
+          explanation: "系统建议把这次 Ask 结论补充进现有主题「Inkdesk repositioning」，因为当前回答已经命中了该主题的现有知识页。",
           evidence: [
             {
               sourceId: "source-001",

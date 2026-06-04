@@ -5,7 +5,7 @@ from datetime import datetime
 from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, String, Table, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from inkvault_server.db import Base
+from inkdesk_server.db import Base
 
 
 topic_sources_table = Table(

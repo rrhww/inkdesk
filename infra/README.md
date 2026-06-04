@@ -38,9 +38,9 @@ docker compose --env-file infra/.env -f infra/docker-compose.yml down
 
 ## 检索相关环境变量
 
-- `INKVAULT_EMBEDDING_PROVIDER_PROFILE`
-- `INKVAULT_EMBEDDING_MODEL`
-- `INKVAULT_EMBEDDING_API_KEY`
-- `INKVAULT_EMBEDDING_BASE_URL`
+- `INKDESK_EMBEDDING_PROVIDER_PROFILE`
+- `INKDESK_EMBEDDING_MODEL`
+- `INKDESK_EMBEDDING_API_KEY`
+- `INKDESK_EMBEDDING_BASE_URL`
 
 应用启动时会自动执行 `CREATE EXTENSION IF NOT EXISTS vector`。如果没有配置 embedding provider，Ask 会回落到 lexical retrieval；配置后会进入 hybrid retrieval。

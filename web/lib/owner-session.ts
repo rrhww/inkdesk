@@ -1,4 +1,4 @@
-export const OWNER_SESSION_COOKIE = "inkvault_owner_session";
+export const OWNER_SESSION_COOKIE = "inkdesk_owner_session";
 export const OWNER_SESSION_VALUE = "owner";
 
 export function hasOwnerSession(value?: string) {

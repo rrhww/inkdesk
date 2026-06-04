@@ -8,22 +8,22 @@ from fastapi.testclient import TestClient
 
 
 @pytest.mark.skipif(
-    not os.getenv("INKVAULT_TEST_PGVECTOR_URL"),
-    reason="Set INKVAULT_TEST_PGVECTOR_URL to run the pgvector integration path.",
+    not os.getenv("INKDESK_TEST_PGVECTOR_URL"),
+    reason="Set INKDESK_TEST_PGVECTOR_URL to run the pgvector integration path.",
 )
 def test_pgvector_health_and_hybrid_ask_path(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
-    from inkvault_server.core.config import get_settings
-    from inkvault_server.db import Base, get_engine, get_session_factory, init_db
-    from inkvault_server.main import create_app
+    from inkdesk_server.core.config import get_settings
+    from inkdesk_server.db import Base, get_engine, get_session_factory, init_db
+    from inkdesk_server.main import create_app
 
-    monkeypatch.setenv("INKVAULT_DB_URL", os.environ["INKVAULT_TEST_PGVECTOR_URL"])
-    monkeypatch.setenv("INKVAULT_VAULT_ROOT", str(tmp_path / "vault"))
-    monkeypatch.setenv("INKVAULT_AUTH_SECRET", "pgvector-test-secret")
-    monkeypatch.setenv("INKVAULT_AUTH_ALLOW_LEGACY_OWNER_COOKIE", "true")
-    monkeypatch.setenv("INKVAULT_AGENT_RUNTIME", "deterministic")
-    monkeypatch.setenv("INKVAULT_ENABLE_WEB_ASSIST", "false")
-    monkeypatch.setenv("INKVAULT_ENABLE_LOCAL_SEED", "false")
-    monkeypatch.setenv("INKVAULT_EMBEDDING_PROVIDER_PROFILE", "deterministic")
+    monkeypatch.setenv("INKDESK_DB_URL", os.environ["INKDESK_TEST_PGVECTOR_URL"])
+    monkeypatch.setenv("INKDESK_VAULT_ROOT", str(tmp_path / "vault"))
+    monkeypatch.setenv("INKDESK_AUTH_SECRET", "pgvector-test-secret")
+    monkeypatch.setenv("INKDESK_AUTH_ALLOW_LEGACY_OWNER_COOKIE", "true")
+    monkeypatch.setenv("INKDESK_AGENT_RUNTIME", "deterministic")
+    monkeypatch.setenv("INKDESK_ENABLE_WEB_ASSIST", "false")
+    monkeypatch.setenv("INKDESK_ENABLE_LOCAL_SEED", "false")
+    monkeypatch.setenv("INKDESK_EMBEDDING_PROVIDER_PROFILE", "deterministic")
 
     get_settings.cache_clear()
     get_engine.cache_clear()
@@ -34,7 +34,7 @@ def test_pgvector_health_and_hybrid_ask_path(tmp_path: Path, monkeypatch: pytest
     init_db()
 
     client = TestClient(create_app())
-    client.cookies.set("inkvault_owner_session", "owner")
+    client.cookies.set("inkdesk_owner_session", "owner")
 
     health = client.get("/actuator/health")
     assert health.status_code == 200

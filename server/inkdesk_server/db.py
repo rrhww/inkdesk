@@ -6,7 +6,7 @@ from functools import lru_cache
 from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
 
-from inkvault_server.core.config import get_settings
+from inkdesk_server.core.config import get_settings
 
 
 Base = declarative_base()
@@ -56,7 +56,7 @@ def get_session_factory():
 
 
 def init_db() -> None:
-    from inkvault_server import models  # noqa: F401
+    from inkdesk_server import models  # noqa: F401
 
     engine = get_engine()
     ensure_pgvector_extension(engine)

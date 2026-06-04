@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Rebuild the authenticated Inkvault frontend into a Chinese, chat-first research shell where `/app` becomes the primary `问答` workspace while preserving the vault-first `资料 / 审阅 / 知识库` workflow.
+**Goal:** Rebuild the authenticated Inkdesk frontend into a Chinese, chat-first research shell where `/app` becomes the primary `问答` workspace while preserving the vault-first `资料 / 审阅 / 知识库` workflow.
 
 **Architecture:** Keep the existing Next.js App Router and Python-backed API contract, but replace the dashboard-style shell with repo-native chat-shell components inspired by assistant-ui. Use a small localStorage-backed ask-history adapter for the left rail, server-render the workspace pages with thin data-fetching routes, and reuse existing Ask/Raw/Ingest/Wiki server actions so the backend stays untouched.
 
@@ -101,20 +101,20 @@ describe("app shell primitives", () => {
   it("merges current ask turns ahead of starter history and removes duplicates", () => {
     const starter = buildStarterHistory({
       suggestedQuestions: ["raw 和 wiki 的边界是什么？"],
-      focusTopicTitle: "Inkvault repositioning"
+      focusTopicTitle: "Inkdesk repositioning"
     });
 
     const merged = mergeAskHistoryEntry(starter, {
       id: "ask-topic-001",
       title: "这个主题当前最稳定的理解是什么？",
       href: "/app?q=%E8%BF%99%E4%B8%AA%E4%B8%BB%E9%A2%98%E5%BD%93%E5%89%8D%E6%9C%80%E7%A8%B3%E5%AE%9A%E7%9A%84%E7%90%86%E8%A7%A3%E6%98%AF%E4%BB%80%E4%B9%88%EF%BC%9F&topicId=topic-001",
-      topicTitle: "Inkvault repositioning",
+      topicTitle: "Inkdesk repositioning",
       preview: "当前最稳定的理解是 wiki 是新的核心对象。",
       updatedAt: "2026-05-03T03:00:00Z"
     });
 
     expect(merged[0]?.id).toBe("ask-topic-001");
-    expect(merged[0]?.topicTitle).toBe("Inkvault repositioning");
+    expect(merged[0]?.topicTitle).toBe("Inkdesk repositioning");
     expect(merged).toHaveLength(2);
   });
 });
@@ -170,7 +170,7 @@ export function buildStarterHistory(input: {
 // web/lib/ask-history.ts
 import type { ResearchAskHistoryEntry } from "@/lib/types";
 
-export const ASK_HISTORY_STORAGE_KEY = "inkvault.askHistory";
+export const ASK_HISTORY_STORAGE_KEY = "inkdesk.askHistory";
 
 export function readAskHistory(): ResearchAskHistoryEntry[] {
   if (typeof window === "undefined") {
@@ -800,7 +800,7 @@ Expected:
 
 - `vitest` passes
 - `node --test` passes
-- Playwright passes or is explicitly skipped when `INKVAULT_E2E_FULLSTACK` is not set
+- Playwright passes or is explicitly skipped when `INKDESK_E2E_FULLSTACK` is not set
 - `lint`, `typecheck`, and `build` succeed
 
 - [ ] **Step 5: Commit the polished shell**

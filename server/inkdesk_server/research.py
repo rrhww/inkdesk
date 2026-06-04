@@ -10,7 +10,7 @@ from uuid import uuid4
 from sqlalchemy import delete, func, inspect, select
 from sqlalchemy.orm import Session, selectinload
 
-from inkvault_server.agents import (
+from inkdesk_server.agents import (
     AskBriefingRequestModel,
     AskBriefingResponseModel,
     AskBriefingSignalModel,
@@ -24,12 +24,12 @@ from inkvault_server.agents import (
     TopicModel,
     WebCitationModel,
 )
-from inkvault_server.core.config import Settings
-from inkvault_server.embeddings import EmbeddingService
-from inkvault_server.importers import ImportedRawMaterial, PdfRawImportService, WebRawImportService
-from inkvault_server.models import AskTurn, ContentNode, NoteDocument, ReviewItem, RetrievalChunk, Source, Topic, TopicClaim, TopicThreadEntry, User, Workspace
-from inkvault_server.retrieval import RetrievalSelection, RetrievalService, RetrievedCitation
-from inkvault_server.schemas import (
+from inkdesk_server.core.config import Settings
+from inkdesk_server.embeddings import EmbeddingService
+from inkdesk_server.importers import ImportedRawMaterial, PdfRawImportService, WebRawImportService
+from inkdesk_server.models import AskTurn, ContentNode, NoteDocument, ReviewItem, RetrievalChunk, Source, Topic, TopicClaim, TopicThreadEntry, User, Workspace
+from inkdesk_server.retrieval import RetrievalSelection, RetrievalService, RetrievedCitation
+from inkdesk_server.schemas import (
     AskCitationResponse,
     AskBriefingActionResponse,
     AskBriefingGapResponse,
@@ -55,12 +55,12 @@ from inkvault_server.schemas import (
     TopicSummaryResponse,
     TopicThreadEntryResponse,
 )
-from inkvault_server.security import ResourceNotFoundError
-from inkvault_server.time_utils import ensure_utc_datetime
-from inkvault_server.vault import LIST_DELIMITER, VaultMarkdownService, VaultService
+from inkdesk_server.security import ResourceNotFoundError
+from inkdesk_server.time_utils import ensure_utc_datetime
+from inkdesk_server.vault import LIST_DELIMITER, VaultMarkdownService, VaultService
 
 
-DEFAULT_WORKSPACE_SLUG = "inkvault"
+DEFAULT_WORKSPACE_SLUG = "inkdesk"
 
 
 @dataclass
@@ -109,16 +109,16 @@ class ResearchWorkspaceService:
         owner = User(
             id="user-owner",
             username="owner",
-            email="owner@inkvault.local",
+            email="owner@inkdesk.local",
             password_hash="$2a$10$LPDn2kRc8QEv/eTF8R30Hu9.NxWX600YSCWveNEp.5fKhYaylubji",
             status="ACTIVE",
             created_at=now,
             updated_at=now,
         )
         workspace = Workspace(
-            id="workspace-inkvault",
+            id="workspace-inkdesk",
             owner_user=owner,
-            name="Inkvault",
+            name="Inkdesk",
             slug=DEFAULT_WORKSPACE_SLUG,
             created_at=now,
             updated_at=now,
@@ -130,11 +130,11 @@ class ResearchWorkspaceService:
             "note-001",
             workspace,
             folder_product,
-            "将 Inkvault 重定位为私有研究型 LLM Wiki",
+            "将 Inkdesk 重定位为私有研究型 LLM Wiki",
             110,
             datetime.fromisoformat("2026-04-12T08:10:00+00:00"),
             "把产品中心收回到 raw / ingest / wiki，让来源导入、AI 编译和人工审阅形成闭环。",
-            "# 将 Inkvault 重定位为私有研究型 LLM Wiki\n\n新的 Inkvault 不再强调个人操作系统或公开发布站，而是一个单人、私有、研究优先的知识编译空间。\n\n系统的核心工作是导入网页、PDF 与旧笔记，把这些材料先保存为 raw，再通过 ingest 转成可审阅的 wiki 记忆，而不是继续扩张旧的计划与发布流。",
+            "# 将 Inkdesk 重定位为私有研究型 LLM Wiki\n\n新的 Inkdesk 不再强调个人操作系统或公开发布站，而是一个单人、私有、研究优先的知识编译空间。\n\n系统的核心工作是导入网页、PDF 与旧笔记，把这些材料先保存为 raw，再通过 ingest 转成可审阅的 wiki 记忆，而不是继续扩张旧的计划与发布流。",
             980,
         )
         note2 = self._build_note(

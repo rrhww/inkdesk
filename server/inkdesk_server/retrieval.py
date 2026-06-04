@@ -10,10 +10,10 @@ from uuid import uuid4
 from sqlalchemy import delete, select, text
 from sqlalchemy.orm import Session
 
-from inkvault_server.agents import AskContextTurnModel
-from inkvault_server.embeddings import EmbeddingService
-from inkvault_server.models import RetrievalChunk, Source, Topic
-from inkvault_server.time_utils import ensure_utc_datetime
+from inkdesk_server.agents import AskContextTurnModel
+from inkdesk_server.embeddings import EmbeddingService
+from inkdesk_server.models import RetrievalChunk, Source, Topic
+from inkdesk_server.time_utils import ensure_utc_datetime
 
 
 @dataclass(frozen=True)

@@ -10,7 +10,7 @@
 
 ```mermaid
 graph TD
-    A["Inkvault"] --> B["入口分流 /"]
+    A["Inkdesk"] --> B["入口分流 /"]
     B --> C["未登录 -> /login"]
     B --> D["已登录 -> /app"]
     D --> D1["Today Vault Panel /app"]

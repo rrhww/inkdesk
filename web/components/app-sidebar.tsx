@@ -31,7 +31,7 @@ export function AppSidebarContent({ pathname, snapshot }: { pathname: string; sn
               </span>
             </div>
             <div>
-              <div className="font-headline text-lg font-extrabold tracking-tight text-ink-primary">Inkvault</div>
+              <div className="font-headline text-lg font-extrabold tracking-tight text-ink-primary">Inkdesk</div>
               <div className="font-headline text-[10px] uppercase tracking-[0.22em] text-ink-muted">LLM Wiki</div>
             </div>
           </Link>

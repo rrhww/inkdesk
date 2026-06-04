@@ -8,7 +8,7 @@ import {
   researchSourcesFixture,
   researchTopicSummariesFixture
 } from "@/lib/mock/research-fixtures";
-import { fetchInkvaultJson, hasApiBaseUrl, InkvaultApiError, postInkvaultJson } from "@/lib/server-api";
+import { fetchInkdeskJson, hasApiBaseUrl, InkdeskApiError, postInkdeskJson } from "@/lib/server-api";
 import type {
   ResearchAskRequest,
   ResearchAskBriefing,
@@ -22,7 +22,7 @@ import type {
   ResearchTopicSummary,
   ResearchWebImportRequest
 } from "@/lib/types";
-import { postInkvaultFormData } from "@/lib/server-api";
+import { postInkdeskFormData } from "@/lib/server-api";
 
 async function withResearchFallback<T>(run: () => Promise<T>, fallback: () => T): Promise<T> {
   if (!hasApiBaseUrl()) {
@@ -32,7 +32,7 @@ async function withResearchFallback<T>(run: () => Promise<T>, fallback: () => T)
   try {
     return await run();
   } catch (error) {
-    if (error instanceof InkvaultApiError) {
+    if (error instanceof InkdeskApiError) {
       throw error;
     }
 
@@ -42,21 +42,21 @@ async function withResearchFallback<T>(run: () => Promise<T>, fallback: () => T)
 
 export async function getResearchDashboard(ownerSession?: string): Promise<ResearchDashboard> {
   return withResearchFallback(
-    () => fetchInkvaultJson<ResearchDashboard>("/admin/home", { ownerSession }),
+    () => fetchInkdeskJson<ResearchDashboard>("/admin/home", { ownerSession }),
     () => researchDashboardFixture
   );
 }
 
 export async function getWikiPages(ownerSession?: string): Promise<ResearchTopicSummary[]> {
   return withResearchFallback(
-    () => fetchInkvaultJson<ResearchTopicSummary[]>("/wiki", { ownerSession }),
+    () => fetchInkdeskJson<ResearchTopicSummary[]>("/wiki", { ownerSession }),
     () => researchTopicSummariesFixture
   );
 }
 
 export async function getWikiDetail(topicId: string, ownerSession?: string): Promise<ResearchTopicDetail> {
   return withResearchFallback(
-    () => fetchInkvaultJson<ResearchTopicDetail>(`/wiki/${topicId}`, { ownerSession }),
+    () => fetchInkdeskJson<ResearchTopicDetail>(`/wiki/${topicId}`, { ownerSession }),
     () => {
       const topic = getResearchTopicDetailFixture(topicId);
       if (!topic) {
@@ -69,21 +69,21 @@ export async function getWikiDetail(topicId: string, ownerSession?: string): Pro
 
 export async function getRawSources(ownerSession?: string): Promise<ResearchSourceRecord[]> {
   return withResearchFallback(
-    () => fetchInkvaultJson<ResearchSourceRecord[]>("/raw", { ownerSession }),
+    () => fetchInkdeskJson<ResearchSourceRecord[]>("/raw", { ownerSession }),
     () => researchSourcesFixture
   );
 }
 
 export async function getIngestItems(ownerSession?: string): Promise<ResearchReviewItem[]> {
   return withResearchFallback(
-    () => fetchInkvaultJson<ResearchReviewItem[]>("/ingest", { ownerSession }),
+    () => fetchInkdeskJson<ResearchReviewItem[]>("/ingest", { ownerSession }),
     () => researchReviewItemsFixture
   );
 }
 
 export async function askResearch(request: ResearchAskRequest, ownerSession?: string): Promise<ResearchAskResponse> {
   return withResearchFallback(
-    () => postInkvaultJson<ResearchAskResponse>("/ask", request, { ownerSession }),
+    () => postInkdeskJson<ResearchAskResponse>("/ask", request, { ownerSession }),
     () => answerResearchQuestionFixture(request)
   );
 }
@@ -102,7 +102,7 @@ export async function getAskBriefing(
         params.set("askTurnId", input.askTurnId);
       }
       const suffix = params.toString() ? `?${params.toString()}` : "";
-      return fetchInkvaultJson<ResearchAskBriefing>(`/ask/briefing${suffix}`, { ownerSession });
+      return fetchInkdeskJson<ResearchAskBriefing>(`/ask/briefing${suffix}`, { ownerSession });
     },
     () => getAskBriefingFixture(input)
   );
@@ -110,25 +110,25 @@ export async function getAskBriefing(
 
 export async function proposeAskWriteback(askTurnId: string, ownerSession?: string): Promise<ResearchReviewItem> {
   return withResearchFallback(
-    () => postInkvaultJson<ResearchReviewItem>(`/ask/${askTurnId}/writeback`, {}, { ownerSession }),
+    () => postInkdeskJson<ResearchReviewItem>(`/ask/${askTurnId}/writeback`, {}, { ownerSession }),
     () => createAskWritebackFixture(askTurnId)
   );
 }
 
 export async function acceptIngest(reviewId: string, ownerSession?: string) {
-  return postInkvaultJson<ResearchReviewDecision>(`/ingest/${reviewId}/accept`, {}, { ownerSession });
+  return postInkdeskJson<ResearchReviewDecision>(`/ingest/${reviewId}/accept`, {}, { ownerSession });
 }
 
 export async function rejectIngest(reviewId: string, ownerSession?: string) {
-  return postInkvaultJson<ResearchReviewDecision>(`/ingest/${reviewId}/reject`, {}, { ownerSession });
+  return postInkdeskJson<ResearchReviewDecision>(`/ingest/${reviewId}/reject`, {}, { ownerSession });
 }
 
 export async function importWebSource(request: ResearchWebImportRequest, ownerSession?: string) {
-  return postInkvaultJson<ResearchSourceRecord>("/raw/web", request, { ownerSession });
+  return postInkdeskJson<ResearchSourceRecord>("/raw/web", request, { ownerSession });
 }
 
 export async function importTextSource(request: ResearchTextImportRequest, ownerSession?: string) {
-  return postInkvaultJson<ResearchSourceRecord>(
+  return postInkdeskJson<ResearchSourceRecord>(
     "/raw",
     {
       kind: "TEXT",
@@ -150,7 +150,7 @@ export async function importPdfSource(file: File, title?: string, ownerSession?:
   if (locator?.trim()) {
     formData.set("locator", locator.trim());
   }
-  return postInkvaultFormData<ResearchSourceRecord>("/raw/pdf", formData, { ownerSession });
+  return postInkdeskFormData<ResearchSourceRecord>("/raw/pdf", formData, { ownerSession });
 }
 
 export const getTopics = getWikiPages;

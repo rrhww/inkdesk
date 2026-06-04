@@ -1,6 +1,6 @@
 # Web
 
-Inkvault 的 Next.js 前端应用，当前只服务于单人私有、Vault-first 的研究工作台。
+Inkdesk 的 Next.js 前端应用，当前只服务于单人私有、Vault-first 的研究工作台。
 
 ## 当前页面模型
 
@@ -33,7 +33,7 @@ Inkvault 的 Next.js 前端应用，当前只服务于单人私有、Vault-first
 
 1. 在 `web/` 目录安装依赖：`npm install`
 2. 复制 `web/.env.local.example` 为 `web/.env.local`
-3. 如需接入真实后端，设置 `INKVAULT_API_BASE_URL` 或 `NEXT_PUBLIC_API_BASE_URL`
+3. 如需接入真实后端，设置 `INKDESK_API_BASE_URL` 或 `NEXT_PUBLIC_API_BASE_URL`
 4. 启动开发环境：`npm run dev`
 5. 浏览器访问：`http://localhost:3000`
 
@@ -44,7 +44,7 @@ Inkvault 的 Next.js 前端应用，当前只服务于单人私有、Vault-first
 如果配置以下任一变量，前端会优先读取 Python 主后端：
 
 - `NEXT_PUBLIC_API_BASE_URL`
-- `INKVAULT_API_BASE_URL`
+- `INKDESK_API_BASE_URL`
 
 变量既可以写成 `http://localhost:8080`，也可以直接写成 `http://localhost:8080/api`。
 
@@ -58,12 +58,12 @@ Inkvault 的 Next.js 前端应用，当前只服务于单人私有、Vault-first
 - `/app/ask`
 - owner 登录 / 登出 / session 校验
 
-这些页面会在服务端渲染时自动转发 `inkvault_owner_session` cookie 给后端私有接口。未配置后端地址时，会自动回退到本地 research fixtures。
+这些页面会在服务端渲染时自动转发 `inkdesk_owner_session` cookie 给后端私有接口。未配置后端地址时，会自动回退到本地 research fixtures。
 
 隐藏登录入口的默认凭证固定为：
 
-- 邮箱：`owner@inkvault.local`
-- 密码：`inkvault-owner`
+- 邮箱：`owner@inkdesk.local`
+- 密码：`inkdesk-owner`
 
 ## 测试
 

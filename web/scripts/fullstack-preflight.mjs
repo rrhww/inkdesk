@@ -56,9 +56,9 @@ export function resolveApiBaseUrl({
   const envFilePath = path.join(cwd, ".env.local");
 
   return normalizeApiBaseUrl(
-    env.INKVAULT_API_BASE_URL ??
+    env.INKDESK_API_BASE_URL ??
       env.NEXT_PUBLIC_API_BASE_URL ??
-      readEnvFileValue(envFilePath, "INKVAULT_API_BASE_URL") ??
+      readEnvFileValue(envFilePath, "INKDESK_API_BASE_URL") ??
       readEnvFileValue(envFilePath, "NEXT_PUBLIC_API_BASE_URL")
   );
 }
@@ -179,7 +179,7 @@ export function buildBackendUnavailableMessage({
   }
 
   if (diagnostics.postgresReachable && !diagnostics.backendReachable) {
-    lines.push("然后启动后端：先进入 `server`，再执行 `python -m uvicorn inkvault_server.main:app --host 0.0.0.0 --port 8080`。");
+    lines.push("然后启动后端：先进入 `server`，再执行 `python -m uvicorn inkdesk_server.main:app --host 0.0.0.0 --port 8080`。");
   }
 
   return lines.join(" ");
@@ -219,7 +219,7 @@ export async function waitForBackendReady(
     }
 
     if (!hasLoggedWait && log) {
-      log(`[inkvault:e2e:fullstack] waiting for backend health at ${healthUrl} ...`);
+      log(`[inkdesk:e2e:fullstack] waiting for backend health at ${healthUrl} ...`);
       hasLoggedWait = true;
     }
 

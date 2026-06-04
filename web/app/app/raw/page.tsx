@@ -244,7 +244,7 @@ export default async function RawPage() {
           <EmptyState
             eyebrow="raw empty"
             title="还没有原始材料"
-            description="先导入网页、文本或 PDF。Inkvault 会把它们保存在 raw，再交给 ingest 生成可审阅提案。"
+            description="先导入网页、文本或 PDF。Inkdesk 会把它们保存在 raw，再交给 ingest 生成可审阅提案。"
             actionLabel="导入第一份材料"
             href="/app/raw"
           />

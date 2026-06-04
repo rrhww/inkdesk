@@ -2,7 +2,7 @@
 
 ## 目标
 
-这份文档用于验收 Inkvault 当前 Ask-first、vault-first 研究工作台的本地闭环可用性。
+这份文档用于验收 Inkdesk 当前 Ask-first、vault-first 研究工作台的本地闭环可用性。
 
 当前闭环定义为：
 
@@ -21,7 +21,7 @@ Copy-Item infra/.env.example infra/.env
 Copy-Item web/.env.local.example web/.env.local
 ```
 
-2. 已设置足够长的 `INKVAULT_AUTH_SECRET`
+2. 已设置足够长的 `INKDESK_AUTH_SECRET`
 3. 本机已安装 `Docker`、`Python 3.12+`、`Node.js 20+`
 
 ## 启动顺序
@@ -37,7 +37,7 @@ docker compose --env-file infra/.env -f infra/docker-compose.yml up -d
 ```powershell
 cd server
 python -m pip install -e .[dev]
-python -m uvicorn inkvault_server.main:app --host 0.0.0.0 --port 8080
+python -m uvicorn inkdesk_server.main:app --host 0.0.0.0 --port 8080
 ```
 
 ### 3. 启动前端
@@ -50,8 +50,8 @@ npm run dev
 
 ## 默认本地 owner 账号
 
-- 邮箱：`owner@inkvault.local`
-- 密码：`inkvault-owner`
+- 邮箱：`owner@inkdesk.local`
+- 密码：`inkdesk-owner`
 
 数据库为空时，后端会自动回补 owner、workspace、legacy note 和示例 research 数据。
 

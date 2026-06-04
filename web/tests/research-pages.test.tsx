@@ -136,7 +136,7 @@ test("wiki index and detail pages expose compiled understanding, open questions,
   );
 
   assert.match(wikiHtml, /wiki/);
-  assert.match(wikiHtml, /Inkvault repositioning/);
+  assert.match(wikiHtml, /Inkdesk repositioning/);
   assert.match(wikiHtml, /claim 治理总览/);
   assert.match(wikiHtml, /2 条高风险 claim 仍需处理/);
   assert.match(wikiHtml, /1 条缺少直接证据/);
@@ -251,7 +251,7 @@ test("ingest revalidation covers ask alias and affected wiki routes", async () =
   assert.deepEqual(module.buildIngestRevalidationPaths("topic-001"), ["/app", "/app/ask", "/app/ingest", "/app/wiki", "/app/raw", "/app/wiki/topic-001"]);
 });
 
-test("login page now frames Inkvault as a private research-first workspace", async () => {
+test("login page now frames Inkdesk as a private research-first workspace", async () => {
   const module = await import("../app/login/page");
   const html = compact(renderToStaticMarkup(await module.default({ searchParams: Promise.resolve({}) })));
 

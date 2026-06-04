@@ -8,11 +8,11 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from inkvault_server.core.config import Settings, get_settings
-from inkvault_server.db import get_db, init_db, session_scope
-from inkvault_server.models import User
-from inkvault_server.research import ResearchWorkspaceService, get_research_service
-from inkvault_server.schemas import (
+from inkdesk_server.core.config import Settings, get_settings
+from inkdesk_server.db import get_db, init_db, session_scope
+from inkdesk_server.models import User
+from inkdesk_server.research import ResearchWorkspaceService, get_research_service
+from inkdesk_server.schemas import (
     ApiErrorResponse,
     AskBriefingResponse,
     AskRequest,
@@ -30,7 +30,7 @@ from inkvault_server.schemas import (
     TopicSummaryResponse,
     WebRawImportRequest,
 )
-from inkvault_server.security import ApiError, InvalidCredentialsError, OwnerSessionService, ResourceNotFoundError, VerifiedOwnerSession, get_current_workspace, get_session_service, require_owner, verify_password
+from inkdesk_server.security import ApiError, InvalidCredentialsError, OwnerSessionService, ResourceNotFoundError, VerifiedOwnerSession, get_current_workspace, get_session_service, require_owner, verify_password
 
 
 @asynccontextmanager
@@ -48,7 +48,7 @@ def create_app() -> FastAPI:
     with session_scope() as db:
         get_research_service(db, settings).bootstrap_seed_data()
 
-    app = FastAPI(title="Inkvault Python Server", version="0.1.0", lifespan=lifespan)
+    app = FastAPI(title="Inkdesk Python Server", version="0.1.0", lifespan=lifespan)
 
     @app.exception_handler(ApiError)
     async def handle_api_error(_, exception: ApiError):

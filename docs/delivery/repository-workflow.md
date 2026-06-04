@@ -2,11 +2,11 @@
 
 ## 目标
 
-这份文档用于固定 Inkvault 的 GitHub 仓库信息、本地仓库规则和单人开发阶段的提交流程。
+这份文档用于固定 Inkdesk 的 GitHub 仓库信息、本地仓库规则和单人开发阶段的提交流程。
 
 ## 仓库信息
 
-- GitHub 仓库：`https://github.com/rrhww/inkvault.git`
+- GitHub 仓库：`https://github.com/rrhww/inkdesk.git`
 - 远程名称：`origin`
 - 默认分支：`main`
 - 当前可见性：`Private`

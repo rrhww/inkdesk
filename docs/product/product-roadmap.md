@@ -2,7 +2,7 @@
 
 ## 目标
 
-这份路线图描述 Inkvault 如何从当前私有研究闭环，演进成一个“回答后沉淀”的 Agent Knowledge Runtime。
+这份路线图描述 Inkdesk 如何从当前私有研究闭环，演进成一个“回答后沉淀”的 Agent Knowledge Runtime。
 
 用户主路径保持极简：
 
@@ -110,22 +110,22 @@ context_pack -> agent work -> deposit
 
 ### 阶段目标
 
-- 让 Claude Code、Codex、Cursor 等外部 Agent 接入 Inkvault
+- 让 Claude Code、Codex、Cursor 等外部 Agent 接入 Inkdesk
 - 为外部 Agent 提供“任务前取上下文、任务后沉淀结果”的通用接口
 
 ### 核心能力
 
-- `inkvault context` CLI：根据 task/repo/files 返回短上下文包
-- `inkvault deposit` CLI：接收回答、片段、引用和上下文，触发后台沉淀
-- `inkvault-mcp`：暴露 `context_pack`、`deposit_answer`、`search`、`open_questions` 等工具
+- `inkdesk context` CLI：根据 task/repo/files 返回短上下文包
+- `inkdesk deposit` CLI：接收回答、片段、引用和上下文，触发后台沉淀
+- `inkdesk-mcp`：暴露 `context_pack`、`deposit_answer`、`search`、`open_questions` 等工具
 - Codex Skill / AGENTS.md 接入说明
 - Claude Code MCP / slash command 接入说明
-- 外部 Agent 不直接写 wiki，只调用 Inkvault deposit
+- 外部 Agent 不直接写 wiki，只调用 Inkdesk deposit
 
 ### 完成标志
 
-- Claude Code 或 Codex 能在任务前调用 Inkvault 获取上下文。
-- 外部 Agent 的一段回答可以被提交给 Inkvault 沉淀。
+- Claude Code 或 Codex 能在任务前调用 Inkdesk 获取上下文。
+- 外部 Agent 的一段回答可以被提交给 Inkdesk 沉淀。
 - 外部接入复用同一套后台沉淀流水线。
 
 ## 阶段五：评测、健康与自进化

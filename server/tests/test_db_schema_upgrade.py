@@ -4,7 +4,7 @@ from sqlalchemy import text
 
 
 def test_init_db_upgrades_legacy_ask_turns_schema_in_place(temp_app_env):
-    from inkvault_server.db import get_engine, init_db
+    from inkdesk_server.db import get_engine, init_db
 
     engine = get_engine()
     with engine.begin() as connection:
@@ -76,7 +76,7 @@ def test_init_db_upgrades_legacy_ask_turns_schema_in_place(temp_app_env):
 
 
 def test_init_db_upgrades_legacy_review_items_schema_in_place(temp_app_env):
-    from inkvault_server.db import get_engine, init_db
+    from inkdesk_server.db import get_engine, init_db
 
     engine = get_engine()
     with engine.begin() as connection:
@@ -122,7 +122,7 @@ def test_init_db_upgrades_legacy_review_items_schema_in_place(temp_app_env):
 
 
 def test_init_db_upgrades_legacy_topic_claims_schema_in_place(temp_app_env):
-    from inkvault_server.db import get_engine, init_db
+    from inkdesk_server.db import get_engine, init_db
 
     engine = get_engine()
     with engine.begin() as connection:

@@ -31,7 +31,7 @@
 ## 4. 认证模型
 
 - 单 owner 登录
-- 会话 Cookie 固定为 `inkvault_owner_session`
+- 会话 Cookie 固定为 `inkdesk_owner_session`
 - 登录标识固定为邮箱
 
 原因：先把私有闭环做稳，不扩展多角色和复杂权限。

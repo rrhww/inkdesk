@@ -4,7 +4,7 @@ from fastapi.testclient import TestClient
 
 
 def test_health_endpoint_returns_up(temp_app_env):
-    from inkvault_server.main import create_app
+    from inkdesk_server.main import create_app
 
     client = TestClient(create_app())
 
@@ -22,7 +22,7 @@ def test_health_endpoint_returns_up(temp_app_env):
 
 
 def test_lightweight_health_endpoint_returns_ok(temp_app_env):
-    from inkvault_server.main import create_app
+    from inkdesk_server.main import create_app
 
     client = TestClient(create_app())
 

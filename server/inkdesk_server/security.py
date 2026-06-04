@@ -12,9 +12,9 @@ from fastapi import Cookie, Depends
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from inkvault_server.core.config import Settings, get_settings
-from inkvault_server.db import get_db
-from inkvault_server.models import User, Workspace
+from inkdesk_server.core.config import Settings, get_settings
+from inkdesk_server.db import get_db
+from inkdesk_server.models import User, Workspace
 
 
 class ApiError(Exception):
@@ -118,7 +118,7 @@ def get_session_service(settings: Settings = Depends(get_settings)) -> OwnerSess
 def require_owner(
     db: Annotated[Session, Depends(get_db)],
     session_service: Annotated[OwnerSessionService, Depends(get_session_service)],
-    owner_session: Annotated[str | None, Cookie(alias="inkvault_owner_session")] = None,
+    owner_session: Annotated[str | None, Cookie(alias="inkdesk_owner_session")] = None,
 ) -> VerifiedOwnerSession:
     if not owner_session:
         raise ApiError(401, "UNAUTHORIZED", "Owner authentication required.")

@@ -167,7 +167,7 @@
 
 ## 关键边界
 
-- 会话 Cookie 固定为 `inkvault_owner_session`
+- 会话 Cookie 固定为 `inkdesk_owner_session`
 - AI 不能直接改写 wiki，只能先生成可审阅提案
 - 外部 Agent 不能直接写 vault，只能调用 context / deposit 协议
 - 未配置 API 基地址时，前端允许回退到本地 fixtures，但后端契约仍以本文件为准

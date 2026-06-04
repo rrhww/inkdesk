@@ -1,6 +1,6 @@
 import { OWNER_SESSION_COOKIE, hasOwnerSession } from "@/lib/owner-session";
 
-export class InkvaultApiError extends Error {
+export class InkdeskApiError extends Error {
   status: number;
 
   constructor(status: number, message: string) {
@@ -20,20 +20,20 @@ function normalizeApiBaseUrl(baseUrl: string) {
 }
 
 export function resolveApiBaseUrl() {
-  return normalizeApiBaseUrl(process.env.INKVAULT_API_BASE_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "");
+  return normalizeApiBaseUrl(process.env.INKDESK_API_BASE_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "");
 }
 
 export function hasApiBaseUrl() {
   return Boolean(resolveApiBaseUrl());
 }
 
-type RequestInkvaultOptions = {
+type RequestInkdeskOptions = {
   method?: "GET" | "POST" | "PATCH";
   ownerSession?: string;
   body?: unknown | FormData;
 };
 
-function buildHeaders(options?: RequestInkvaultOptions) {
+function buildHeaders(options?: RequestInkdeskOptions) {
   const headers: Record<string, string> = {};
 
   if (hasOwnerSession(options?.ownerSession)) {
@@ -47,11 +47,11 @@ function buildHeaders(options?: RequestInkvaultOptions) {
   return Object.keys(headers).length > 0 ? headers : undefined;
 }
 
-async function requestInkvault(path: string, options?: RequestInkvaultOptions) {
+async function requestInkdesk(path: string, options?: RequestInkdeskOptions) {
   const apiBaseUrl = resolveApiBaseUrl();
 
   if (!apiBaseUrl) {
-    throw new InkvaultApiError(500, "Inkvault API base URL is not configured");
+    throw new InkdeskApiError(500, "Inkdesk API base URL is not configured");
   }
 
   const response = await fetch(`${apiBaseUrl}${path}`, {
@@ -67,14 +67,14 @@ async function requestInkvault(path: string, options?: RequestInkvaultOptions) {
   });
 
   if (!response.ok) {
-    throw new InkvaultApiError(response.status, `Inkvault API request failed for ${path}`);
+    throw new InkdeskApiError(response.status, `Inkdesk API request failed for ${path}`);
   }
 
   return response;
 }
 
-export async function fetchInkvaultJson<T>(path: string, options?: { ownerSession?: string }) {
-  const response = await requestInkvault(path, {
+export async function fetchInkdeskJson<T>(path: string, options?: { ownerSession?: string }) {
+  const response = await requestInkdesk(path, {
     method: "GET",
     ownerSession: options?.ownerSession
   });
@@ -82,8 +82,8 @@ export async function fetchInkvaultJson<T>(path: string, options?: { ownerSessio
   return (await response.json()) as T;
 }
 
-export async function postInkvaultJson<T>(path: string, body: unknown, options?: { ownerSession?: string }) {
-  const response = await requestInkvault(path, {
+export async function postInkdeskJson<T>(path: string, body: unknown, options?: { ownerSession?: string }) {
+  const response = await requestInkdesk(path, {
     method: "POST",
     ownerSession: options?.ownerSession,
     body
@@ -92,8 +92,8 @@ export async function postInkvaultJson<T>(path: string, body: unknown, options?:
   return (await response.json()) as T;
 }
 
-export async function patchInkvaultJson<T>(path: string, body: unknown, options?: { ownerSession?: string }) {
-  const response = await requestInkvault(path, {
+export async function patchInkdeskJson<T>(path: string, body: unknown, options?: { ownerSession?: string }) {
+  const response = await requestInkdesk(path, {
     method: "PATCH",
     ownerSession: options?.ownerSession,
     body
@@ -102,16 +102,16 @@ export async function patchInkvaultJson<T>(path: string, body: unknown, options?
   return (await response.json()) as T;
 }
 
-export async function postInkvault(path: string, options?: { ownerSession?: string; body?: unknown }) {
-  await requestInkvault(path, {
+export async function postInkdesk(path: string, options?: { ownerSession?: string; body?: unknown }) {
+  await requestInkdesk(path, {
     method: "POST",
     ownerSession: options?.ownerSession,
     body: options?.body
   });
 }
 
-export async function postInkvaultFormData<T>(path: string, body: FormData, options?: { ownerSession?: string }) {
-  const response = await requestInkvault(path, {
+export async function postInkdeskFormData<T>(path: string, body: FormData, options?: { ownerSession?: string }) {
+  const response = await requestInkdesk(path, {
     method: "POST",
     ownerSession: options?.ownerSession,
     body

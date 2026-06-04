@@ -5,13 +5,13 @@ import { getRequestOwnerSession } from "@/lib/request-owner-session";
 import { resolveRootDestination } from "@/lib/owner-session";
 
 export const metadata: Metadata = {
-  title: "Private LLM Wiki | Inkvault",
+  title: "Private LLM Wiki | Inkdesk",
   description: "单人私有、raw / ingest / wiki 的 Vault-first LLM Wiki。",
   alternates: {
     canonical: "/"
   },
   openGraph: {
-    title: "Private LLM Wiki | Inkvault",
+    title: "Private LLM Wiki | Inkdesk",
     description: "单人私有、raw / ingest / wiki 的 Vault-first LLM Wiki。",
     type: "website"
   }

@@ -1,4 +1,4 @@
-# Inkvault Ask Researcher Design
+# Inkdesk Ask Researcher Design
 
 ## Summary
 

@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { OwnerLoginForm } from "@/components/workbench/owner-login-form";
 import { loginOwner } from "@/lib/owner-auth";
 import { getRequestOwnerSession } from "@/lib/request-owner-session";
-import { InkvaultApiError } from "@/lib/server-api";
+import { InkdeskApiError } from "@/lib/server-api";
 import { OWNER_SESSION_COOKIE, hasOwnerSession } from "@/lib/owner-session";
 
 async function loginAction(formData: FormData) {
@@ -29,7 +29,7 @@ async function loginAction(formData: FormData) {
     });
     redirect("/app");
   } catch (error) {
-    if (error instanceof InkvaultApiError && error.status === 401) {
+    if (error instanceof InkdeskApiError && error.status === 401) {
       redirect("/login?error=1");
     }
 
@@ -54,7 +54,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
     <main className="flex min-h-screen items-center justify-center px-6 py-12">
       <div className="grid w-full max-w-5xl overflow-hidden rounded-[28px] bg-white shadow-paper lg:grid-cols-[1.15fr_0.85fr]">
         <section className="bg-ink-low px-8 py-12 md:px-12">
-          <div className="font-headline text-sm uppercase tracking-[0.22em] text-ink-muted">Inkvault</div>
+          <div className="font-headline text-sm uppercase tracking-[0.22em] text-ink-muted">Inkdesk</div>
           <h1 className="mt-6 font-headline text-5xl font-extrabold tracking-tight">进入私有 LLM Wiki</h1>
           <p className="mt-6 max-w-xl font-body text-[1.3rem] leading-[1.8] text-[#313738]">
             这是单人私有入口。进入后会直接回到 Ask-first 工作区，先看当前缺什么证据，再决定继续追问、补 raw、审 ingest 或打开 wiki。

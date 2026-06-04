@@ -1,10 +1,10 @@
-# Inkvault Chat-First Research Shell Design
+# Inkdesk Chat-First Research Shell Design
 
 ## Summary
 
-本次改造把 Inkvault 的主前端从“研究后台”收束为一个更直接的 **对话型研究工作台**。`/app` 不再是 dashboard 聚合页，而是直接成为 `问答` 主入口；用户进入系统后，第一感知应该是“我可以立刻提问、继续追问、查看证据、发现知识缺口，并决定是否把本轮结果沉淀到知识库”。
+本次改造把 Inkdesk 的主前端从“研究后台”收束为一个更直接的 **对话型研究工作台**。`/app` 不再是 dashboard 聚合页，而是直接成为 `问答` 主入口；用户进入系统后，第一感知应该是“我可以立刻提问、继续追问、查看证据、发现知识缺口，并决定是否把本轮结果沉淀到知识库”。
 
-这次不是单纯给 Ask 页面换皮，而是重写主路径的信息架构与交互重心：左侧改成历史优先，中间是连续对话流，顶部是中文直白页签，右侧是当前研究上下文与动作。整体气质参考 ChatGPT、Gemini、豆包、DeepSeek 这类成熟对话产品，但必须保留 Inkvault 的 `raw / ingest / wiki / ask` 研究工作流特征。
+这次不是单纯给 Ask 页面换皮，而是重写主路径的信息架构与交互重心：左侧改成历史优先，中间是连续对话流，顶部是中文直白页签，右侧是当前研究上下文与动作。整体气质参考 ChatGPT、Gemini、豆包、DeepSeek 这类成熟对话产品，但必须保留 Inkdesk 的 `raw / ingest / wiki / ask` 研究工作流特征。
 
 ## Confirmed Decisions
 

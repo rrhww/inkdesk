@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { AppChrome } from "@/components/app-chrome";
 import { logoutOwner } from "@/lib/owner-auth";
 import { getResearchDashboard } from "@/lib/research";
-import { InkvaultApiError } from "@/lib/server-api";
+import { InkdeskApiError } from "@/lib/server-api";
 import { OWNER_SESSION_COOKIE, hasOwnerSession } from "@/lib/owner-session";
 import type { ResearchDashboard } from "@/lib/types";
 
@@ -31,7 +31,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   try {
     snapshot = await getResearchDashboard(ownerSession);
   } catch (error) {
-    if (error instanceof InkvaultApiError && error.status === 401) {
+    if (error instanceof InkdeskApiError && error.status === 401) {
       cookieStore.delete(OWNER_SESSION_COOKIE);
       redirect("/login");
     }

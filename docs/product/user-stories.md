@@ -101,20 +101,20 @@
 
 ### 6.1 任务前获取长期上下文
 
-作为 Claude Code、Codex 或 Cursor 这类外部 Agent，我希望在处理任务前向 Inkvault 请求相关长期知识，这样我不用每次都从零理解项目背景和历史判断。
+作为 Claude Code、Codex 或 Cursor 这类外部 Agent，我希望在处理任务前向 Inkdesk 请求相关长期知识，这样我不用每次都从零理解项目背景和历史判断。
 
 验收标准：
 
 - 外部 Agent 可以通过 CLI / MCP 请求 context pack
 - context pack 控制长度，优先返回和任务相关的稳定判断、open questions 和来源
-- 外部 Agent 不能直接改写 Inkvault wiki
+- 外部 Agent 不能直接改写 Inkdesk wiki
 
 ### 6.2 任务后沉淀高价值回答
 
-作为 owner，我希望外部 Agent 完成一个重要回答、方案或复盘后，也能把它提交给 Inkvault 沉淀，这样我的长期知识不会被锁在某个 Agent 的聊天记录里。
+作为 owner，我希望外部 Agent 完成一个重要回答、方案或复盘后，也能把它提交给 Inkdesk 沉淀，这样我的长期知识不会被锁在某个 Agent 的聊天记录里。
 
 验收标准：
 
 - 外部 Agent 可以通过 CLI / MCP 提交 deposit 请求
-- deposit 请求复用 Inkvault 后台沉淀流水线
+- deposit 请求复用 Inkdesk 后台沉淀流水线
 - 只有用户确认后才沉淀外部 Agent 的输出

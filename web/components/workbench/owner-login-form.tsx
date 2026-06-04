@@ -22,7 +22,7 @@ export function OwnerLoginForm({ action, hasError }: OwnerLoginFormProps) {
           className="w-full rounded-sm border-none bg-ink-low px-4 py-3 focus:ring-2 focus:ring-ink-primary/20"
           id="owner-email"
           name="email"
-          placeholder="owner@inkvault.local"
+          placeholder="owner@inkdesk.local"
           required
           type="email"
         />

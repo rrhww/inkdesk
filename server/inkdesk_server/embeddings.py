@@ -7,7 +7,7 @@ import re
 
 import httpx
 
-from inkvault_server.core.config import Settings
+from inkdesk_server.core.config import Settings
 
 
 logger = logging.getLogger(__name__)

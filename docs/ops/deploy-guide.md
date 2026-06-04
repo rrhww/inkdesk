@@ -2,7 +2,7 @@
 
 ## 目标
 
-说明 Inkvault 当前私有 vault-first LLM Wiki 的推荐部署方式。默认路线为：
+说明 Inkdesk 当前私有 vault-first LLM Wiki 的推荐部署方式。默认路线为：
 
 `单台服务器 + Docker Compose + Nginx + PostgreSQL + 挂载 Vault 目录 + HTTPS`
 
@@ -73,8 +73,8 @@ flowchart LR
 ### 第三步：准备数据库和 vault
 
 - 创建 PostgreSQL 数据库与账号
-- 配置 `INKVAULT_DB_URL`
-- 配置 `INKVAULT_VAULT_ROOT` 指向持久化目录
+- 配置 `INKDESK_DB_URL`
+- 配置 `INKDESK_VAULT_ROOT` 指向持久化目录
 
 ### 第四步：部署应用
 

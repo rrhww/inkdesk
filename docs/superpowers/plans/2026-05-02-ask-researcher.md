@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Upgrade Inkvault Ask from a thin prompt wrapper into a vault-first Ask Researcher that supports contextual follow-ups, conditional web assist, and reviewable writeback into `raw -> ingest -> wiki`.
+**Goal:** Upgrade Inkdesk Ask from a thin prompt wrapper into a vault-first Ask Researcher that supports contextual follow-ups, conditional web assist, and reviewable writeback into `raw -> ingest -> wiki`.
 
 **Architecture:** Keep a single Python main backend and a single Ask runtime boundary. Refactor Ask into a staged LangGraph flow with explicit context loading, vault retrieval, evidence assessment, optional web assist, answer composition, and writeback package generation. Persist Ask turns as reusable research snapshots so the frontend can continue a line of questioning and materialize web-backed writeback proposals without re-running the full research flow.
 
@@ -13,8 +13,8 @@
 ### Task 1: Expand Ask contracts and persistence shape
 
 **Files:**
-- Modify: `server/inkvault_server/models.py`
-- Modify: `server/inkvault_server/schemas.py`
+- Modify: `server/inkdesk_server/models.py`
+- Modify: `server/inkdesk_server/schemas.py`
 - Modify: `web/lib/types.ts`
 - Modify: `server/tests/test_research_api.py`
 
@@ -58,7 +58,7 @@ Expected: FAIL because TypeScript fixtures or response shapes do not yet include
 
 - [ ] **Step 4: Extend the SQLAlchemy AskTurn model to hold research snapshot fields**
 
-Update `server/inkvault_server/models.py` so `AskTurn` grows from:
+Update `server/inkdesk_server/models.py` so `AskTurn` grows from:
 
 ```python
 class AskTurn(Base):
@@ -96,7 +96,7 @@ class AskTurn(Base):
 
 - [ ] **Step 5: Extend backend and frontend Ask schemas**
 
-In `server/inkvault_server/schemas.py`, grow:
+In `server/inkdesk_server/schemas.py`, grow:
 
 ```python
 class AskRequest(BaseModel):
@@ -173,8 +173,8 @@ Expected: PASS, or fail only because the runtime implementation has not yet been
 ### Task 2: Introduce Ask-specific runtime schemas and helper boundaries
 
 **Files:**
-- Modify: `server/inkvault_server/agents.py`
-- Modify: `server/inkvault_server/research.py`
+- Modify: `server/inkdesk_server/agents.py`
+- Modify: `server/inkdesk_server/research.py`
 - Test: `server/tests/test_agent_runtime.py`
 
 - [ ] **Step 1: Write failing runtime tests for contextual Ask and web evidence output**
@@ -267,7 +267,7 @@ Expected: FAIL on graph behavior, which is the next task, not on missing model f
 ### Task 3: Refactor Ask runtime into staged LangGraph execution
 
 **Files:**
-- Modify: `server/inkvault_server/agents.py`
+- Modify: `server/inkdesk_server/agents.py`
 - Test: `server/tests/test_agent_runtime.py`
 
 - [ ] **Step 1: Write failing tests for staged Ask behavior**
@@ -353,8 +353,8 @@ Expected: PASS for staged routing and deterministic Ask output.
 ### Task 4: Add vault retrieval and web assist services to the research backend
 
 **Files:**
-- Modify: `server/inkvault_server/research.py`
-- Modify: `server/inkvault_server/importers.py`
+- Modify: `server/inkdesk_server/research.py`
+- Modify: `server/inkdesk_server/importers.py`
 - Modify: `server/tests/test_research_api.py`
 
 - [ ] **Step 1: Write failing API tests for conditional web assist**
@@ -409,7 +409,7 @@ Keep v1 retrieval deterministic:
 
 - [ ] **Step 4: Add a minimal web assist boundary reusing existing web importer primitives**
 
-In `server/inkvault_server/importers.py`, add a helper shaped like:
+In `server/inkdesk_server/importers.py`, add a helper shaped like:
 
 ```python
 class WebAssistResult:
@@ -470,8 +470,8 @@ Expected: PASS for the richer Ask response shape, even if `usedWebSources` is cu
 ### Task 5: Persist Ask research snapshots and use them for follow-up context
 
 **Files:**
-- Modify: `server/inkvault_server/research.py`
-- Modify: `server/inkvault_server/models.py`
+- Modify: `server/inkdesk_server/research.py`
+- Modify: `server/inkdesk_server/models.py`
 - Test: `server/tests/test_research_api.py`
 
 - [ ] **Step 1: Write failing persistence tests for follow-up inheritance**
@@ -566,9 +566,9 @@ Expected: PASS for inherited `contextAskTurnIds` and persisted follow-up state.
 ### Task 6: Materialize web-backed writeback into raw plus ingest proposal
 
 **Files:**
-- Modify: `server/inkvault_server/research.py`
+- Modify: `server/inkdesk_server/research.py`
 - Modify: `server/tests/test_research_api.py`
-- Modify: `server/inkvault_server/vault.py`
+- Modify: `server/inkdesk_server/vault.py`
 
 - [ ] **Step 1: Write failing tests for Ask writeback idempotency and raw materialization**
 
@@ -804,6 +804,6 @@ Check that the implementation does **not** introduce:
 - [ ] **Step 8: Commit**
 
 ```bash
-git add server/inkvault_server/models.py server/inkvault_server/schemas.py server/inkvault_server/agents.py server/inkvault_server/research.py server/inkvault_server/importers.py server/tests/test_agent_runtime.py server/tests/test_research_api.py web/lib/types.ts web/lib/research.ts web/app/app/ask/page.tsx web/tests/research-pages.test.tsx web/tests/research-api.test.tsx web/tests/e2e/local-fullstack.spec.ts docs/superpowers/specs/2026-05-02-ask-researcher-design.md docs/superpowers/plans/2026-05-02-ask-researcher.md
+git add server/inkdesk_server/models.py server/inkdesk_server/schemas.py server/inkdesk_server/agents.py server/inkdesk_server/research.py server/inkdesk_server/importers.py server/tests/test_agent_runtime.py server/tests/test_research_api.py web/lib/types.ts web/lib/research.ts web/app/app/ask/page.tsx web/tests/research-pages.test.tsx web/tests/research-api.test.tsx web/tests/e2e/local-fullstack.spec.ts docs/superpowers/specs/2026-05-02-ask-researcher-design.md docs/superpowers/plans/2026-05-02-ask-researcher.md
 git commit -m "feat: add ask researcher runtime and writeback flow"
 ```

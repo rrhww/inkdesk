@@ -18,7 +18,7 @@
 - AI 写入必须先经过 `review_items`
 - `topics` 与 `sources` 是当前主产品对象
 - 旧 `content_nodes` / `note_documents` 仅作为 legacy note 迁移桥接层保留
-- schema 以 `server/src/main/resources/db/migration/*.sql` 和 `server/inkvault_server/models.py` 为准
+- schema 以 `server/src/main/resources/db/migration/*.sql` 和 `server/inkdesk_server/models.py` 为准
 
 ## 当前表清单
 

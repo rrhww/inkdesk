@@ -14,7 +14,7 @@
 ## 主系统链路
 
 - `/login` 可访问
-- 使用 `owner@inkvault.local / inkvault-owner` 可登录
+- 使用 `owner@inkdesk.local / inkdesk-owner` 可登录
 - 登录后进入 `/app`
 - 未登录访问 `/app/*` 会被拦回 `/login`
 - `/app` 第一屏是 Ask-first 主入口，不再回到 dashboard 聚合页

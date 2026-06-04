@@ -1,6 +1,6 @@
 import type { ResearchAskHistoryEntry } from "@/lib/types";
 
-export const ASK_HISTORY_STORAGE_KEY = "inkvault.askHistory";
+export const ASK_HISTORY_STORAGE_KEY = "inkdesk.askHistory";
 
 export function readAskHistory(): ResearchAskHistoryEntry[] {
   if (typeof window === "undefined") {

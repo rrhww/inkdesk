@@ -3,9 +3,9 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "inkvault-server"
+name = "inkdesk-server"
 version = "0.1.0"
-description = "Inkvault Python main backend"
+description = "Inkdesk Python main backend"
 requires-python = ">=3.12"
 dependencies = [
   "fastapi>=0.115,<1.0",
@@ -30,7 +30,7 @@ dev = [
 ]
 
 [tool.setuptools.packages.find]
-include = ["inkvault_server*"]
+include = ["inkdesk_server*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

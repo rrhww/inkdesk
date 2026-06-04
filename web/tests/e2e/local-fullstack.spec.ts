@@ -2,8 +2,8 @@ import { expect, test, type Page } from "@playwright/test";
 
 async function login(page: Page) {
   await page.goto("/login");
-  await page.getByLabel("邮箱").fill("owner@inkvault.local");
-  await page.getByLabel("密码").fill("inkvault-owner");
+  await page.getByLabel("邮箱").fill("owner@inkdesk.local");
+  await page.getByLabel("密码").fill("inkdesk-owner");
   await page.getByRole("button", { name: "进入工作区" }).click();
   await expect(page).toHaveURL(/\/app$/);
 }
@@ -20,7 +20,7 @@ test.describe("local full-stack loop", () => {
   test.describe.configure({ mode: "serial" });
 
   test.skip(
-    !process.env.INKVAULT_E2E_FULLSTACK,
+    !process.env.INKDESK_E2E_FULLSTACK,
     "请通过 `npm run e2e:fullstack` 运行，并先启动 Docker 基础设施、Python 主后端与 Next.js 所需配置。"
   );
 
@@ -49,9 +49,9 @@ test.describe("local full-stack loop", () => {
 
     await page.goto("/app/wiki");
     await expect(page.getByRole("heading", { name: "沉淀后的知识页面" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "将 Inkvault 重定位为私有研究型 LLM Wiki" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "将 Inkdesk 重定位为私有研究型 LLM Wiki" })).toBeVisible();
     await page
-      .getByRole("heading", { name: "将 Inkvault 重定位为私有研究型 LLM Wiki" })
+      .getByRole("heading", { name: "将 Inkdesk 重定位为私有研究型 LLM Wiki" })
       .locator("..")
       .getByRole("link", { name: "打开 wiki" })
       .click();

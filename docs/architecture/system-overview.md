@@ -2,11 +2,11 @@
 
 ## 目标
 
-说明 Inkvault 当前主产品的系统边界、职责拆分、关键数据流与部署形态。
+说明 Inkdesk 当前主产品的系统边界、职责拆分、关键数据流与部署形态。
 
 ## 系统定位
 
-Inkvault 当前不是公开发布系统，而是一个单人私有、vault-first 的 Agent Knowledge Runtime。
+Inkdesk 当前不是公开发布系统，而是一个单人私有、vault-first 的 Agent Knowledge Runtime。
 
 用户可感知的主路径是：
 
@@ -108,15 +108,15 @@ flowchart LR
 
 ### 外部 Agent 请求流（规划）
 
-1. Claude Code、Codex 或 Cursor 调用 Inkvault MCP / CLI
+1. Claude Code、Codex 或 Cursor 调用 Inkdesk MCP / CLI
 2. `context_pack` 返回当前任务相关的短上下文包
 3. 外部 Agent 完成任务并询问用户是否沉淀
 4. 用户确认后调用 `deposit`
-5. Inkvault 复用同一套后台沉淀流水线
+5. Inkdesk 复用同一套后台沉淀流水线
 
 ## 部署形态
 
-Inkvault 当前保持单体私有部署形态：
+Inkdesk 当前保持单体私有部署形态：
 
 - 单一 Git 仓库
 - 单一 Next.js 前端应用

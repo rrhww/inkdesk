@@ -51,11 +51,11 @@ export const researchSourcesFixture: ResearchSourceRecord[] = [
     id: "source-001",
     kind: "LEGACY_NOTE",
     status: "WIKI_LINKED",
-    title: "将 Inkvault 重定位为私有研究型 LLM Wiki",
+    title: "将 Inkdesk 重定位为私有研究型 LLM Wiki",
     locator: "legacy://note-001",
     excerpt: "迁移材料已经成为 wiki 迁移的核心 raw 来源。",
     legacyNoteId: "note-001",
-    vaultPath: "raw/2026-04-12-inkvault-llm-wiki.md",
+    vaultPath: "raw/2026-04-12-inkdesk-llm-wiki.md",
     contentHash: "mock-raw-legacy-1",
     updatedAt: "2026-04-12T08:10:00Z"
   },
@@ -76,14 +76,14 @@ export const researchSourcesFixture: ResearchSourceRecord[] = [
 export const researchTopicSummariesFixture: ResearchTopicSummary[] = [
   {
     id: "topic-001",
-    title: "Inkvault repositioning",
+    title: "Inkdesk repositioning",
     summary: "把产品中心收回到 raw / ingest / wiki，由 raw 驱动、由 ingest 把关。",
     sourceCount: 3,
     openQuestionCount: 2,
     unsupportedClaimCount: 1,
     staleClaimCount: 1,
     conflictingClaimCount: 2,
-    vaultPath: "wiki/inkvault-repositioning.md",
+    vaultPath: "wiki/inkdesk-repositioning.md",
     updatedAt: "2026-04-13T08:30:00Z"
   },
   {
@@ -106,23 +106,23 @@ export const researchReviewItemsFixture: ResearchReviewItem[] = [
     kind: "TOPIC_PATCH",
     proposalKind: "TOPIC_PATCH",
     title: "把高频使用的旧 claim 送入重审",
-    summary: "主题「Inkvault repositioning」里有 1 条高频使用的 claim 需要重新复核。",
+    summary: "主题「Inkdesk repositioning」里有 1 条高频使用的 claim 需要重新复核。",
     sourceId: "source-005",
     sourceTitle: "Wiki memory compilation notes",
     targetTopicId: "topic-001",
-    targetTopicTitle: "Inkvault repositioning",
+    targetTopicTitle: "Inkdesk repositioning",
     proposedTopicTitle: null,
     proposedUnderstanding: "补一轮更新证据，再决定是否调整当前理解。",
     proposedOpenQuestions:
       "这条高频 claim 是否还成立，需要补哪条更新来源？；为什么「AI 生成的知识必须先进入 ingest 队列。」最近被频繁使用却还没有完成新一轮复核？",
     proposedClaim: "AI 生成的知识必须先进入 ingest 队列。",
-    proposedVaultPath: "wiki/inkvault-repositioning.md",
+    proposedVaultPath: "wiki/inkdesk-repositioning.md",
     sourceVaultPath: "raw/2026-04-13-topic-memory-compilation-notes.md",
     proposalPayload: {
       topicDecision: {
         decision: "PATCH",
         targetTopicId: "topic-001",
-        targetTopicTitle: "Inkvault repositioning",
+        targetTopicTitle: "Inkdesk repositioning",
         proposedTopicTitle: null
       },
       summaryChanges: ["针对高频使用但久未复核的 claim，补一轮更新证据并重审当前理解。"],
@@ -267,10 +267,10 @@ export const researchReviewItemsFixture: ResearchReviewItem[] = [
 export const researchTopicDetailsFixture: ResearchTopicDetail[] = [
   {
     id: "topic-001",
-    title: "Inkvault repositioning",
+    title: "Inkdesk repositioning",
     summary: "把产品中心收回到 raw / ingest / wiki，由 raw 驱动、由 ingest 把关。",
-    vaultPath: "wiki/inkvault-repositioning.md",
-    contentHash: "mock-wiki-inkvault",
+    vaultPath: "wiki/inkdesk-repositioning.md",
+    contentHash: "mock-wiki-inkdesk",
     currentUnderstanding: [
       "wiki 是新的核心对象，Note 退回为待迁移 raw。",
       "AI 只提交 ingest 补丁提案，不直接改写 wiki 事实。"
@@ -298,10 +298,10 @@ export const researchTopicDetailsFixture: ResearchTopicDetail[] = [
       },
       {
         sourceId: "source-001",
-        title: "将 Inkvault 重定位为私有研究型 LLM Wiki",
+        title: "将 Inkdesk 重定位为私有研究型 LLM Wiki",
         kind: "LEGACY_NOTE",
         locator: "legacy://note-001",
-        vaultPath: "raw/2026-04-12-inkvault-llm-wiki.md",
+        vaultPath: "raw/2026-04-12-inkdesk-llm-wiki.md",
         legacyNoteId: "note-001"
       }
     ],
@@ -436,7 +436,7 @@ export const researchDashboardFixture: ResearchDashboard = {
         title: "wiki 里还有 3 个开放问题",
         summary: "开放问题是下一轮 Ask、补 raw 或审 ingest 的优先线索。",
         relatedId: "topic-001",
-        relatedTitle: "Inkvault repositioning"
+        relatedTitle: "Inkdesk repositioning"
       },
       {
         type: "UNSUPPORTED_CLAIM",
@@ -444,7 +444,7 @@ export const researchDashboardFixture: ResearchDashboard = {
         title: "有 1 条 claim 缺少直接证据",
         summary: "至少有一条关键结论还没有直接证据链支持，建议回到 wiki、raw 或 ingest 补证。",
         relatedId: "topic-001",
-        relatedTitle: "Inkvault repositioning"
+        relatedTitle: "Inkdesk repositioning"
       },
       {
         type: "STALE_CLAIM",
@@ -452,7 +452,7 @@ export const researchDashboardFixture: ResearchDashboard = {
         title: "有 1 条常用 claim 需要重审",
         summary: "这条 claim 最近仍被 Ask 使用，但验证时间过旧或证据仍偏弱，建议进入 ingest 复核。",
         relatedId: "topic-001",
-        relatedTitle: "Inkvault repositioning"
+        relatedTitle: "Inkdesk repositioning"
       },
       {
         type: "CONFLICTING_CLAIM",
@@ -460,7 +460,7 @@ export const researchDashboardFixture: ResearchDashboard = {
         title: "有 2 条 claim 彼此冲突",
         summary: "同一主题里出现了方向相反的 claim，建议先回到 ingest 做一轮统一裁决。",
         relatedId: "topic-001",
-        relatedTitle: "Inkvault repositioning"
+        relatedTitle: "Inkdesk repositioning"
       },
       {
         type: "KNOWLEDGE_GAP",
@@ -495,7 +495,7 @@ export const researchAskHistoryFixture: ResearchAskHistoryEntry[] = [
     id: "ask-topic-001",
     title: "这个主题当前最稳定的理解是什么？",
     href: "/app/ask?q=%E8%BF%99%E4%B8%AA%E4%B8%BB%E9%A2%98%E5%BD%93%E5%89%8D%E6%9C%80%E7%A8%B3%E5%AE%9A%E7%9A%84%E7%90%86%E8%A7%A3%E6%98%AF%E4%BB%80%E4%B9%88%EF%BC%9F&topicId=topic-001",
-    topicTitle: "Inkvault repositioning",
+    topicTitle: "Inkdesk repositioning",
     preview: "当前最稳定的理解是 wiki 是新的核心对象。",
     updatedAt: "2026-05-03T03:00:00Z"
   }
@@ -557,7 +557,7 @@ export const workspaceAskBriefingFixture: ResearchAskBriefing = {
   ],
   suggestedQuestions: [
     "当前哪条提案最值得先审阅？",
-    "围绕「Inkvault repositioning」还缺哪条证据？",
+    "围绕「Inkdesk repositioning」还缺哪条证据？",
     "哪些 raw 已经足够稳定，可以沉淀进现有 wiki？"
   ],
   supportingSignals: [
@@ -598,7 +598,7 @@ export const workspaceAskBriefingFixture: ResearchAskBriefing = {
 export const askTurnAskBriefingFixture: ResearchAskBriefing = {
   scope: "ask_turn",
   topicId: "topic-001",
-  topicTitle: "Inkvault repositioning",
+  topicTitle: "Inkdesk repositioning",
   askTurnId: "ask-topic-001",
   summary: "这轮问答已经给出一版可继续推进的判断，但仍缺少更扎实的外部证据来收口。",
   confidence: 0.86,
@@ -798,7 +798,7 @@ export function createAskWritebackFixture(askTurnId: string): ResearchReviewItem
     ...researchReviewItemsFixture[0],
     id: `review-from-${askTurnId}`,
     title: "把 Ask 结论补充进现有 wiki",
-    summary: "把“这个主题当前最稳定的理解是什么？”的回答沉淀进 Inkvault repositioning。",
+    summary: "把“这个主题当前最稳定的理解是什么？”的回答沉淀进 Inkdesk repositioning。",
     proposedUnderstanding: "当前最稳定的理解是 wiki 是新的核心对象，Note 退回为待迁移 raw。 同时仍需要追问：迁移老笔记时，哪些内容应进入 wiki？",
     proposedOpenQuestions: "这个主题当前最稳定的理解是什么？",
     proposedClaim: "当前最稳定的理解是 wiki 是新的核心对象，Note 退回为待迁移 raw。",
@@ -806,10 +806,10 @@ export function createAskWritebackFixture(askTurnId: string): ResearchReviewItem
       topicDecision: {
         decision: "PATCH",
         targetTopicId: "topic-001",
-        targetTopicTitle: "Inkvault repositioning",
+        targetTopicTitle: "Inkdesk repositioning",
         proposedTopicTitle: null
       },
-      summaryChanges: ["把 Ask 当前回答补充进 Inkvault repositioning 的 Current Understanding。"],
+      summaryChanges: ["把 Ask 当前回答补充进 Inkdesk repositioning 的 Current Understanding。"],
       claims: [
         {
           statement: "当前最稳定的理解是 wiki 是新的核心对象，Note 退回为待迁移 raw。",
@@ -823,7 +823,7 @@ export function createAskWritebackFixture(askTurnId: string): ResearchReviewItem
       ],
       conflicts: [],
       openQuestions: ["这个主题当前最稳定的理解是什么？"],
-      explanation: "系统建议把这次 Ask 当前回答补充进现有主题「Inkvault repositioning」，因为当前答案已经命中了这个 wiki 页面。",
+      explanation: "系统建议把这次 Ask 当前回答补充进现有主题「Inkdesk repositioning」，因为当前答案已经命中了这个 wiki 页面。",
       evidence: [
         {
           sourceId: "source-004",

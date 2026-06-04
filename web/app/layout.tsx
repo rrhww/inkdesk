@@ -4,11 +4,11 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Inkvault",
+  title: "Inkdesk",
   description: "单人私有、raw / ingest / wiki 的 Vault-first LLM Wiki",
-  metadataBase: new URL("https://inkvault.local"),
+  metadataBase: new URL("https://inkdesk.local"),
   openGraph: {
-    title: "Inkvault",
+    title: "Inkdesk",
     description: "一个把 raw 导入、ingest 编译和 wiki 沉淀整合进同一研究工作流的私有系统。",
     type: "website"
   }

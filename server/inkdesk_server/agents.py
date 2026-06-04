@@ -6,7 +6,7 @@ from typing import Any, Callable, TypedDict
 
 from pydantic import BaseModel, Field, field_validator
 
-from inkvault_server.core.config import Settings
+from inkdesk_server.core.config import Settings
 
 try:
     from langchain_openai import ChatOpenAI
@@ -684,7 +684,7 @@ class AgentRuntime:
 
     def _render_ask_prompt(self, request: AskRequestModel, used_web_sources: list[WebCitationModel] | None = None) -> str:
         lines = [
-            "You are the research agent for Inkvault.",
+            "You are the research agent for Inkdesk.",
             "Answer from the vault-first perspective.",
             "Respond in Simplified Chinese, but preserve product names, URLs, and proper nouns in their original spelling when needed.",
             f"Mode: {request.mode}",
@@ -724,7 +724,7 @@ class AgentRuntime:
 
     def _render_briefing_prompt(self, request: AskBriefingRequestModel) -> str:
         lines = [
-            "You are the judgment hub for the Ask-first Inkvault workspace.",
+            "You are the judgment hub for the Ask-first Inkdesk workspace.",
             "Summarize the current research situation in Simplified Chinese.",
             "Focus on knowledge gaps and next safe actions.",
             f"Briefing scope: {request.scope}",
@@ -765,8 +765,8 @@ class AgentRuntime:
     def _prepare_compile_prompt(self, state: CompileState) -> dict[str, Any]:
         request = state["request"]
         lines = [
-            "You are compiling a research proposal for Inkvault.",
-            "Inkvault is a vault-first private LLM Wiki with a raw -> ingest -> wiki review loop.",
+            "You are compiling a research proposal for Inkdesk.",
+            "Inkdesk is a vault-first private LLM Wiki with a raw -> ingest -> wiki review loop.",
             "You are writing a reviewable ingest proposal, not editing the wiki directly.",
             COMPILE_STYLE_INSTRUCTIONS,
             COMPILE_JSON_MODE_INSTRUCTIONS if self._structured_output_method() == "json_mode" else "",

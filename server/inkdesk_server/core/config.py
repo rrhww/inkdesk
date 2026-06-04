@@ -35,35 +35,35 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    app_env: str = Field(default="local", alias="INKVAULT_ENV")
+    app_env: str = Field(default="local", alias="INKDESK_ENV")
     db_url: str = Field(
-        default="postgresql+psycopg://inkvault:inkvault@localhost:5432/inkvault",
-        alias="INKVAULT_DB_URL",
+        default="postgresql+psycopg://inkdesk:inkdesk@localhost:5432/inkdesk",
+        alias="INKDESK_DB_URL",
     )
-    vault_root: Path = Field(default=Path("./inkvault-vault"), alias="INKVAULT_VAULT_ROOT")
+    vault_root: Path = Field(default=Path("./inkdesk-vault"), alias="INKDESK_VAULT_ROOT")
     auth_secret: str = Field(
-        default="inkvault-local-owner-session-secret",
-        validation_alias=AliasChoices("INKVAULT_AUTH_SECRET", "APP_JWT_SECRET"),
+        default="inkdesk-local-owner-session-secret",
+        validation_alias=AliasChoices("INKDESK_AUTH_SECRET", "APP_JWT_SECRET"),
     )
-    auth_session_duration: timedelta = Field(default=timedelta(hours=8), alias="INKVAULT_AUTH_SESSION_DURATION")
-    auth_allow_legacy_owner_cookie: bool = Field(default=True, alias="INKVAULT_AUTH_ALLOW_LEGACY_OWNER_COOKIE")
-    owner_session_cookie: str = "inkvault_owner_session"
-    agent_runtime: str = Field(default="langgraph", alias="INKVAULT_AGENT_RUNTIME")
-    agent_provider_profile: str = Field(default="openai", alias="INKVAULT_AGENT_PROVIDER_PROFILE")
-    agent_model: str | None = Field(default=None, alias="INKVAULT_AGENT_MODEL")
-    agent_api_key: str | None = Field(default=None, alias="INKVAULT_AGENT_API_KEY")
-    agent_base_url: str | None = Field(default=None, alias="INKVAULT_AGENT_BASE_URL")
-    embedding_provider_profile: str = Field(default="openai", alias="INKVAULT_EMBEDDING_PROVIDER_PROFILE")
-    embedding_model: str | None = Field(default="text-embedding-3-small", alias="INKVAULT_EMBEDDING_MODEL")
-    embedding_api_key: str | None = Field(default=None, alias="INKVAULT_EMBEDDING_API_KEY")
-    embedding_base_url: str | None = Field(default=None, alias="INKVAULT_EMBEDDING_BASE_URL")
-    agent_connect_timeout_seconds: float = Field(default=2.0, alias="INKVAULT_AGENT_CONNECT_TIMEOUT_SECONDS")
-    agent_read_timeout_seconds: float = Field(default=20.0, alias="INKVAULT_AGENT_READ_TIMEOUT_SECONDS")
-    enable_web_assist: bool = Field(default=True, alias="INKVAULT_ENABLE_WEB_ASSIST")
+    auth_session_duration: timedelta = Field(default=timedelta(hours=8), alias="INKDESK_AUTH_SESSION_DURATION")
+    auth_allow_legacy_owner_cookie: bool = Field(default=True, alias="INKDESK_AUTH_ALLOW_LEGACY_OWNER_COOKIE")
+    owner_session_cookie: str = "inkdesk_owner_session"
+    agent_runtime: str = Field(default="langgraph", alias="INKDESK_AGENT_RUNTIME")
+    agent_provider_profile: str = Field(default="openai", alias="INKDESK_AGENT_PROVIDER_PROFILE")
+    agent_model: str | None = Field(default=None, alias="INKDESK_AGENT_MODEL")
+    agent_api_key: str | None = Field(default=None, alias="INKDESK_AGENT_API_KEY")
+    agent_base_url: str | None = Field(default=None, alias="INKDESK_AGENT_BASE_URL")
+    embedding_provider_profile: str = Field(default="openai", alias="INKDESK_EMBEDDING_PROVIDER_PROFILE")
+    embedding_model: str | None = Field(default="text-embedding-3-small", alias="INKDESK_EMBEDDING_MODEL")
+    embedding_api_key: str | None = Field(default=None, alias="INKDESK_EMBEDDING_API_KEY")
+    embedding_base_url: str | None = Field(default=None, alias="INKDESK_EMBEDDING_BASE_URL")
+    agent_connect_timeout_seconds: float = Field(default=2.0, alias="INKDESK_AGENT_CONNECT_TIMEOUT_SECONDS")
+    agent_read_timeout_seconds: float = Field(default=20.0, alias="INKDESK_AGENT_READ_TIMEOUT_SECONDS")
+    enable_web_assist: bool = Field(default=True, alias="INKDESK_ENABLE_WEB_ASSIST")
     openai_api_key: str | None = Field(default=None, alias="OPENAI_API_KEY")
     openai_base_url: str | None = Field(default=None, alias="OPENAI_BASE_URL")
     deepseek_api_key: str | None = Field(default=None, alias="DEEPSEEK_API_KEY")
-    enable_local_seed: bool = Field(default=True, alias="INKVAULT_ENABLE_LOCAL_SEED")
+    enable_local_seed: bool = Field(default=True, alias="INKDESK_ENABLE_LOCAL_SEED")
 
     @property
     def resolved_agent_provider(self) -> AgentProviderConfig:

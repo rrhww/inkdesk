@@ -2,8 +2,8 @@ import { expect, test, type Page } from "@playwright/test";
 
 async function loginAsOwner(page: Page) {
   await page.goto("/login");
-  await page.getByLabel("邮箱").fill("owner@inkvault.local");
-  await page.getByLabel("密码").fill("inkvault-owner");
+  await page.getByLabel("邮箱").fill("owner@inkdesk.local");
+  await page.getByLabel("密码").fill("inkdesk-owner");
   await page.getByRole("button", { name: "进入工作区" }).click();
   await expect(page).toHaveURL(/\/app$/);
 }

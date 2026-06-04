@@ -1,8 +1,8 @@
 import { OWNER_SESSION_VALUE } from "@/lib/owner-session";
-import { hasApiBaseUrl, InkvaultApiError, postInkvault, postInkvaultJson } from "@/lib/server-api";
+import { hasApiBaseUrl, InkdeskApiError, postInkdesk, postInkdeskJson } from "@/lib/server-api";
 
-const OWNER_EMAIL = "owner@inkvault.local";
-const OWNER_PASSWORD = "inkvault-owner";
+const OWNER_EMAIL = "owner@inkdesk.local";
+const OWNER_PASSWORD = "inkdesk-owner";
 
 type LoginResponse = {
   sessionToken: string;
@@ -24,12 +24,12 @@ export async function loginOwner(email: string, password: string): Promise<Login
   }
 
   try {
-    return await postInkvaultJson<LoginResponse>("/auth/login", {
+    return await postInkdeskJson<LoginResponse>("/auth/login", {
       email,
       password
     });
   } catch (error) {
-    if (error instanceof InkvaultApiError) {
+    if (error instanceof InkdeskApiError) {
       throw error;
     }
 
@@ -43,9 +43,9 @@ export async function logoutOwner(ownerSession?: string) {
   }
 
   try {
-    await postInkvault("/auth/logout", { ownerSession });
+    await postInkdesk("/auth/logout", { ownerSession });
   } catch (error) {
-    if (error instanceof InkvaultApiError) {
+    if (error instanceof InkdeskApiError) {
       throw error;
     }
   }

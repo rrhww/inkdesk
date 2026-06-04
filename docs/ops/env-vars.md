@@ -12,7 +12,7 @@
 
 ## 前端变量
 
-### `INKVAULT_API_BASE_URL`
+### `INKDESK_API_BASE_URL`
 
 - 用途：Next.js 服务端渲染和 server action 访问 Python 主后端的基础地址
 - 示例：`http://localhost:8080`
@@ -24,7 +24,7 @@
 - 示例：`http://localhost:8080`
 - 说明：可写成 `http://localhost:8080` 或 `http://localhost:8080/api`
 
-### `INKVAULT_E2E_BACKEND_TIMEOUT_MS`
+### `INKDESK_E2E_BACKEND_TIMEOUT_MS`
 
 - 用途：控制 `web npm run e2e:fullstack` 在启动 Playwright 前等待真实后端健康检查的最长时间
 - 示例：`60000`
@@ -32,22 +32,22 @@
 
 ## 后端变量
 
-### `INKVAULT_ENV`
+### `INKDESK_ENV`
 
 - 用途：声明当前运行环境
 - 示例：`local`
 
-### `INKVAULT_DB_URL`
+### `INKDESK_DB_URL`
 
 - 用途：Python 主后端的数据库连接地址
-- 示例：`postgresql+psycopg://inkvault:inkvault@localhost:5432/inkvault`
+- 示例：`postgresql+psycopg://inkdesk:inkdesk@localhost:5432/inkdesk`
 
-### `INKVAULT_VAULT_ROOT`
+### `INKDESK_VAULT_ROOT`
 
 - 用途：vault 根目录，后端会在其中维护 `raw/`、`wiki/` 与 `AGENTS.md`
-- 示例：`C:\path\to\inkvault-vault`
+- 示例：`C:\path\to\inkdesk-vault`
 
-### `INKVAULT_AUTH_SECRET`
+### `INKDESK_AUTH_SECRET`
 
 - 用途：owner session token 的签名密钥
 - 示例：`replace-with-a-long-random-secret`
@@ -55,50 +55,50 @@
 ### `APP_JWT_SECRET`
 
 - 用途：旧环境变量兼容别名
-- 说明：当前仍可读取，但新部署统一使用 `INKVAULT_AUTH_SECRET`
+- 说明：当前仍可读取，但新部署统一使用 `INKDESK_AUTH_SECRET`
 
-### `INKVAULT_AUTH_SESSION_DURATION`
+### `INKDESK_AUTH_SESSION_DURATION`
 
 - 用途：owner session 时长
 - 示例：`PT8H`
 
-### `INKVAULT_AUTH_ALLOW_LEGACY_OWNER_COOKIE`
+### `INKDESK_AUTH_ALLOW_LEGACY_OWNER_COOKIE`
 
 - 用途：控制是否兼容旧 owner cookie
 - 示例：`true`
 
-### `INKVAULT_AGENT_RUNTIME`
+### `INKDESK_AGENT_RUNTIME`
 
 - 用途：指定 agent runtime 类型
 - 示例：`langgraph`
 
-### `INKVAULT_AGENT_PROVIDER_PROFILE`
+### `INKDESK_AGENT_PROVIDER_PROFILE`
 
 - 用途：选择正式 provider profile
 - 示例：`openai`、`deepseek`、`openai_compatible`
 - 说明：`deepseek` 会自动带入 `https://api.deepseek.com` 和 `json_mode`；`openai` 默认带入 `https://api.openai.com/v1` 和 `json_schema`
 
-### `INKVAULT_AGENT_MODEL`
+### `INKDESK_AGENT_MODEL`
 
 - 用途：覆盖当前 provider profile 的默认模型名
 - 示例：`gpt-4.1-mini`、`deepseek-v4-flash`
 
-### `INKVAULT_AGENT_API_KEY`
+### `INKDESK_AGENT_API_KEY`
 
 - 用途：显式覆盖当前 provider profile 使用的 API key
 - 说明：优先级高于 `OPENAI_API_KEY` / `DEEPSEEK_API_KEY`
 
-### `INKVAULT_AGENT_BASE_URL`
+### `INKDESK_AGENT_BASE_URL`
 
 - 用途：显式覆盖当前 provider profile 使用的基础地址
 - 说明：主要用于 `openai_compatible` / `custom` 场景
 
-### `INKVAULT_AGENT_CONNECT_TIMEOUT_SECONDS`
+### `INKDESK_AGENT_CONNECT_TIMEOUT_SECONDS`
 
 - 用途：控制 LLM 请求连接超时
 - 示例：`2`
 
-### `INKVAULT_AGENT_READ_TIMEOUT_SECONDS`
+### `INKDESK_AGENT_READ_TIMEOUT_SECONDS`
 
 - 用途：控制 LLM 请求读取超时
 - 示例：`20`
@@ -114,14 +114,14 @@
 ### `OPENAI_BASE_URL`
 
 - 用途：兼容旧配置的基础地址别名
-- 说明：当未设置 `INKVAULT_AGENT_BASE_URL` 时，`openai` / `openai_compatible` 仍会读取它；`deepseek` profile 未显式覆盖时默认使用 `https://api.deepseek.com`
+- 说明：当未设置 `INKDESK_AGENT_BASE_URL` 时，`openai` / `openai_compatible` 仍会读取它；`deepseek` profile 未显式覆盖时默认使用 `https://api.deepseek.com`
 
-### `INKVAULT_ENABLE_WEB_ASSIST`
+### `INKDESK_ENABLE_WEB_ASSIST`
 
 - 用途：控制 Ask 的 `vault_plus_web` 是否允许联网补料
 - 示例：`true`
 
-### `INKVAULT_ENABLE_LOCAL_SEED`
+### `INKDESK_ENABLE_LOCAL_SEED`
 
 - 用途：控制本地 owner、workspace 与示例 research 数据自动回补
 - 示例：`true`
@@ -133,17 +133,17 @@
 ### `POSTGRES_DB`
 
 - 用途：本地 PostgreSQL 数据库名
-- 示例：`inkvault`
+- 示例：`inkdesk`
 
 ### `POSTGRES_USER`
 
 - 用途：本地 PostgreSQL 用户名
-- 示例：`inkvault`
+- 示例：`inkdesk`
 
 ### `POSTGRES_PASSWORD`
 
 - 用途：本地 PostgreSQL 密码
-- 示例：`inkvault`
+- 示例：`inkdesk`
 
 ### `POSTGRES_PORT`
 
@@ -153,12 +153,12 @@
 ### `MINIO_ROOT_USER`
 
 - 用途：本地 MinIO 管理账号
-- 示例：`inkvault`
+- 示例：`inkdesk`
 
 ### `MINIO_ROOT_PASSWORD`
 
 - 用途：本地 MinIO 管理密码
-- 示例：`inkvaultminio`
+- 示例：`inkdeskminio`
 
 ### `MINIO_API_PORT`
 
@@ -170,7 +170,7 @@
 - 用途：本地 MinIO Console 端口
 - 示例：`9001`
 
-### `INKVAULT_SERVER_PORT`
+### `INKDESK_SERVER_PORT`
 
 - 用途：本地 Python 主后端暴露端口
 - 示例：`8080`

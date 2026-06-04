@@ -2,7 +2,7 @@
 
 ## 目标
 
-统一 Inkvault 当前本地开发环境，保证前端、Python 主后端、数据库与 vault 存储的启动方式一致。
+统一 Inkdesk 当前本地开发环境，保证前端、Python 主后端、数据库与 vault 存储的启动方式一致。
 
 ## 软件准备
 
@@ -34,7 +34,7 @@
 
 - 前端和后端优先本地直接启动，便于热更新
 - PostgreSQL 和 MinIO 通过 Docker Compose 托管
-- Vault 数据默认写入 `server/inkvault-vault`，也可以通过环境变量改为外部目录
+- Vault 数据默认写入 `server/inkdesk-vault`，也可以通过环境变量改为外部目录
 - 后端启动时会自动回补 owner、workspace 与示例 research 数据
 
 ## 版本建议
@@ -74,9 +74,9 @@ Copy-Item web/.env.local.example web/.env.local
 2. 设置后端关键变量
 
 ```powershell
-$env:INKVAULT_AUTH_SECRET='replace-with-a-long-random-secret'
-$env:INKVAULT_VAULT_ROOT='C:\path\to\inkvault-vault'
-$env:INKVAULT_AGENT_PROVIDER_PROFILE='openai' # 或 deepseek
+$env:INKDESK_AUTH_SECRET='replace-with-a-long-random-secret'
+$env:INKDESK_VAULT_ROOT='C:\path\to\inkdesk-vault'
+$env:INKDESK_AGENT_PROVIDER_PROFILE='openai' # 或 deepseek
 ```
 
 3. 启动基础设施
@@ -90,7 +90,7 @@ docker compose --env-file infra/.env -f infra/docker-compose.yml up -d
 ```powershell
 cd server
 python -m pip install -e .[dev]
-python -m uvicorn inkvault_server.main:app --host 0.0.0.0 --port 8080
+python -m uvicorn inkdesk_server.main:app --host 0.0.0.0 --port 8080
 ```
 
 5. 启动前端
@@ -103,8 +103,8 @@ npm run dev
 
 6. 使用本地 owner 账号登录
 
-- 邮箱：`owner@inkvault.local`
-- 密码：`inkvault-owner`
+- 邮箱：`owner@inkdesk.local`
+- 密码：`inkdesk-owner`
 
 ## 推荐的本地服务职责
 

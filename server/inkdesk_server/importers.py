@@ -9,7 +9,7 @@ from bs4 import BeautifulSoup
 from fastapi import UploadFile
 from pypdf import PdfReader
 
-from inkvault_server.security import ApiError
+from inkdesk_server.security import ApiError
 
 
 @dataclass(frozen=True)
@@ -32,7 +32,7 @@ class WebAssistResult:
 
 class WebRawImportService:
     search_url = "https://html.duckduckgo.com/html/"
-    user_agent = "Inkvault/1.0 (+https://inkvault.local)"
+    user_agent = "Inkdesk/1.0 (+https://inkdesk.local)"
     max_web_assist_results = 3
 
     def assist_from_query(self, query: str) -> list[WebAssistResult]:
