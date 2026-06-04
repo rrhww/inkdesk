@@ -110,7 +110,7 @@ class ResearchWorkspaceService:
             id="user-owner",
             username="owner",
             email="owner@inkdesk.local",
-            password_hash="$2a$10$LPDn2kRc8QEv/eTF8R30Hu9.NxWX600YSCWveNEp.5fKhYaylubji",
+            password_hash="$2b$10$B8QISysp34AOP9YiFtY/weik7CHo1nhqDvm5BGdiBYcSuOswEWPgO",
             status="ACTIVE",
             created_at=now,
             updated_at=now,
