@@ -76,6 +76,18 @@ context_pack -> agent work -> deposit
 - 沉淀后给出轻量反馈：已沉淀、需要确认、暂不适合沉淀
 - 冲突、低证据、高风险覆盖旧判断时才打断用户
 
+### 当前执行顺序
+
+下一轮开发先执行 [Ask-to-Deposit Main Flow Implementation Plan](../superpowers/plans/2026-06-04-ask-to-deposit-main-flow.md)。
+
+执行判断：
+
+- 先把现有 Ask writeback 收敛成明确的 deposit 合同。
+- 保持 `/api/ask/{id}/writeback` 兼容，但新增 `/api/ask/{id}/deposit` 作为产品主语义。
+- 先支持“沉淀整条回答”，再支持“沉淀选中片段”。
+- 所有沉淀结果仍进入 ingest 审阅，不直接写 wiki。
+- 完成这一层后，再进入 `schema/`、`skills/`、Skill Workbench 和外部 Agent 接入。
+
 ### 完成标志
 
 - 用户能从任意 Ask 回答触发沉淀。
