@@ -1,67 +1,67 @@
 # Inkdesk
 
-> A private LLM-Wiki and skill-driven agent workbench.
+> 一个私有的 LLM-Wiki 与 Skill 驱动的 Agent 工作台。
 
-Inkdesk is being shaped as a personal knowledge control plane for AI agents. It absorbs the product pattern described in "AI研发自动化：Wiki知识库+技能包": long-lived AI systems need a durable Wiki, explicit Skills, measurable evaluations, and a Harness that can safely coordinate agent work.
+Inkdesk 正在被塑造成面向 AI Agent 的个人知识控制台。它吸收了《AI研发自动化：Wiki知识库+技能包》这篇文章里的核心产品形态：长期可用的 AI 系统需要一套可持续演化的 Wiki、显式的 Skills、可衡量的评测，以及能安全编排 Agent 工作的 Harness。
 
-The product direction is:
+产品方向是：
 
 ```text
 LLM-Wiki + Skill Workbench + Agent Harness
 ```
 
-Inkdesk should not try to replace Claude Code, Codex, LangGraph, Obsidian, or future agent runtimes. Instead, it should manage the memory and workflow substrate they need:
+Inkdesk 不应该替代 Claude Code、Codex、LangGraph、Obsidian 或未来的 Agent Runtime。它应该管理这些执行器所需要的记忆层与工作流底座：
 
 ```text
-Inkdesk manages memory, skills, evaluations, run state, and review.
-External agent runtimes execute work.
-Vault Markdown remains portable and inspectable.
+Inkdesk 管理记忆、技能、评测、运行状态和审阅。
+外部 Agent Runtime 负责执行。
+Vault Markdown 保持可迁移、可检查、可版本化。
 ```
 
-## Product Idea
+## 产品理念
 
-Inkdesk is not a normal RAG app.
+Inkdesk 不是普通 RAG 应用。
 
-Traditional RAG answers from raw document chunks at query time. Inkdesk is moving toward a write-time knowledge system: sources are compiled into a living Markdown Wiki, queries can produce reviewable Wiki proposals, Skills turn repeated work into reusable workflows, and evaluation checks whether the system is getting better.
+传统 RAG 在查询时从原始文档切片里检索并生成答案。Inkdesk 更接近一种写入时知识系统：来源材料会被编译成持续生长的 Markdown Wiki，查询结果可以变成可审阅的 Wiki 提案，Skills 把重复工作固化为可复用流程，评测系统检查知识库和技能是否真的变好。
 
-The internal research loop still matters:
+当前内部研究闭环仍然是：
 
 ```text
 raw -> ingest -> wiki -> ask
 ```
 
-- `raw/` stores original source material such as webpages, PDFs, imported notes, and future code or project context.
-- `ingest` turns raw material into AI-generated proposals that the owner can accept or reject.
-- `wiki/` stores accepted long-term knowledge as Markdown.
-- `ask` answers from accepted Wiki first, then raw sources, and can send useful answers back into review.
+- `raw/` 保存网页、PDF、导入笔记，以及未来的代码或项目上下文等原始材料。
+- `ingest` 把 raw 材料转成 AI 生成的审阅提案，由 owner 接受或拒绝。
+- `wiki/` 保存已经接受的长期知识页，格式是 Markdown。
+- `ask` 优先基于已接受的 Wiki 回答，再回退到 raw，并能把有价值回答送回审阅。
 
-The next product layer extends that loop:
+下一层产品能力会扩展为：
 
 ```text
 schema -> skills -> evals -> runs -> harness
 ```
 
-- `schema/` defines how agents should maintain the Wiki.
-- `skills/` stores reusable workflow instructions.
-- `evals/` stores golden tasks and rubrics.
-- `runs/` records agent outputs, decisions, and review state.
-- `harness` coordinates multi-step work with gates, retries, and rollback records.
+- `schema/` 定义 Agent 应该如何维护 Wiki。
+- `skills/` 保存可复用的工作流说明。
+- `evals/` 保存 golden tasks 和 rubrics。
+- `runs/` 记录 Agent 输出、决策和审阅状态。
+- `harness` 用门禁、重试和回滚记录来编排多步骤工作。
 
-## Target Shape
+## 目标形态
 
-The long-term vault layout should stay file-first and portable:
+长期 vault 结构应该保持 file-first 和 portable：
 
 ```text
 vault/
-  raw/        original source material
-  wiki/       accepted long-term knowledge pages
-  schema/     agent-facing maintenance rules
-  skills/     reusable workflow instructions
-  evals/      golden tasks, rubrics, and evaluation runs
-  runs/       agent run records, outputs, and review state
+  raw/        原始材料
+  wiki/       已接受的长期知识页
+  schema/     面向 Agent 的维护规则
+  skills/     可复用工作流说明
+  evals/      golden tasks、rubrics 和评测运行记录
+  runs/       Agent 运行记录、输出和审阅状态
 ```
 
-The application sits on top of that vault:
+应用层覆盖在 vault 之上：
 
 ```text
 Raw Library
@@ -74,68 +74,68 @@ Evaluation Harness
 Agent Run Console
 ```
 
-PostgreSQL indexes files, queues proposals, stores workflow state, and caches read models. The accepted knowledge itself must remain recoverable from vault Markdown.
+PostgreSQL 负责索引文件、排队提案、保存工作流状态和缓存读模型。已经接受的长期知识必须始终能从 vault Markdown 中恢复。
 
-## Design Principles
+## 设计原则
 
-- File-first: accepted knowledge should be readable and versionable outside Inkdesk.
-- Review-first: AI can propose Wiki changes, but must not silently rewrite canonical knowledge.
-- Skill-first: repeated workflows should be explicit files with inputs, context, output contracts, safety rules, and verification expectations.
-- Runtime-agnostic: Inkdesk should be able to work with LangGraph now and external tools like Claude Code or Codex later.
-- Evaluation-driven: Wiki and Skill changes should be judged with health checks and golden tasks, not vibes.
-- Obsidian-compatible where useful: the vault should remain understandable in normal Markdown tools without making Obsidian a hard dependency.
+- File-first：已接受知识应该能在 Inkdesk 外部阅读、编辑、版本化。
+- Review-first：AI 可以提出 Wiki 修改，但不能静默改写正式知识。
+- Skill-first：重复工作应该成为显式文件，包含输入、上下文、输出契约、安全规则和验证要求。
+- Runtime-agnostic：Inkdesk 现在可以使用 LangGraph，未来也要能接入 Claude Code、Codex 等外部工具。
+- Evaluation-driven：Wiki 和 Skill 的优化要通过 health checks 与 golden tasks 判断，不能只凭感觉。
+- Obsidian-compatible where useful：vault 应该能被普通 Markdown 工具理解，但不把 Obsidian 作为硬依赖。
 
-## Current State
+## 当前状态
 
-Implemented today:
+已经实现：
 
-- Single-owner private workspace and hidden login.
-- Vault-first `raw -> ingest -> wiki -> ask` loop.
-- Raw text, webpage, and PDF import.
-- AI-generated review proposals with accept/reject flow.
-- Accepted Wiki pages written back to vault Markdown.
-- Ask-first workspace with citations, follow-up context, and writeback proposals.
-- Claim-level metadata, source links, usage signals, and review state.
-- Local Docker stack with Next.js, FastAPI, PostgreSQL, and pgvector.
+- 单 owner 私有工作区与隐藏登录入口。
+- Vault-first 的 `raw -> ingest -> wiki -> ask` 主闭环。
+- raw 文本、网页、PDF 导入。
+- AI 生成审阅提案，支持接受 / 拒绝。
+- 已接受 Wiki 页面写回 vault Markdown。
+- Ask-first 工作区，支持引用回答、追问上下文和 writeback 提案。
+- claim 级元数据、来源链接、使用信号和审阅状态。
+- 本地 Docker 栈：Next.js、FastAPI、PostgreSQL、pgvector。
 
-In progress as product direction:
+正在作为产品方向推进：
 
-- Make Ask-to-Wiki proposal flow feel like a first-class memory-building action.
-- Add `schema/` and `skills/` conventions to the vault.
-- Add Skill Workbench for browsing, running, and exporting skills.
-- Add Wiki Health checks for links, missing sources, missing frontmatter, stubs, and orphan pages.
-- Add Evaluation Harness for golden tasks and skill/wiki version comparisons.
-- Add Agent Harness only after review and evaluation paths are strong enough.
+- 让 Ask-to-Wiki proposal 成为一等的记忆沉淀动作。
+- 在 vault 中加入 `schema/` 和 `skills/` 约定。
+- 增加 Skill Workbench，用于浏览、运行、导出 skills。
+- 增加 Wiki Health，检查断链、缺失来源、缺失 frontmatter、短页、孤页等问题。
+- 增加 Evaluation Harness，用 golden tasks 对比 skill/wiki 版本效果。
+- 只有当 review 与 evaluation 足够可靠后，再推进 Agent Harness。
 
-## Current Routes
+## 当前路由
 
-- `/` redirects based on owner session.
-- `/login` is the hidden owner login.
-- `/app` is the Ask-first research workspace.
-- `/app/raw` shows original vault material.
-- `/app/ingest` shows pending AI proposals.
-- `/app/wiki` shows accepted Wiki pages.
-- `/app/wiki/[id]` shows a Wiki page with understanding, claims, questions, and sources.
-- `/app/ask` is a compatibility alias for the Ask workspace.
+- `/`：根据 owner session 跳转。
+- `/login`：隐藏 owner 登录入口。
+- `/app`：Ask-first 研究工作区。
+- `/app/raw`：原始 vault 材料。
+- `/app/ingest`：等待处理的 AI 提案。
+- `/app/wiki`：已接受的 Wiki 页面。
+- `/app/wiki/[id]`：单个 Wiki 页面详情，包含 understanding、claims、questions 和 sources。
+- `/app/ask`：Ask 工作区的兼容别名。
 
-Legacy routes such as `/app/inbox`, `/app/review`, `/app/topics`, and `/app/sources` are no longer formal product entry points.
+旧路由 `/app/inbox`、`/app/review`、`/app/topics`、`/app/sources` 当前不再是正式产品入口。
 
-## Tech Stack
+## 技术栈
 
-- Frontend: `Next.js 16`, `React 19`, `TypeScript`, `Tailwind CSS`
-- Backend: `FastAPI`, `Python 3.12`, `SQLAlchemy`, `LangGraph`
-- Storage: `PostgreSQL + pgvector` for indexes and workflow state, plus mounted vault Markdown for raw/wiki truth
-- Testing: `node:test`, `Vitest`, `Playwright`, `pytest`
+- 前端：`Next.js 16`、`React 19`、`TypeScript`、`Tailwind CSS`
+- 后端：`FastAPI`、`Python 3.12`、`SQLAlchemy`、`LangGraph`
+- 存储：`PostgreSQL + pgvector` 保存索引和工作流状态，挂载的 vault Markdown 保存 raw/wiki 真相层
+- 测试：`node:test`、`Vitest`、`Playwright`、`pytest`
 
-## Quick Start
+## 快速启动
 
-Prepare environment variables:
+准备环境变量：
 
 ```bash
 cp infra/.env.example infra/.env
 ```
 
-Set at least:
+至少设置：
 
 ```env
 INKDESK_AUTH_SECRET=replace-with-a-long-random-secret
@@ -148,7 +148,7 @@ INKDESK_EMBEDDING_MODEL=text-embedding-3-small
 INKDESK_ENABLE_WEB_ASSIST=true
 ```
 
-For DeepSeek:
+如果使用 DeepSeek：
 
 ```env
 INKDESK_AGENT_RUNTIME=langgraph
@@ -157,44 +157,44 @@ DEEPSEEK_API_KEY=sk-xxxx
 INKDESK_AGENT_MODEL=deepseek-v4-flash
 ```
 
-Start the local Docker stack:
+启动本地 Docker 栈：
 
 ```bash
 docker compose --env-file infra/.env -f infra/docker-compose.local-docker.yml up -d --build
 ```
 
-Open:
+打开：
 
-- App: `http://localhost:3000/login`
-- Backend health: `http://localhost:8080/actuator/health`
+- 应用：`http://localhost:3000/login`
+- 后端健康检查：`http://localhost:8080/actuator/health`
 
-Default local owner:
+默认本地 owner：
 
-- Email: `owner@inkdesk.local`
-- Password: `inkdesk-owner`
+- 邮箱：`owner@inkdesk.local`
+- 密码：`inkdesk-owner`
 
-Stop while keeping data:
+停止容器但保留数据：
 
 ```bash
 docker compose --env-file infra/.env -f infra/docker-compose.local-docker.yml down
 ```
 
-Reset the local demo state:
+重置本地 demo 数据：
 
 ```bash
 docker compose --env-file infra/.env -f infra/docker-compose.local-docker.yml down -v
 ```
 
-## Verification
+## 验证
 
-Backend:
+后端：
 
 ```powershell
 cd server
 python -m pytest
 ```
 
-Frontend:
+前端：
 
 ```powershell
 cd web
@@ -206,9 +206,9 @@ npm run e2e
 npm run e2e:fullstack
 ```
 
-`npm run e2e` and `npm run e2e:fullstack` should be run serially because both trigger Next.js build/start flows.
+`npm run e2e` 和 `npm run e2e:fullstack` 需要串行运行，因为二者都会触发 Next.js build/start 流程。
 
-## Related Design Notes
+## 相关设计文档
 
 - [LLM-Wiki + Skill Workbench Product Design](docs/superpowers/specs/2026-06-04-llm-wiki-skill-workbench-design.md)
 - [Product Vision](docs/product/product-vision.md)
