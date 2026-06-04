@@ -85,27 +85,49 @@ PostgreSQL 负责索引文件、排队提案、保存工作流状态和缓存读
 - Evaluation-driven：Wiki 和 Skill 的优化要通过 health checks 与 golden tasks 判断，不能只凭感觉。
 - Obsidian-compatible where useful：vault 应该能被普通 Markdown 工具理解，但不把 Obsidian 作为硬依赖。
 
-## 当前状态
+## 开发进度
 
-已经实现：
+Inkdesk 不是从零开始转向新形态。当前已经有一条可运行的私有研究闭环，接下来是在这个闭环上叠加“回答沉淀、Skills、评测和外部 Agent 接入”。
 
-- 单 owner 私有工作区与隐藏登录入口。
-- Vault-first 的 `raw -> ingest -> wiki -> ask` 主闭环。
-- raw 文本、网页、PDF 导入。
-- AI 生成审阅提案，支持接受 / 拒绝。
-- 已接受 Wiki 页面写回 vault Markdown。
-- Ask-first 工作区，支持引用回答、追问上下文和 writeback 提案。
-- claim 级元数据、来源链接、使用信号和审阅状态。
-- 本地 Docker 栈：Next.js、FastAPI、PostgreSQL、pgvector。
+### 已完成：阶段一主体闭环
 
-正在作为产品方向推进：
+- [x] 单 owner 私有登录、本地 `/app` 工作区、隐藏登录入口。
+- [x] Vault-first 的 `raw -> ingest -> wiki -> ask` 主闭环。
+- [x] raw 文本、网页、PDF 导入。
+- [x] AI 生成审阅提案，支持接受 / 拒绝。
+- [x] 已接受 Wiki 页面写回 vault Markdown。
+- [x] Ask-first 工作区，支持引用回答、追问上下文和 writeback 提案。
+- [x] claim 级证据状态、来源链接、usage、stale/conflict 信号。
+- [x] 本地 Docker 栈：Next.js、FastAPI、PostgreSQL、pgvector。
+- [x] 后端 `python -m pytest` 与前端 `npm run typecheck` 已作为当前基线验证。
 
-- 让 Ask-to-Wiki proposal 成为一等的记忆沉淀动作。
-- 在 vault 中加入 `schema/` 和 `skills/` 约定。
-- 增加 Skill Workbench，用于浏览、运行、导出 skills。
-- 增加 Wiki Health，检查断链、缺失来源、缺失 frontmatter、短页、孤页等问题。
-- 增加 Evaluation Harness，用 golden tasks 对比 skill/wiki 版本效果。
-- 只有当 review 与 evaluation 足够可靠后，再推进 Agent Harness。
+### 当前重点：回答沉淀主形态
+
+阶段一已经成立，产品重点正在转向更极简的主路径：
+
+```text
+Ask -> 沉淀
+```
+
+接下来优先补齐：
+
+- [ ] 每个回答固定提供“沉淀这次回答”。
+- [ ] 支持完整回答与选中片段两种沉淀入口。
+- [ ] 沉淀后生成新 wiki 页面、patch 旧页面、open question 或冲突裁决。
+- [ ] 用户不需要进入复杂 ingest/health 页面，也能完成主要记忆沉淀动作。
+
+### 下一阶段：Skill Workbench 与 Agent 底座
+
+在 Ask-to-Wiki 稳定之后，再把文章里的 Claude Code + Skill 仓库 + Obsidian 思路吸收到 Inkdesk 自己的结构里：
+
+- [ ] 在 vault 中加入 `schema/` 和 `skills/` 约定。
+- [ ] 增加 Skill Workbench，用于浏览、运行、审阅、导出 skills。
+- [ ] 增加 Wiki Health，检查断链、缺失来源、缺失 frontmatter、短页、孤页等问题。
+- [ ] 增加 Evaluation Harness，用 golden tasks 对比 skill/wiki 版本效果。
+- [ ] 增加 MCP / CLI / Skill 接入，让 Claude Code、Codex、Cursor 等外部 Agent 能在任务前取上下文、任务后提交沉淀。
+- [ ] 只有当 review 与 evaluation 足够可靠后，再推进更高自治度的 Agent Harness。
+
+完整阶段计划见 [产品路线图](docs/product/product-roadmap.md)。
 
 ## 当前路由
 
