@@ -1,4 +1,4 @@
-﻿# Inkdesk 校招生 / 初级程序员简历包装报告
+# Inkdesk 校招生 / 初级程序员简历包装报告
 
 生成日期：2026-05-15
 
@@ -19,10 +19,10 @@ Inkdesk 更适合包装为一个「私有研究记忆系统 / AI 应用工作流
 
 | 维度 | 判断 | 证据 |
 | --- | --- | --- |
-| 系统类型 | AI 应用 / RAG / LLM 编排 / 中后台平台 | [README.md](../../README.md) 写明 `raw -> ingest -> wiki -> ask`；[docs/architecture/system-overview.md](../architecture/system-overview.md) 明确 LangGraph、PostgreSQL、Vault Markdown |
-| 核心业务对象 | Source、ReviewItem、Topic、TopicClaim、AskTurn、RetrievalChunk | [server/inkdesk_server/models.py](../../server/inkdesk_server/models.py) 定义模型；[docs/architecture/domain-model.md](../architecture/domain-model.md) 定义领域语言 |
+| 系统类型 | AI 应用 / RAG / LLM 编排 / 中后台平台 | [项目说明.md](../../项目说明.md) 写明 `raw -> ingest -> wiki -> ask`；[docs/architecture/系统总览.md](../architecture/系统总览.md) 明确 LangGraph、PostgreSQL、Vault Markdown |
+| 核心业务对象 | Source、ReviewItem、Topic、TopicClaim、AskTurn、RetrievalChunk | [server/inkdesk_server/models.py](../../server/inkdesk_server/models.py) 定义模型；[docs/architecture/领域模型.md](../architecture/领域模型.md) 定义领域语言 |
 | 主链路 | raw 导入 -> ingest 提案 -> 人工 accept/reject -> wiki 落库/落文件 -> ask 问答 -> writeback 提案 | API 在 [server/inkdesk_server/main.py](../../server/inkdesk_server/main.py)；编排在 [server/inkdesk_server/research.py](../../server/inkdesk_server/research.py) |
-| 数据事实来源 | Vault Markdown 是长期真相，数据库做索引、队列和状态 | [README.md](../README.md)；[server/inkdesk_server/vault.py](../../server/inkdesk_server/vault.py) |
+| 数据事实来源 | Vault Markdown 是长期真相，数据库做索引、队列和状态 | [项目说明.md](../项目说明.md)；[server/inkdesk_server/vault.py](../../server/inkdesk_server/vault.py) |
 | 检索形态 | 应用层 chunk + lexical fallback / embedding hybrid | [server/inkdesk_server/retrieval.py](../../server/inkdesk_server/retrieval.py)；[server/inkdesk_server/embeddings.py](../../server/inkdesk_server/embeddings.py) |
 | AI 编排 | LangGraph Ask / Compile graph，结构化输出，确定性 fallback | [server/inkdesk_server/agents.py](../../server/inkdesk_server/agents.py) |
 | 前端形态 | Next.js 私有工作区，Ask / raw / ingest / wiki 页面 | [web/components/workbench/ask-workspace.tsx](../../web/components/workbench/ask-workspace.tsx)、[web/app/app/raw/page.tsx](../../web/app/app/raw/page.tsx)、[web/app/app/ingest/page.tsx](../../web/app/app/ingest/page.tsx) |
@@ -115,7 +115,7 @@ Inkdesk 更适合包装为一个「私有研究记忆系统 / AI 应用工作流
 | 2 | 使用 LangGraph 编排 Ask / Compile 两条 LLM 工作流 | S | 已实现 | agents.py | 主打 AI 应用 |
 | 3 | 实现带引用的 RAG 检索增强问答，支持 topic scoped 和 global ask | S | 已实现 | retrieval.py、research.py | 主打 RAG |
 | 4 | 引入人工审阅闸门，AI 只生成提案，接受后才写 wiki | S | 已实现 | review_items、accept_review、ingest page | 主打可信 AI |
-| 5 | 建立 Source / Topic / Claim / AskTurn 的领域模型和 provenance 链路 | S | 已实现 | models.py、database-schema.md | 主打平台建模 |
+| 5 | 建立 Source / Topic / Claim / AskTurn 的领域模型和 provenance 链路 | S | 已实现 | models.py、数据库结构.md | 主打平台建模 |
 | 6 | Vault-first Markdown 持久化，数据库只做索引与状态层 | A | 已实现 | vault.py、README | 主打工程设计 |
 | 7 | Ask writeback 将高价值回答转成 ingest 提案而非直接改写知识库 | A | 已实现 | create_ask_writeback_proposal、tests | 主打闭环 |
 | 8 | Claim 治理：unsupported / stale / conflicting claim 识别和重审提案 | A | 已实现 | build_dashboard_health、ensure_claim_review、ensure_conflict_review | 面试深挖 |
@@ -556,3 +556,6 @@ Inkdesk 是一个私有研究工作台，前端有 raw、ingest、wiki、ask 四
 如果只能选 1 条作为项目主讲点：
 
 - 讲“AI 不直接写长期知识，而是通过 raw -> ingest -> wiki -> ask 的人审闭环沉淀可信知识”。这个点最能体现业务理解、AI 应用架构、RAG、工程边界和风险意识。
+
+
+
