@@ -296,7 +296,8 @@ npm run e2e:fullstack
 
 - [产品定位与形态](docs/product/产品定位与形态.md)
 - [产品路线图](docs/product/产品路线图.md)
-- [知识库初始化设计](docs/superpowers/specs/2026-06-05-知识库初始化设计.md)
+- [初步开发计划](docs/development/plans/2026-06-05-初步开发计划.md)
+- [知识库初始化设计](docs/development/specs/2026-06-05-知识库初始化设计.md)
 - [按文章流程开发计划](docs/superpowers/plans/2026-06-04-按文章流程开发计划.md)
 - [大模型维基与技能工作台产品设计](docs/superpowers/specs/2026-06-04-大模型维基与技能工作台产品设计.md)
 - [产品愿景](docs/product/产品愿景.md)
