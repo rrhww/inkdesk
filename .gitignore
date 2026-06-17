@@ -54,6 +54,14 @@ __pycache__/
 *.egg-info/
 .venv/
 
+# Personal docs
+docs/resume/
+
+# Planning artifacts
+findings.md
+progress.md
+task_plan.md
+
 # Local vault data
 inkdesk-vault/
 server/inkdesk-vault/
