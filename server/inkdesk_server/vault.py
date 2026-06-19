@@ -9,18 +9,8 @@ from tempfile import NamedTemporaryFile
 from inkdesk_server.core.config import Settings
 from inkdesk_server.models import Source, Topic, TopicClaim
 from inkdesk_server.time_utils import ensure_utc_datetime
+from inkdesk_server.vault_assets import SHARED_DIRS, SHARED_FILES, VAULT_TYPE_WIKI_DIRS
 
-
-AGENTS_MD = """# Inkdesk LLM Wiki Agents
-
-This vault follows the raw -> ingest -> wiki workflow.
-
-- raw/ stores imported webpages, PDFs, and migrated internal notes.
-- ingest is a review workflow, not a durable content directory.
-- wiki/ stores accepted, settled knowledge pages.
-- Never silently edit wiki knowledge without a review decision.
-- Preserve backlinks from every compiled claim to raw source material.
-"""
 
 LIST_DELIMITER = "\n---\n"
 
@@ -35,12 +25,40 @@ class VaultService:
     def __init__(self, settings: Settings):
         self.root = Path(settings.vault_root).expanduser().resolve()
 
-    def ensure_initialized(self) -> None:
-        self.root.joinpath("raw").mkdir(parents=True, exist_ok=True)
-        self.root.joinpath("wiki").mkdir(parents=True, exist_ok=True)
-        agents = self.root / "AGENTS.md"
-        if not agents.exists():
-            self.write_vault_file("AGENTS.md", AGENTS_MD)
+    def ensure_initialized(self, vault_type: str | None = None) -> None:
+        for dir_name in SHARED_DIRS:
+            self.root.joinpath(dir_name).mkdir(parents=True, exist_ok=True)
+        if vault_type is not None:
+            for wiki_dir in VAULT_TYPE_WIKI_DIRS.get(vault_type, []):
+                self.root.joinpath(wiki_dir).mkdir(parents=True, exist_ok=True)
+        for asset in SHARED_FILES:
+            if not self.exists(asset.relative_path):
+                self.write_vault_file(asset.relative_path, asset.content)
+
+    def get_status(self) -> dict:
+        """返回 Vault 初始化状态，不修改文件系统。"""
+        kb_meta_exists = self.exists("KB-META.md")
+        wiki_entities = (self.root / "wiki" / "entities").is_dir()
+        wiki_concepts = (self.root / "wiki" / "concepts").is_dir()
+        wiki_topics = (self.root / "wiki" / "topics").is_dir()
+        wiki_sources = (self.root / "wiki" / "sources").is_dir()
+        wiki_queries = (self.root / "wiki" / "queries").is_dir()
+
+        vault_type = None
+        if wiki_entities and wiki_concepts:
+            vault_type = "code"
+        elif wiki_topics and wiki_sources and wiki_queries:
+            vault_type = "general"
+
+        dirs_created = all(
+            self.root.joinpath(d).is_dir() for d in SHARED_DIRS
+        )
+
+        return {
+            "initialized": kb_meta_exists and dirs_created,
+            "vault_type": vault_type,
+            "shared_dirs_exist": dirs_created,
+        }
 
     def write_raw_source(self, imported_at: datetime, title: str, source_id: str, content: str) -> VaultWriteResult:
         file_name = f"{imported_at.astimezone(UTC):%Y-%m-%d}-{self.slugify(title)}-{self.compact_id(source_id)}.md"

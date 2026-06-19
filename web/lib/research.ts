@@ -20,7 +20,9 @@ import type {
   ResearchTextImportRequest,
   ResearchTopicDetail,
   ResearchTopicSummary,
-  ResearchWebImportRequest
+  ResearchWebImportRequest,
+  VaultInitializeRequest,
+  VaultStatus,
 } from "@/lib/types";
 import { postInkdeskFormData } from "@/lib/server-api";
 
@@ -159,3 +161,11 @@ export const getSources = getRawSources;
 export const getReviewItems = getIngestItems;
 export const acceptReview = acceptIngest;
 export const rejectReview = rejectIngest;
+
+export async function getVaultStatus(ownerSession?: string): Promise<VaultStatus> {
+  return fetchInkdeskJson<VaultStatus>("/vault/status", { ownerSession });
+}
+
+export async function initializeVault(request: VaultInitializeRequest, ownerSession?: string): Promise<VaultStatus> {
+  return postInkdeskJson<VaultStatus>("/vault/initialize", request, { ownerSession });
+}

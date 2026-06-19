@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 
 import { AppChrome } from "@/components/app-chrome";
 import { logoutOwner } from "@/lib/owner-auth";
-import { getResearchDashboard } from "@/lib/research";
+import { getResearchDashboard, getVaultStatus } from "@/lib/research";
 import { InkdeskApiError } from "@/lib/server-api";
 import { OWNER_SESSION_COOKIE, hasOwnerSession } from "@/lib/owner-session";
 import type { ResearchDashboard } from "@/lib/types";
