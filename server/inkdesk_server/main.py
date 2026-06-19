@@ -12,6 +12,7 @@ from inkdesk_server.core.config import Settings, get_settings
 from inkdesk_server.db import get_db, init_db, session_scope
 from inkdesk_server.deposit_service import DepositService
 from inkdesk_server.health_service import HealthService
+from inkdesk_server.mcp_server import build_mcp_server
 from inkdesk_server.models import User
 from inkdesk_server.vault import VaultService
 from inkdesk_server.research import ResearchWorkspaceService, get_research_service
@@ -46,22 +47,26 @@ from inkdesk_server.schemas import (
 from inkdesk_server.security import ApiError, InvalidCredentialsError, OwnerSessionService, ResourceNotFoundError, VerifiedOwnerSession, get_current_workspace, get_session_service, require_owner, verify_password
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    init_db()
-    settings = get_settings()
-    with session_scope() as db:
-        get_research_service(db, settings).bootstrap_seed_data()
-    yield
-
-
 def create_app() -> FastAPI:
     settings = get_settings()
     init_db()
     with session_scope() as db:
         get_research_service(db, settings).bootstrap_seed_data()
 
-    app = FastAPI(title="Inkdesk Python Server", version="0.1.0", lifespan=lifespan)
+    # --- MCP Server（必须在 lifespan 之前构建，以便 lifespan 管理其 session manager 生命周期）---
+    mcp = build_mcp_server(settings)
+    mcp_app = mcp.streamable_http_app()  # 创建 session_manager
+    session_manager = mcp.session_manager
+
+    @asynccontextmanager
+    async def app_lifespan(app: FastAPI):
+        init_db()
+        with session_scope() as db:
+            get_research_service(db, settings).bootstrap_seed_data()
+        async with session_manager.run():
+            yield
+
+    app = FastAPI(title="Inkdesk Python Server", version="0.1.0", lifespan=app_lifespan)
 
     @app.exception_handler(ApiError)
     async def handle_api_error(_, exception: ApiError):
@@ -369,6 +374,9 @@ def create_app() -> FastAPI:
     ):
         service = HealthService(settings, VaultService(settings))
         return service.scan()
+
+    # --- MCP Server（挂载在 lifespan 管理的 mcp_app）---
+    app.mount("/mcp", mcp_app)
 
     return app
 
