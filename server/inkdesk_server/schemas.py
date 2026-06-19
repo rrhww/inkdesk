@@ -315,3 +315,57 @@ class AskThreadResponse(BaseModel):
     currentAskTurnId: str
     topicId: str | None = None
     turns: list[AskResponse]
+
+
+class CreateDevRunRequest(BaseModel):
+    type: str
+    title: str
+    goal: str
+    repoContext: str | None = None
+
+
+class StageInfo(BaseModel):
+    name: str
+    status: str
+
+
+class RunEventResponse(BaseModel):
+    id: str
+    eventType: str
+    stage: str | None = None
+    payload: dict
+    createdAt: datetime
+
+
+class DevRunResponse(BaseModel):
+    id: str
+    workspaceId: str
+    type: str
+    title: str
+    goal: str
+    repoContext: str | None = None
+    status: str
+    currentStage: str
+    stageStatus: str
+    stages: list[StageInfo]
+    events: list[RunEventResponse]
+    createdAt: datetime
+    updatedAt: datetime | None = None
+    completedAt: datetime | None = None
+    cancelledAt: datetime | None = None
+
+
+class DevRunSummaryResponse(BaseModel):
+    id: str
+    type: str
+    title: str
+    status: str
+    currentStage: str
+    stageStatus: str
+    createdAt: datetime
+
+
+class AddRunEventRequest(BaseModel):
+    stage: str | None = None
+    eventType: str
+    payload: dict = Field(default_factory=dict)

@@ -12,7 +12,9 @@ from inkdesk_server.core.config import Settings, get_settings
 from inkdesk_server.db import get_db, init_db, session_scope
 from inkdesk_server.models import User
 from inkdesk_server.research import ResearchWorkspaceService, get_research_service
+from inkdesk_server.run_service import RunService
 from inkdesk_server.schemas import (
+    AddRunEventRequest,
     ApiErrorResponse,
     AskBriefingResponse,
     AskRequest,
@@ -21,15 +23,18 @@ from inkdesk_server.schemas import (
     AuthLoginRequest,
     AuthLoginResponse,
     AuthMeResponse,
+    CreateDevRunRequest,
     CreateSourceRequest,
+    DevRunResponse,
+    DevRunSummaryResponse,
     ResearchDashboardResponse,
     ReviewDecisionResponse,
     ReviewItemResponse,
     SourceResponse,
-    VaultInitializeRequest,
-    VaultStatusResponse,
     TopicDetailResponse,
     TopicSummaryResponse,
+    VaultInitializeRequest,
+    VaultStatusResponse,
     WebRawImportRequest,
 )
 from inkdesk_server.security import ApiError, InvalidCredentialsError, OwnerSessionService, ResourceNotFoundError, VerifiedOwnerSession, get_current_workspace, get_session_service, require_owner, verify_password
@@ -272,6 +277,60 @@ def create_app() -> FastAPI:
         settings: Annotated[Settings, Depends(get_settings)],
     ):
         return get_research_service(db, settings).create_ask_writeback_proposal(ask_turn_id)
+
+    @app.post("/api/runs", response_model=DevRunResponse, status_code=201)
+    def run_create(
+        request: CreateDevRunRequest,
+        owner: Annotated[VerifiedOwnerSession, Depends(require_owner)],
+        db: Annotated[Session, Depends(get_db)],
+        settings: Annotated[Settings, Depends(get_settings)],
+    ):
+        workspace = get_current_workspace(db, owner.username)
+        return RunService(db).create_run(
+            workspace.id, request.type, request.title, request.goal, request.repoContext,
+        )
+
+    @app.get("/api/runs", response_model=list[DevRunSummaryResponse])
+    def run_list(
+        owner: Annotated[VerifiedOwnerSession, Depends(require_owner)],
+        db: Annotated[Session, Depends(get_db)],
+        settings: Annotated[Settings, Depends(get_settings)],
+    ):
+        workspace = get_current_workspace(db, owner.username)
+        return RunService(db).get_runs(workspace.id)
+
+    @app.get("/api/runs/{run_id}", response_model=DevRunResponse)
+    def run_detail(
+        run_id: str,
+        owner: Annotated[VerifiedOwnerSession, Depends(require_owner)],
+        db: Annotated[Session, Depends(get_db)],
+        settings: Annotated[Settings, Depends(get_settings)],
+    ):
+        workspace = get_current_workspace(db, owner.username)
+        return RunService(db).get_run(run_id, workspace.id)
+
+    @app.post("/api/runs/{run_id}/events", response_model=DevRunResponse)
+    def run_add_event(
+        run_id: str,
+        request: AddRunEventRequest,
+        owner: Annotated[VerifiedOwnerSession, Depends(require_owner)],
+        db: Annotated[Session, Depends(get_db)],
+        settings: Annotated[Settings, Depends(get_settings)],
+    ):
+        workspace = get_current_workspace(db, owner.username)
+        return RunService(db).add_event(
+            run_id, request.stage, request.eventType, request.payload, workspace.id,
+        )
+
+    @app.post("/api/runs/{run_id}/cancel", response_model=DevRunResponse)
+    def run_cancel(
+        run_id: str,
+        owner: Annotated[VerifiedOwnerSession, Depends(require_owner)],
+        db: Annotated[Session, Depends(get_db)],
+        settings: Annotated[Settings, Depends(get_settings)],
+    ):
+        workspace = get_current_workspace(db, owner.username)
+        return RunService(db).cancel_run(run_id, workspace.id)
 
     return app
 

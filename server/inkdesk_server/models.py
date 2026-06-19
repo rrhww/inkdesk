@@ -199,6 +199,40 @@ class RetrievalChunk(Base):
     workspace: Mapped[Workspace] = relationship()
 
 
+class DevRun(Base):
+    __tablename__ = "dev_runs"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    workspace_id: Mapped[str] = mapped_column(String(64), ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False)
+    type: Mapped[str] = mapped_column(String(20), nullable=False)
+    title: Mapped[str] = mapped_column(String(240), nullable=False)
+    goal: Mapped[str] = mapped_column(Text, nullable=False)
+    repo_context: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="active")
+    current_stage: Mapped[str] = mapped_column(String(20), nullable=False, default="context")
+    stage_status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    cancelled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    workspace: Mapped[Workspace] = relationship()
+    events: Mapped[list["RunEvent"]] = relationship(back_populates="run", cascade="all, delete-orphan", order_by="RunEvent.created_at")
+
+
+class RunEvent(Base):
+    __tablename__ = "run_events"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    run_id: Mapped[str] = mapped_column(String(64), ForeignKey("dev_runs.id", ondelete="CASCADE"), nullable=False)
+    event_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    stage: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    payload_json: Mapped[str] = mapped_column(Text, nullable=False, default="{}")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+    run: Mapped[DevRun] = relationship(back_populates="events")
+
+
 class AskTurn(Base):
     __tablename__ = "ask_turns"
 
