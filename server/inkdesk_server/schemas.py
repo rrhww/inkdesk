@@ -386,3 +386,23 @@ class DepositResponse(BaseModel):
     status: str
     source: str
     isNew: bool = True
+
+
+class HealthFinding(BaseModel):
+    type: str
+    severity: str
+    page: str
+    detail: str
+
+
+class HealthSummary(BaseModel):
+    totalPages: int
+    brokenLinkCount: int
+    orphanPageCount: int
+    missingFrontmatterCount: int
+    missingSourceCount: int
+
+
+class HealthResponse(BaseModel):
+    summary: HealthSummary
+    findings: list[HealthFinding]

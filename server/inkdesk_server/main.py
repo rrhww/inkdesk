@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from inkdesk_server.core.config import Settings, get_settings
 from inkdesk_server.db import get_db, init_db, session_scope
 from inkdesk_server.deposit_service import DepositService
+from inkdesk_server.health_service import HealthService
 from inkdesk_server.models import User
 from inkdesk_server.vault import VaultService
 from inkdesk_server.research import ResearchWorkspaceService, get_research_service
@@ -31,6 +32,7 @@ from inkdesk_server.schemas import (
     DepositResponse,
     DevRunResponse,
     DevRunSummaryResponse,
+    HealthResponse,
     ResearchDashboardResponse,
     ReviewDecisionResponse,
     ReviewItemResponse,
@@ -359,6 +361,14 @@ def create_app() -> FastAPI:
         else:
             response.status_code = 201
         return result
+
+    @app.get("/api/health", response_model=HealthResponse)
+    def health_check(
+        _: Annotated[VerifiedOwnerSession, Depends(require_owner)],
+        settings: Annotated[Settings, Depends(get_settings)],
+    ):
+        service = HealthService(settings, VaultService(settings))
+        return service.scan()
 
     return app
 

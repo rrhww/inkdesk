@@ -56,8 +56,8 @@ class VaultService:
 
         return {
             "initialized": kb_meta_exists and dirs_created,
-            "vault_type": vault_type,
-            "shared_dirs_exist": dirs_created,
+            "vaultType": vault_type,
+            "sharedDirsExist": dirs_created,
         }
 
     def write_raw_source(self, imported_at: datetime, title: str, source_id: str, content: str) -> VaultWriteResult:
