@@ -12,7 +12,7 @@ from inkdesk_server.core.config import Settings, get_settings
 from inkdesk_server.db import get_db, init_db, session_scope
 from inkdesk_server.deposit_service import DepositService
 from inkdesk_server.health_service import HealthService
-from inkdesk_server.mcp_server import build_mcp_server
+from inkdesk_server.mcp import build_mcp_server
 from inkdesk_server.models import User
 from inkdesk_server.vault import VaultService
 from inkdesk_server.research import ResearchWorkspaceService, get_research_service
