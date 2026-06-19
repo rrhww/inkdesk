@@ -13,7 +13,7 @@ from inkdesk_server.db import get_db, init_db, session_scope
 from inkdesk_server.deposit_service import DepositService
 from inkdesk_server.health_service import HealthService
 from inkdesk_server.mcp import build_mcp_server
-from inkdesk_server.models import User
+from inkdesk_server.models import CompileTask, CompileStep, Source, User
 from inkdesk_server.vault import VaultService
 from inkdesk_server.research import ResearchWorkspaceService, get_research_service
 from inkdesk_server.run_service import RunService
@@ -58,6 +58,11 @@ def create_app() -> FastAPI:
     mcp_app = mcp.streamable_http_app()  # 创建 session_manager
     session_manager = mcp.session_manager
 
+    # --- 编译后台 Worker ---
+    from inkdesk_server.compile_worker import get_compile_worker
+    compile_worker = get_compile_worker(settings)
+    compile_worker.start()
+
     @asynccontextmanager
     async def app_lifespan(app: FastAPI):
         init_db()
@@ -65,6 +70,7 @@ def create_app() -> FastAPI:
             get_research_service(db, settings).bootstrap_seed_data()
         async with session_manager.run():
             yield
+        compile_worker.stop()
 
     app = FastAPI(title="Inkdesk Python Server", version="0.1.0", lifespan=app_lifespan)
 
@@ -374,6 +380,87 @@ def create_app() -> FastAPI:
     ):
         service = HealthService(settings, VaultService(settings))
         return service.scan()
+
+    # --- 编译流水线 ---
+
+    @app.post("/api/raw/{source_id}/compile", status_code=202)
+    def raw_compile(
+        source_id: str,
+        _: Annotated[VerifiedOwnerSession, Depends(require_owner)],
+        db: Annotated[Session, Depends(get_db)],
+        settings: Annotated[Settings, Depends(get_settings)],
+    ):
+        source = db.get(Source, source_id)
+        if source is None:
+            raise ResourceNotFoundError(f"Source not found: {source_id}")
+        if source.status == "WIKI_LINKED":
+            raise ApiError(409, "SOURCE_ALREADY_LINKED", "Source is already linked to a wiki topic.")
+        service = get_research_service(db, settings)
+        task = service._enqueue_compile_for_source(source)
+        db.commit()
+        is_new = task.status == "PENDING"
+        data = service._to_compile_task_response(task)
+        data["isNew"] = is_new
+        return data
+
+    @app.get("/api/compile/queue")
+    def compile_queue(
+        _: Annotated[VerifiedOwnerSession, Depends(require_owner)],
+        db: Annotated[Session, Depends(get_db)],
+        settings: Annotated[Settings, Depends(get_settings)],
+    ):
+        from sqlalchemy import select, desc
+        service = get_research_service(db, settings)
+        workspace = service.require_workspace()
+        tasks = db.scalars(
+            select(CompileTask)
+            .where(CompileTask.workspace_id == workspace.id)
+            .order_by(desc(CompileTask.created_at))
+            .limit(50)
+        ).all()
+        return [service._to_compile_task_summary(t) for t in tasks]
+
+    @app.get("/api/compile/{task_id}")
+    def compile_task_status(
+        task_id: str,
+        _: Annotated[VerifiedOwnerSession, Depends(require_owner)],
+        db: Annotated[Session, Depends(get_db)],
+        settings: Annotated[Settings, Depends(get_settings)],
+    ):
+        task = db.get(CompileTask, task_id)
+        if task is None:
+            raise ResourceNotFoundError(f"Compile task not found: {task_id}")
+        return get_research_service(db, settings)._to_compile_task_response(task)
+
+    @app.post("/api/compile/{task_id}/retry", status_code=202)
+    def compile_retry(
+        task_id: str,
+        _: Annotated[VerifiedOwnerSession, Depends(require_owner)],
+        db: Annotated[Session, Depends(get_db)],
+        settings: Annotated[Settings, Depends(get_settings)],
+    ):
+        from inkdesk_server.compile_worker import get_compile_worker
+        task = db.get(CompileTask, task_id)
+        if task is None:
+            raise ResourceNotFoundError(f"Compile task not found: {task_id}")
+        if task.status != "FAILED":
+            raise ApiError(409, "TASK_NOT_FAILED", "Only FAILED tasks can be retried.")
+        for step in task.steps:
+            step.status = "PENDING"
+            step.error_message = None
+            step.started_at = None
+            step.completed_at = None
+            step.payload_json = "{}"
+            db.add(step)
+        task.status = "PENDING"
+        task.error_message = None
+        task.started_at = None
+        task.completed_at = None
+        db.add(task)
+        db.flush()
+        get_compile_worker(settings).enqueue(task.id)
+        db.commit()
+        return get_research_service(db, settings)._to_compile_task_response(task)
 
     # --- MCP Server（挂载在 lifespan 管理的 mcp_app）---
     app.mount("/mcp", mcp_app)

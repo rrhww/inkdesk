@@ -1027,15 +1027,21 @@ def test_compile_review_persists_structured_agent_payload_with_chunk_backlinks(t
             )
 
         service.agent_runtime.compile = fake_compile
-        created = service.create_source(
-            "TEXT",
-            "外部策略补料 003",
-            None,
-            "新的材料强调产品应该聚焦 raw、ingest、wiki 的研究闭环。",
-            "补料进一步说明，系统的核心工作是导入网页、PDF 与旧笔记，再通过 ingest 转成可审阅的 wiki 记忆。",
+        from datetime import UTC, datetime
+        from inkdesk_server.importers import ImportedRawMaterial
+        now = datetime.now(UTC)
+        material = ImportedRawMaterial(
+            kind="TEXT",
+            title="外部策略补料 003",
+            locator=None,
+            excerpt="新的材料强调产品应该聚焦 raw、ingest、wiki 的研究闭环。",
+            body="补料进一步说明，系统的核心工作是导入网页、PDF 与旧笔记，再通过 ingest 转成可审阅的 wiki 记忆。",
         )
+        source = service._create_source_from_material(material, now)
+        service._compile_and_create_review(source)
+        service.db.commit()
 
-        review = next(item for item in service.get_review_items() if item.sourceId == created.id)
+        review = next(item for item in service.get_review_items() if item.sourceId == source.id)
 
         assert review.targetTopicId == topic_id
         assert review.proposalPayload.topicDecision.decision == "PATCH"
@@ -1095,14 +1101,20 @@ def test_accept_review_applies_all_structured_claims_and_open_questions_to_topic
             )
 
         service.agent_runtime.compile = fake_compile
-        created = service.create_source(
-            "TEXT",
-            "外部策略补料 004",
-            None,
-            "新的材料强调产品应该聚焦 raw、ingest、wiki 的研究闭环。",
-            "补料进一步说明，系统的核心工作是导入网页、PDF 与旧笔记，再通过 ingest 转成可审阅的 wiki 记忆。",
+        from datetime import UTC, datetime
+        from inkdesk_server.importers import ImportedRawMaterial
+        now = datetime.now(UTC)
+        material = ImportedRawMaterial(
+            kind="TEXT",
+            title="外部策略补料 004",
+            locator=None,
+            excerpt="新的材料强调产品应该聚焦 raw、ingest、wiki 的研究闭环。",
+            body="补料进一步说明，系统的核心工作是导入网页、PDF 与旧笔记，再通过 ingest 转成可审阅的 wiki 记忆。",
         )
-        review = next(item for item in service.get_review_items() if item.sourceId == created.id)
+        source = service._create_source_from_material(material, now)
+        service._compile_and_create_review(source)
+        service.db.commit()
+        review = next(item for item in service.get_review_items() if item.sourceId == source.id)
 
         service.accept_review(review.id)
         topic = service.get_topic(topic_id)
@@ -1157,14 +1169,21 @@ def test_accept_topic_create_review_applies_structured_payload_to_new_topic(temp
             )
 
         service.agent_runtime.compile = fake_compile
-        created = service.create_source(
-            "TEXT",
-            "Agent-native 研究记忆补料",
-            None,
-            "新的材料强调 Ask 与 Compile 应该构成双核心。",
-            "补料进一步说明 canonical knowledge 必须经过 review 才能进入 wiki。",
+        service.ensure_research_seed_state()
+        from datetime import UTC, datetime
+        from inkdesk_server.importers import ImportedRawMaterial
+        now = datetime.now(UTC)
+        material = ImportedRawMaterial(
+            kind="TEXT",
+            title="Agent-native 研究记忆补料",
+            locator=None,
+            excerpt="新的材料强调 Ask 与 Compile 应该构成双核心。",
+            body="补料进一步说明 canonical knowledge 必须经过 review 才能进入 wiki。",
         )
-        review = next(item for item in service.get_review_items() if item.sourceId == created.id)
+        source = service._create_source_from_material(material, now)
+        service._compile_and_create_review(source)
+        service.db.commit()
+        review = next(item for item in service.get_review_items() if item.sourceId == source.id)
 
         decision = service.accept_review(review.id)
         topic = service.get_topic(decision.topicId)

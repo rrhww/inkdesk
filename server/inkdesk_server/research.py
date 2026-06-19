@@ -266,6 +266,13 @@ class ResearchWorkspaceService:
         self.db.add(review)
         self.db.commit()
         self.db.expire_all()
+
+        # 同步 wiki 索引和日志
+        self.vault_service.update_wiki_index(self._topics())
+        self.vault_service.append_log_entry(
+            f"ACCEPT | {review.kind} | {topic.title}"
+        )
+
         return ReviewDecisionResponse(reviewId=review.id, status=review.status, topicId=topic.id)
 
     def reject_review(self, review_id: str) -> ReviewDecisionResponse:
@@ -612,7 +619,7 @@ class ResearchWorkspaceService:
     def create_imported_source(self, material: ImportedRawMaterial) -> SourceResponse:
         now = datetime.now(UTC)
         source = self._create_source_from_material(material, now)
-        self.ensure_review_for_source(source)
+        self._enqueue_compile_for_source(source)
         self.db.commit()
         return self.to_source_response(source)
 
@@ -638,6 +645,9 @@ class ResearchWorkspaceService:
         return source
 
     def ensure_review_for_source(self, source: Source, topics: list[Topic] | None = None) -> None:
+        self._compile_and_create_review(source, topics)
+
+    def _compile_and_create_review(self, source: Source, topics: list[Topic] | None = None) -> None:
         available_topics = topics or self._topics()
         available_sources = self._sources()
         matched_topic = self.find_matching_topic(source, available_topics)
@@ -2452,6 +2462,83 @@ class ResearchWorkspaceService:
 
     def new_id(self, prefix: str) -> str:
         return f"{prefix}-{uuid4().hex}"
+
+    def _enqueue_compile_for_source(self, source: Source):
+        from inkdesk_server.models import CompileTask, CompileStep
+        from inkdesk_server.compile_worker import COMPILE_STEP_NAMES, get_compile_worker
+
+        proposed_vault_path = self.vault_service.wiki_path_for_slug(self.slugify(source.title))
+        content_hash = self.vault_service.content_hash(
+            f"compile|{source.id}|{proposed_vault_path}|{source.content_hash}"
+        )
+        existing = self.db.scalar(
+            select(CompileTask).where(
+                CompileTask.content_hash == content_hash,
+                CompileTask.status.in_(["PENDING", "RUNNING"]),
+            )
+        )
+        if existing is not None:
+            return existing
+
+        workspace = self.require_workspace()
+        now = datetime.now(UTC)
+        task = CompileTask(
+            id=self.new_id("ct"),
+            workspace_id=workspace.id,
+            source_id=source.id,
+            status="PENDING",
+            content_hash=content_hash,
+            created_at=now,
+        )
+        self.db.add(task)
+        self.db.flush()
+
+        for idx, step_name in enumerate(COMPILE_STEP_NAMES):
+            step = CompileStep(
+                id=self.new_id("cs"),
+                compile_task_id=task.id,
+                step_name=step_name,
+                sort_order=idx,
+                status="PENDING",
+            )
+            self.db.add(step)
+
+        self.db.flush()
+        get_compile_worker(self.settings).enqueue(task.id)
+        return task
+
+    def _to_compile_task_response(self, task) -> dict:
+        return {
+            "id": task.id,
+            "sourceId": task.source_id,
+            "status": task.status,
+            "errorMessage": task.error_message,
+            "createdAt": task.created_at.isoformat(),
+            "startedAt": task.started_at.isoformat() if task.started_at else None,
+            "completedAt": task.completed_at.isoformat() if task.completed_at else None,
+            "steps": [
+                {
+                    "id": step.id,
+                    "stepName": step.step_name,
+                    "sortOrder": step.sort_order,
+                    "status": step.status,
+                    "errorMessage": step.error_message,
+                    "startedAt": step.started_at.isoformat() if step.started_at else None,
+                    "completedAt": step.completed_at.isoformat() if step.completed_at else None,
+                }
+                for step in sorted(task.steps, key=lambda s: s.sort_order)
+            ],
+        }
+
+    def _to_compile_task_summary(self, task) -> dict:
+        return {
+            "id": task.id,
+            "sourceId": task.source_id,
+            "sourceTitle": task.source.title if task.source else None,
+            "status": task.status,
+            "createdAt": task.created_at.isoformat(),
+            "completedAt": task.completed_at.isoformat() if task.completed_at else None,
+        }
 
 
 def get_research_service(db: Session, settings: Settings) -> ResearchWorkspaceService:

@@ -406,3 +406,35 @@ class HealthSummary(BaseModel):
 class HealthResponse(BaseModel):
     summary: HealthSummary
     findings: list[HealthFinding]
+
+
+# ── 编译任务 ──
+
+class CompileStepResponse(BaseModel):
+    id: str
+    stepName: str
+    sortOrder: int
+    status: str
+    errorMessage: str | None = None
+    startedAt: datetime | None = None
+    completedAt: datetime | None = None
+
+
+class CompileTaskResponse(BaseModel):
+    id: str
+    sourceId: str | None = None
+    status: str
+    errorMessage: str | None = None
+    createdAt: datetime
+    startedAt: datetime | None = None
+    completedAt: datetime | None = None
+    steps: list[CompileStepResponse] = Field(default_factory=list)
+
+
+class CompileTaskSummaryResponse(BaseModel):
+    id: str
+    sourceId: str | None = None
+    sourceTitle: str | None = None
+    status: str
+    createdAt: datetime
+    completedAt: datetime | None = None

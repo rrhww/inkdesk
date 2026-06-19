@@ -46,6 +46,24 @@ TOPIC_CLAIMS_SCHEMA_UPGRADES = (
     ("last_used_at", "ALTER TABLE topic_claims ADD COLUMN last_used_at TIMESTAMP NULL"),
 )
 
+COMPILE_TASKS_SCHEMA_UPGRADES = (
+    ("content_hash", "ALTER TABLE compile_tasks ADD COLUMN content_hash VARCHAR(128)"),
+    ("error_message", "ALTER TABLE compile_tasks ADD COLUMN error_message TEXT"),
+    ("started_at", "ALTER TABLE compile_tasks ADD COLUMN started_at TIMESTAMP NULL"),
+    ("completed_at", "ALTER TABLE compile_tasks ADD COLUMN completed_at TIMESTAMP NULL"),
+)
+
+COMPILE_STEPS_SCHEMA_UPGRADES = (
+    ("compile_task_id", "ALTER TABLE compile_steps ADD COLUMN compile_task_id VARCHAR(64) REFERENCES compile_tasks (id) ON DELETE CASCADE"),
+    ("step_name", "ALTER TABLE compile_steps ADD COLUMN step_name VARCHAR(20) NOT NULL DEFAULT 'INSIGHT'"),
+    ("sort_order", "ALTER TABLE compile_steps ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0"),
+    ("status", "ALTER TABLE compile_steps ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'PENDING'"),
+    ("error_message", "ALTER TABLE compile_steps ADD COLUMN error_message TEXT"),
+    ("payload_json", "ALTER TABLE compile_steps ADD COLUMN payload_json TEXT NOT NULL DEFAULT '{}'"),
+    ("started_at", "ALTER TABLE compile_steps ADD COLUMN started_at TIMESTAMP NULL"),
+    ("completed_at", "ALTER TABLE compile_steps ADD COLUMN completed_at TIMESTAMP NULL"),
+)
+
 
 @lru_cache(maxsize=1)
 def get_engine():
@@ -108,6 +126,22 @@ def upgrade_existing_schema(engine) -> None:
                     continue
                 connection.exec_driver_sql(ddl)
                 topic_claim_columns.add(column_name)
+
+        if inspector.has_table("compile_tasks"):
+            task_columns = {column["name"] for column in inspector.get_columns("compile_tasks")}
+            for column_name, ddl in COMPILE_TASKS_SCHEMA_UPGRADES:
+                if column_name in task_columns:
+                    continue
+                connection.exec_driver_sql(ddl)
+                task_columns.add(column_name)
+
+        if inspector.has_table("compile_steps"):
+            step_columns = {column["name"] for column in inspector.get_columns("compile_steps")}
+            for column_name, ddl in COMPILE_STEPS_SCHEMA_UPGRADES:
+                if column_name in step_columns:
+                    continue
+                connection.exec_driver_sql(ddl)
+                step_columns.add(column_name)
 
 
 def get_db() -> Session:

@@ -92,6 +92,39 @@ class VaultService:
     def exists(self, relative_path: str) -> bool:
         return self.resolve(relative_path).exists()
 
+    def update_wiki_index(self, topics: list) -> None:
+        """根据当前 wiki 文件列表重建 wiki/index.md"""
+        wiki_files = self.list_markdown_files("wiki")
+        topic_files = [
+            f for f in wiki_files
+            if f not in ("wiki/index.md", "wiki/log.md")
+        ]
+        timestamp = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S UTC")
+        lines = [
+            "# 知识库目录",
+            "",
+            f"## 页面列表（{len(topic_files)} 页）",
+            "",
+        ]
+        for path in sorted(topic_files):
+            display = path.replace("wiki/", "").replace(".md", "")
+            lines.append(f"- [[{display}]]")
+        lines.extend([
+            "",
+            f"最后更新：{timestamp}",
+            "",
+        ])
+        self.write_vault_file("wiki/index.md", "\n".join(lines))
+
+    def append_log_entry(self, entry: str) -> None:
+        """向 wiki/log.md 追加一条时间戳条目"""
+        timestamp = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S UTC")
+        log_line = f"- {timestamp} | {entry}"
+        existing = ""
+        if self.exists("wiki/log.md"):
+            existing = self.read_vault_file("wiki/log.md").rstrip()
+        self.write_vault_file("wiki/log.md", existing + "\n" + log_line + "\n")
+
     def content_hash(self, content: str) -> str:
         return sha256(content.encode("utf-8")).hexdigest()
 

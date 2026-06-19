@@ -265,3 +265,40 @@ class AskTurn(Base):
 
     workspace: Mapped[Workspace] = relationship()
     topic: Mapped[Topic | None] = relationship()
+
+
+class CompileTask(Base):
+    __tablename__ = "compile_tasks"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    workspace_id: Mapped[str] = mapped_column(String(64), ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False)
+    source_id: Mapped[str | None] = mapped_column(String(64), ForeignKey("sources.id", ondelete="SET NULL"), nullable=True)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="PENDING")
+    content_hash: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    workspace: Mapped[Workspace] = relationship()
+    source: Mapped[Source | None] = relationship()
+    steps: Mapped[list["CompileStep"]] = relationship(
+        back_populates="compile_task", cascade="all, delete-orphan",
+        order_by="CompileStep.sort_order",
+    )
+
+
+class CompileStep(Base):
+    __tablename__ = "compile_steps"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    compile_task_id: Mapped[str] = mapped_column(String(64), ForeignKey("compile_tasks.id", ondelete="CASCADE"), nullable=False)
+    step_name: Mapped[str] = mapped_column(String(20), nullable=False)
+    sort_order: Mapped[int] = mapped_column(Integer, nullable=False)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="PENDING")
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    payload_json: Mapped[str] = mapped_column(Text, nullable=False, default="{}")
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    compile_task: Mapped[CompileTask] = relationship(back_populates="steps")
