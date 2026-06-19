@@ -310,3 +310,57 @@ export type VaultStatus = {
 export type VaultInitializeRequest = {
   vaultType: string;
 };
+
+export type DevRunType = "PRD" | "BUG" | "REFACTOR";
+
+export type DevRunStatus = "draft" | "active" | "awaiting_review" | "blocked" | "completed" | "cancelled";
+
+export type DevRunStageStatus = "pending" | "active" | "awaiting_review" | "completed" | "blocked" | "skipped";
+
+export type DevRunStage = {
+  name: string;
+  status: DevRunStageStatus;
+};
+
+export type DevRunEvent = {
+  id: string;
+  eventType: string;
+  stage?: string | null;
+  payload: Record<string, unknown>;
+  createdAt: string;
+};
+
+export type DevRun = {
+  id: string;
+  workspaceId: string;
+  type: DevRunType;
+  title: string;
+  goal: string;
+  repoContext?: string | null;
+  status: DevRunStatus;
+  currentStage: string;
+  stageStatus: DevRunStageStatus;
+  stages: DevRunStage[];
+  events: DevRunEvent[];
+  createdAt: string;
+  updatedAt?: string | null;
+  completedAt?: string | null;
+  cancelledAt?: string | null;
+};
+
+export type DevRunSummary = {
+  id: string;
+  type: DevRunType;
+  title: string;
+  status: DevRunStatus;
+  currentStage: string;
+  stageStatus: DevRunStageStatus;
+  createdAt: string;
+};
+
+export type CreateDevRunRequest = {
+  type: DevRunType;
+  title: string;
+  goal: string;
+  repoContext?: string;
+};

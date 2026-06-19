@@ -46,7 +46,8 @@ describe("workbench components", () => {
 
     expect(screen.getByRole("heading", { name: "资料" })).toBeInTheDocument();
     expect(screen.getByText(/raw 材料进入系统后的第一站/)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "问答" })).toHaveAttribute("href", "/app");
+    expect(screen.getByRole("link", { name: "任务" })).toHaveAttribute("href", "/app");
+    expect(screen.getByRole("link", { name: "问答" })).toHaveAttribute("href", "/app/ask");
     expect(screen.getByRole("link", { name: "资料" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "审阅" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "知识库" })).toBeInTheDocument();

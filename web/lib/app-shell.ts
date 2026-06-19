@@ -1,7 +1,8 @@
 import type { ResearchAskHistoryEntry, ResearchDashboard } from "@/lib/types";
 
 export const PRIMARY_SECTIONS = [
-  { href: "/app", label: "问答", matchers: ["/app", "/app/ask"], exact: true },
+  { href: "/app", label: "任务", matchers: ["/app"], exact: true },
+  { href: "/app/ask", label: "问答", matchers: ["/app/ask"] },
   { href: "/app/raw", label: "资料", matchers: ["/app/raw"] },
   { href: "/app/ingest", label: "审阅", matchers: ["/app/ingest"] },
   { href: "/app/wiki", label: "知识库", matchers: ["/app/wiki"] }
@@ -73,6 +74,17 @@ export function getAppRouteChrome(pathname: string, snapshot: ResearchDashboard)
   }
 
   if (pathname === "/app" || pathname.startsWith("/app/ask")) {
+    if (pathname === "/app") {
+      return {
+        title: "研发任务",
+        subtitle: "Dev Run Console：从 PRD / bug / 改造任务出发，沿着 context → solution → review → coding → testing → deposit 推进，每个阶段的输出都沉淀到知识库。",
+        contextItems: [
+          { label: "当前入口", value: "Dev Run Console" },
+          { label: "知识缺口", value: `${snapshot.health.knowledgeGapCount} 个` },
+          { label: "待审阅", value: `${snapshot.health.reviewBacklogCount} 条` }
+        ]
+      };
+    }
     return {
       title: "问答",
       subtitle: "Ask 现在是主入口：先暴露知识缺口，再指向下一步安全动作，回答仍然保持 vault-first 和显式联网补料纪律。",

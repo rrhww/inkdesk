@@ -11,15 +11,15 @@ describe("app shell primitives", () => {
   });
 
   it("exposes Chinese primary sections in product order", () => {
-    expect(PRIMARY_SECTIONS.map((item) => item.label)).toEqual(["问答", "资料", "审阅", "知识库"]);
-    expect(PRIMARY_SECTIONS.map((item) => item.href)).toEqual(["/app", "/app/raw", "/app/ingest", "/app/wiki"]);
+    expect(PRIMARY_SECTIONS.map((item) => item.label)).toEqual(["任务", "问答", "资料", "审阅", "知识库"]);
+    expect(PRIMARY_SECTIONS.map((item) => item.href)).toEqual(["/app", "/app/ask", "/app/raw", "/app/ingest", "/app/wiki"]);
     expect(PRIMARY_SECTIONS.flatMap((item) => item.matchers)).not.toEqual(
       expect.arrayContaining(["/app/inbox", "/app/sources", "/app/review", "/app/topics"])
     );
   });
 
-  it("matches /app and /app/ask as the same ask-first primary section", () => {
-    expect(getPrimarySectionForPathname("/app")?.label).toBe("问答");
+  it("matches /app and /app/ask as separate sections", () => {
+    expect(getPrimarySectionForPathname("/app")?.label).toBe("任务");
     expect(getPrimarySectionForPathname("/app/ask")?.label).toBe("问答");
     expect(getPrimarySectionForPathname("/app/raw")?.label).toBe("资料");
     expect(getPrimarySectionForPathname("/app/wiki/topic-001")?.label).toBe("知识库");
@@ -28,9 +28,9 @@ describe("app shell primitives", () => {
 
   it("derives route-specific header chrome from the current snapshot", () => {
     expect(getAppRouteChrome("/app", researchDashboardFixture)).toMatchObject({
-      title: "问答",
-      subtitle: expect.stringContaining("Ask 现在是主入口"),
-      contextItems: expect.arrayContaining([{ label: "当前模式", value: "Ask-first" }])
+      title: "研发任务",
+      subtitle: expect.stringContaining("Dev Run Console"),
+      contextItems: expect.arrayContaining([{ label: "当前入口", value: "Dev Run Console" }])
     });
     expect(getAppRouteChrome("/app/raw", researchDashboardFixture)).toMatchObject({
       title: "资料",

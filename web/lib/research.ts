@@ -10,6 +10,9 @@ import {
 } from "@/lib/mock/research-fixtures";
 import { fetchInkdeskJson, hasApiBaseUrl, InkdeskApiError, postInkdeskJson } from "@/lib/server-api";
 import type {
+  CreateDevRunRequest,
+  DevRun,
+  DevRunSummary,
   ResearchAskRequest,
   ResearchAskBriefing,
   ResearchAskResponse,
@@ -168,4 +171,19 @@ export async function getVaultStatus(ownerSession?: string): Promise<VaultStatus
 
 export async function initializeVault(request: VaultInitializeRequest, ownerSession?: string): Promise<VaultStatus> {
   return postInkdeskJson<VaultStatus>("/vault/initialize", request, { ownerSession });
+}
+
+export async function getDevRuns(ownerSession?: string): Promise<DevRunSummary[]> {
+  return withResearchFallback(
+    () => fetchInkdeskJson<DevRunSummary[]>("/runs", { ownerSession }),
+    () => []
+  );
+}
+
+export async function getDevRun(runId: string, ownerSession?: string): Promise<DevRun> {
+  return fetchInkdeskJson<DevRun>(`/runs/${runId}`, { ownerSession });
+}
+
+export async function createDevRun(request: CreateDevRunRequest, ownerSession?: string): Promise<DevRun> {
+  return postInkdeskJson<DevRun>("/runs", request, { ownerSession });
 }
