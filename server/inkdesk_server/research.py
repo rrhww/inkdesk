@@ -27,7 +27,7 @@ from inkdesk_server.agents import (
 from inkdesk_server.core.config import Settings
 from inkdesk_server.embeddings import EmbeddingService
 from inkdesk_server.importers import ImportedRawMaterial, PdfRawImportService, WebRawImportService
-from inkdesk_server.models import AskTurn, ContentNode, NoteDocument, ReviewItem, RetrievalChunk, Source, Topic, TopicClaim, TopicThreadEntry, User, Workspace
+from inkdesk_server.models import AskTurn, ContentNode, DevRun, NoteDocument, ReviewItem, RetrievalChunk, RunEvent, Source, Topic, TopicClaim, TopicThreadEntry, User, Workspace
 from inkdesk_server.retrieval import RetrievalSelection, RetrievalService, RetrievedCitation
 from inkdesk_server.schemas import (
     AskCitationResponse,
@@ -282,6 +282,14 @@ class ResearchWorkspaceService:
         self.ensure_research_seed_state()
         now = datetime.now(UTC)
         workspace = self.require_workspace()
+
+        # validate run_id if provided — must belong to this workspace
+        run_id = self.blank_to_none(request.runId)
+        if run_id:
+            run = self.db.get(DevRun, run_id)
+            if not run or run.workspace_id != workspace.id:
+                raise ResourceNotFoundError(f"DevRun not found: {run_id}")
+
         question = self.blank_to_fallback(request.question, "现在有什么值得继续追问的内容？")
         mode = self.blank_to_fallback(request.mode, "vault").lower()
         continued_from = None
@@ -372,6 +380,7 @@ class ResearchWorkspaceService:
             parent_ask_turn_id=continued_from.id if continued_from else None,
             thread_root_ask_turn_id=thread_root_ask_turn_id,
             mode=mode,
+            run_id=run_id,
             question=question,
             answer=draft.answer,
             confidence=draft.confidence,
@@ -390,6 +399,18 @@ class ResearchWorkspaceService:
         )
         self.db.add(ask_turn)
         self.db.commit()
+
+        # emit context_ask event if this Ask is linked to a DevRun
+        if run_id:
+            from inkdesk_server.run_service import RunService
+            RunService(self.db).add_event(
+                run_id=run_id,
+                stage="context",
+                event_type="context_ask",
+                payload={"askTurnId": ask_turn_id, "question": question},
+                workspace_id=workspace.id,
+            )
+
         lineage_ask_turn_ids = [turn.id for turn in continued_lineage] + [ask_turn.id]
         return self.to_ask_response(
             ask_turn,
@@ -996,6 +1017,7 @@ class ResearchWorkspaceService:
             id=review.id,
             kind=review.kind,
             proposalKind=review.proposal_kind,
+            status=review.status,
             title=review.title,
             summary=review.summary,
             sourceId=review.source.id if review.source else None,
@@ -2367,10 +2389,13 @@ class ResearchWorkspaceService:
     def decode_proposal_payload(self, raw: str | None) -> ProposalPayloadResponse | None:
         if not raw or not raw.strip():
             return None
-        decoded = json.loads(raw)
-        if not isinstance(decoded, dict) or not decoded:
+        try:
+            decoded = json.loads(raw)
+            if not isinstance(decoded, dict) or not decoded:
+                return None
+            return ProposalPayloadResponse.model_validate(decoded)
+        except Exception:
             return None
-        return ProposalPayloadResponse.model_validate(decoded)
 
     def split_segments(self, value: str | None) -> list[str]:
         if not value or not value.strip():

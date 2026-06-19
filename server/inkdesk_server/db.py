@@ -33,6 +33,10 @@ REVIEW_ITEMS_SCHEMA_UPGRADES = (
     ("proposal_payload_json", "ALTER TABLE review_items ADD COLUMN proposal_payload_json TEXT NOT NULL DEFAULT '{}'"),
 )
 
+ASK_TURNS_V2_UPGRADES = (
+    ("run_id", "ALTER TABLE ask_turns ADD COLUMN run_id VARCHAR(64) REFERENCES dev_runs (id) ON DELETE SET NULL"),
+)
+
 TOPIC_CLAIMS_SCHEMA_UPGRADES = (
     ("evidence_count", "ALTER TABLE topic_claims ADD COLUMN evidence_count INTEGER NOT NULL DEFAULT 0"),
     ("provenance_status", "ALTER TABLE topic_claims ADD COLUMN provenance_status VARCHAR(20) NOT NULL DEFAULT 'unsupported'"),
@@ -79,6 +83,11 @@ def upgrade_existing_schema(engine) -> None:
         else:
             existing_columns = {column["name"] for column in inspector.get_columns("ask_turns")}
             for column_name, ddl in ASK_TURNS_SCHEMA_UPGRADES:
+                if column_name in existing_columns:
+                    continue
+                connection.exec_driver_sql(ddl)
+                existing_columns.add(column_name)
+            for column_name, ddl in ASK_TURNS_V2_UPGRADES:
                 if column_name in existing_columns:
                     continue
                 connection.exec_driver_sql(ddl)

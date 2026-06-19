@@ -116,6 +116,7 @@ class ReviewItemResponse(BaseModel):
     id: str
     kind: str
     proposalKind: str
+    status: str
     title: str
     summary: str
     sourceId: str | None = None
@@ -232,6 +233,7 @@ class AskRequest(BaseModel):
     question: str
     mode: str | None = "vault"
     continueFromAskTurnId: str | None = None
+    runId: str | None = None
 
 
 class AskCitationResponse(BaseModel):
@@ -369,3 +371,18 @@ class AddRunEventRequest(BaseModel):
     stage: str | None = None
     eventType: str
     payload: dict = Field(default_factory=dict)
+
+
+class DepositRequest(BaseModel):
+    source: str
+    runId: str | None = None
+    askTurnId: str | None = None
+    stage: str | None = None
+    payload: dict = Field(default_factory=dict)
+
+
+class DepositResponse(BaseModel):
+    reviewId: str
+    status: str
+    source: str
+    isNew: bool = True

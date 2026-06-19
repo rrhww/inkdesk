@@ -246,6 +246,7 @@ class AskTurn(Base):
         String(64), ForeignKey("ask_turns.id", ondelete="SET NULL"), nullable=True
     )
     mode: Mapped[str] = mapped_column(String(32), nullable=False, default="vault")
+    run_id: Mapped[str | None] = mapped_column(String(64), ForeignKey("dev_runs.id", ondelete="SET NULL"), nullable=True)
     question: Mapped[str] = mapped_column(Text, nullable=False)
     answer: Mapped[str] = mapped_column(Text, nullable=False)
     confidence: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)

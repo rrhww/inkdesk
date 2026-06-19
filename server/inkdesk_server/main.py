@@ -10,7 +10,9 @@ from sqlalchemy.orm import Session
 
 from inkdesk_server.core.config import Settings, get_settings
 from inkdesk_server.db import get_db, init_db, session_scope
+from inkdesk_server.deposit_service import DepositService
 from inkdesk_server.models import User
+from inkdesk_server.vault import VaultService
 from inkdesk_server.research import ResearchWorkspaceService, get_research_service
 from inkdesk_server.run_service import RunService
 from inkdesk_server.schemas import (
@@ -25,6 +27,8 @@ from inkdesk_server.schemas import (
     AuthMeResponse,
     CreateDevRunRequest,
     CreateSourceRequest,
+    DepositRequest,
+    DepositResponse,
     DevRunResponse,
     DevRunSummaryResponse,
     ResearchDashboardResponse,
@@ -331,6 +335,30 @@ def create_app() -> FastAPI:
     ):
         workspace = get_current_workspace(db, owner.username)
         return RunService(db).cancel_run(run_id, workspace.id)
+
+    @app.post("/api/deposits", response_model=DepositResponse)
+    def deposit_create(
+        request: DepositRequest,
+        owner: Annotated[VerifiedOwnerSession, Depends(require_owner)],
+        db: Annotated[Session, Depends(get_db)],
+        settings: Annotated[Settings, Depends(get_settings)],
+        response: Response = None,
+    ):
+        workspace = get_current_workspace(db, owner.username)
+        deposit_service = DepositService(db, VaultService(settings))
+        result = deposit_service.deposit(
+            workspace_id=workspace.id,
+            source=request.source,
+            payload=request.payload,
+            run_id=request.runId,
+            ask_turn_id=request.askTurnId,
+            stage=request.stage,
+        )
+        if not result.isNew:
+            response.status_code = 200
+        else:
+            response.status_code = 201
+        return result
 
     return app
 
