@@ -26,6 +26,8 @@ from inkdesk_server.schemas import (
     ReviewDecisionResponse,
     ReviewItemResponse,
     SourceResponse,
+    VaultInitializeRequest,
+    VaultStatusResponse,
     TopicDetailResponse,
     TopicSummaryResponse,
     WebRawImportRequest,
@@ -79,6 +81,23 @@ def create_app() -> FastAPI:
             "status": "UP",
             "retrieval": get_research_service(db, settings).get_retrieval_health(),
         }
+
+    @app.get("/api/vault/status", response_model=VaultStatusResponse)
+    def vault_status(
+        _: Annotated[VerifiedOwnerSession, Depends(require_owner)],
+        db: Annotated[Session, Depends(get_db)],
+        settings: Annotated[Settings, Depends(get_settings)],
+    ):
+        return get_research_service(db, settings).get_vault_status()
+
+    @app.post("/api/vault/initialize", response_model=VaultStatusResponse)
+    def vault_initialize(
+        request: VaultInitializeRequest,
+        _: Annotated[VerifiedOwnerSession, Depends(require_owner)],
+        db: Annotated[Session, Depends(get_db)],
+        settings: Annotated[Settings, Depends(get_settings)],
+    ):
+        return get_research_service(db, settings).initialize_vault(request.vaultType)
 
     @app.post("/api/auth/login", response_model=AuthLoginResponse)
     def login(

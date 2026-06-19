@@ -300,3 +300,13 @@ export type ResearchAskBriefing = {
   supportingSignals: ResearchAskBriefingSignal[];
   generatedAt: string;
 };
+
+export type VaultStatus = {
+  initialized: boolean;
+  vaultType: string | null;
+  sharedDirsExist: boolean;
+};
+
+export type VaultInitializeRequest = {
+  vaultType: string;
+};

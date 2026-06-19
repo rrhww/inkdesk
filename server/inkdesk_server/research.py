@@ -189,6 +189,13 @@ class ResearchWorkspaceService:
 
     def get_retrieval_health(self) -> dict[str, object]:
         return self.retrieval_service.health()
+    
+    def get_vault_status(self) -> dict:
+        return self.vault_service.get_status()
+
+    def initialize_vault(self, vault_type: str) -> dict:
+        self.vault_service.ensure_initialized(vault_type=vault_type)
+        return self.vault_service.get_status()
 
     def get_topics(self) -> list[TopicSummaryResponse]:
         self.ensure_research_seed_state()
@@ -544,6 +551,13 @@ class ResearchWorkspaceService:
             self.ensure_claim_review_for_topic(topic.id)
             self.ensure_conflict_review_for_topic(topic.id)
         self.db.commit()
+
+    def get_vault_status(self) -> dict:
+        return self.vault_service.get_status()
+
+    def initialize_vault(self, vault_type: str) -> dict:
+        self.vault_service.ensure_initialized(vault_type=vault_type)
+        return self.vault_service.get_status()
 
     def import_legacy_notes_as_sources(self) -> None:
         workspace = self.require_workspace()

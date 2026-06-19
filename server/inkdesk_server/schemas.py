@@ -9,6 +9,15 @@ class ApiErrorResponse(BaseModel):
     code: str
     message: str
 
+class VaultStatusResponse(BaseModel):
+    initialized: bool
+    vaultType: str | None = None
+    sharedDirsExist: bool
+
+
+class VaultInitializeRequest(BaseModel):
+    vaultType: str
+
 
 class AuthLoginRequest(BaseModel):
     email: str
