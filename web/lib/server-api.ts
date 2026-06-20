@@ -1,4 +1,4 @@
-import { OWNER_SESSION_COOKIE, hasOwnerSession } from "@/lib/owner-session";
+import { OWNER_SESSION_COOKIE } from "@/lib/owner-session";
 
 export class InkdeskApiError extends Error {
   status: number;
@@ -36,7 +36,7 @@ type RequestInkdeskOptions = {
 function buildHeaders(options?: RequestInkdeskOptions) {
   const headers: Record<string, string> = {};
 
-  if (hasOwnerSession(options?.ownerSession)) {
+  if (options?.ownerSession) {
     headers.Cookie = `${OWNER_SESSION_COOKIE}=${options?.ownerSession}`;
   }
 

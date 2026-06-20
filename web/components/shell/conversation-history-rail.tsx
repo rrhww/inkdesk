@@ -1,73 +1,70 @@
 import Link from "next/link";
 
-import type { ResearchDashboard } from "@/lib/types";
+import type { DevRunSummary, ResearchDashboard } from "@/lib/types";
 
 type ConversationHistoryRailProps = {
   pathname: string;
   snapshot: ResearchDashboard;
+  devRuns: DevRunSummary[];
 };
 
-function getHistoryItems(snapshot: ResearchDashboard) {
-  const items = [];
-  const firstSignal = snapshot.health.signals[0];
+const STAGE_LABELS: Record<string, string> = {
+  context: "上下文",
+  solution: "方案",
+  review: "审阅",
+  coding: "编码",
+  testing: "测试",
+  deposit: "沉淀",
+};
 
-  if (firstSignal) {
+function getHistoryItems(snapshot: ResearchDashboard, devRuns: DevRunSummary[]) {
+  const items: { href: string; title: string; subtitle: string; icon: string }[] = [];
+
+  const activeRuns = devRuns.filter((r) => r.status === "active" || r.status === "awaiting_review" || r.status === "blocked");
+  for (const run of activeRuns.slice(0, 3)) {
+    const stageLabel = STAGE_LABELS[run.currentStage] ?? run.currentStage;
     items.push({
-      href: "/app",
-      title: "知识健康",
-      preview: firstSignal.title
+      href: `/app/runs/${run.id}`,
+      title: run.title,
+      subtitle: `${run.type} · ${stageLabel}${run.stageStatus === "awaiting_review" ? " · 待确认" : ""}`,
+      icon: "rocket_launch",
     });
   }
 
-  if (snapshot.focusTopic) {
-    items.push({
-      href: "/app",
-      title: "当前主题",
-      preview: snapshot.focusTopic.title
-    });
-  }
-
-  if (snapshot.pendingReviews[0]) {
+  if (snapshot.pendingReviews.length > 0) {
     items.push({
       href: "/app/ingest",
-      title: "待审阅",
-      preview: snapshot.pendingReviews[0].title
-    });
-  }
-
-  if (snapshot.recentSources[0]) {
-    items.push({
-      href: "/app/raw",
-      title: "最新资料",
-      preview: snapshot.recentSources[0].title
+      title: `待确认 · ${snapshot.pendingReviews.length} 条 ingest`,
+      subtitle: snapshot.pendingReviews[0].title,
+      icon: "fact_check",
     });
   }
 
   return items;
 }
 
-export function ConversationHistoryRail({ pathname, snapshot }: ConversationHistoryRailProps) {
-  const historyItems = getHistoryItems(snapshot);
+export function ConversationHistoryRail({ pathname, snapshot, devRuns }: ConversationHistoryRailProps) {
+  const historyItems = getHistoryItems(snapshot, devRuns);
 
   return (
     <div className="flex h-full flex-col">
       <div className="rounded-[28px] bg-white p-4 shadow-paper">
-        <button
+        <a
           className="flex w-full items-center justify-center gap-2 rounded-full bg-ink-primary px-4 py-3 text-sm font-semibold text-white"
-          type="button"
+          href="/app"
         >
           <span aria-hidden="true" className="material-symbols-outlined text-base">
-            add_comment
+            rocket_launch
           </span>
-          新建对话
-        </button>
+          新建任务
+        </a>
       </div>
 
       <div className="mt-6 flex-1 rounded-[32px] bg-white/92 p-4 shadow-paper">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <h2 className="font-headline text-base font-bold text-ink-text">最近对话</h2>
-            <p className="mt-1 text-sm text-ink-muted">先看知识健康，再回到最近的脉络继续修复。</p>
+            <h2 className="font-headline text-base font-bold text-ink-text">Dev Run</h2>
+            <p className="mt-1 text-sm text-ink-muted">任务 & 待办追踪</p>
           </div>
           <span className="rounded-full bg-ink-low px-3 py-1 text-xs text-ink-muted">{historyItems.length} 条</span>
         </div>
@@ -87,8 +84,11 @@ export function ConversationHistoryRail({ pathname, snapshot }: ConversationHist
                 }`}
                 href={item.href}
               >
-                <div className="text-xs uppercase tracking-[0.18em]">{item.title}</div>
-                <div className="mt-2 text-sm font-medium text-ink-text">{item.preview}</div>
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[16px] text-ink-muted">{item.icon}</span>
+                  <span className="text-sm font-medium text-ink-text">{item.title}</span>
+                </div>
+                <div className="mt-1.5 ml-[24px] text-xs text-ink-muted">{item.subtitle}</div>
               </Link>
             );
           })}

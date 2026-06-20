@@ -1,44 +1,51 @@
-import type { ReactNode } from "react";
+"use client";
 
-import { TopSectionTabs } from "@/components/shell/top-section-tabs";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
-type AppHeaderContextItem = {
-  label: string;
-  value: string;
-};
+import { PRIMARY_SECTIONS, pathnameMatchesSection } from "@/lib/app-shell";
 
 type AppHeaderProps = {
   title: string;
   subtitle?: string;
-  contextItems?: AppHeaderContextItem[];
-  action?: ReactNode;
 };
 
-export function AppHeader({ title, subtitle, contextItems, action }: AppHeaderProps) {
+export function AppHeader({ title, subtitle }: AppHeaderProps) {
+  const pathname = usePathname() ?? "/app";
+
   return (
     <header className="sticky top-0 z-30 border-b border-black/5 bg-white/80 backdrop-blur-lg">
-      <div className="border-b border-black/5 px-6 py-3 lg:px-8">
-        <TopSectionTabs />
+      <div className="flex items-center justify-center px-6 py-2.5 lg:px-8">
+        <nav aria-label="主分区" className="w-full">
+          <div className="flex items-center gap-4">
+            {PRIMARY_SECTIONS.map((tab) => {
+              const active = pathnameMatchesSection(pathname, tab);
+
+              return (
+                <Link
+                  key={tab.href}
+                  aria-current={active ? "page" : undefined}
+                  className={`flex-1 rounded-full px-10 py-2.5 text-center text-lg font-medium transition ${
+                    active
+                      ? "bg-ink-primary text-white shadow-paper"
+                      : "text-ink-muted hover:bg-ink-low hover:text-ink-text"
+                  }`}
+                  href={tab.href}
+                >
+                  {tab.label}
+                </Link>
+              );
+            })}
+          </div>
+        </nav>
       </div>
-      <div className="flex min-h-16 items-center justify-between gap-6 px-6 py-4 lg:px-8">
+
+      <div className="flex items-center justify-between gap-6 px-6 py-3 lg:px-8">
         <div className="min-w-0">
           <h1 className="font-headline text-xl font-extrabold tracking-tight text-ink-text">{title}</h1>
-          {subtitle ? <p className="mt-1 text-sm text-ink-muted">{subtitle}</p> : null}
+          {subtitle ? <p className="mt-1 text-sm text-ink-muted line-clamp-1">{subtitle}</p> : null}
         </div>
-        {action}
       </div>
-      {contextItems?.length ? (
-        <div className="border-t border-black/5 px-6 py-3 lg:px-8">
-          <div className="flex flex-wrap gap-3">
-            {contextItems.map((item) => (
-              <div key={item.label} className="rounded-full bg-ink-low px-4 py-2 text-sm text-ink-muted">
-                <span className="font-semibold text-ink-text">{item.value}</span>
-                <span className="ml-2">{item.label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      ) : null}
     </header>
   );
 }

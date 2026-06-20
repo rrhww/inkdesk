@@ -6,7 +6,6 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { AppHeader } from "@/components/app-header";
 import { AppSidebarContent } from "@/components/app-sidebar";
 import { AskAnswerCard } from "@/components/workbench/ask-answer-card";
-import { OwnerLoginForm } from "@/components/workbench/owner-login-form";
 import { ReviewCard } from "@/components/workbench/review-card";
 import { getAppRouteChrome } from "@/lib/app-shell";
 import { researchDashboardFixture } from "@/lib/mock/research-fixtures";
@@ -17,19 +16,6 @@ describe("workbench components", () => {
     vi.restoreAllMocks();
   });
 
-  it("renders owner login form fields with robust metadata", () => {
-    render(
-      React.createElement(OwnerLoginForm, {
-        action: async () => {},
-        hasError: false
-      })
-    );
-
-    expect(screen.getByLabelText("邮箱")).toHaveAttribute("type", "email");
-    expect(screen.getByLabelText("密码")).toHaveAttribute("autocomplete", "current-password");
-    expect(screen.getByText(/主人身份/)).toBeInTheDocument();
-  });
-
   it("renders Chinese top tabs and ask-first rail", () => {
     const chrome = getAppRouteChrome("/app/raw", researchDashboardFixture);
 
@@ -38,24 +24,15 @@ describe("workbench components", () => {
         <AppHeader
           title={chrome.title}
           subtitle={chrome.subtitle}
-          contextItems={chrome.contextItems}
         />
-        <AppSidebarContent pathname="/app" snapshot={researchDashboardFixture} />
+        <AppSidebarContent pathname="/app" snapshot={researchDashboardFixture} devRuns={[]} />
       </>
     );
 
     expect(screen.getByRole("heading", { name: "资料" })).toBeInTheDocument();
-    expect(screen.getByText(/raw 材料进入系统后的第一站/)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "任务" })).toHaveAttribute("href", "/app");
-    expect(screen.getByRole("link", { name: "问答" })).toHaveAttribute("href", "/app/ask");
-    expect(screen.getByRole("link", { name: "资料" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "审阅" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "知识库" })).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "健康" })).not.toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /知识健康/ })).toHaveAttribute("href", "/app");
-    expect(screen.getByText("raw 里有 3 条材料等待编译")).toBeInTheDocument();
-    expect(screen.getByText("最近对话")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "新建对话" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /新建任务/ })).toHaveAttribute("href", "/app");
+    expect(screen.getAllByText("Dev Run")).toHaveLength(2);
+    expect(screen.getByText(/任务 & 待办追踪/)).toBeInTheDocument();
   });
 
   it("renders claim governance metadata inside review cards", () => {

@@ -29,27 +29,23 @@ describe("app shell primitives", () => {
   it("derives route-specific header chrome from the current snapshot", () => {
     expect(getAppRouteChrome("/app", researchDashboardFixture)).toMatchObject({
       title: "研发任务",
-      subtitle: expect.stringContaining("Dev Run Console"),
-      contextItems: expect.arrayContaining([{ label: "当前入口", value: "Dev Run Console" }])
+      subtitle: "",
     });
     expect(getAppRouteChrome("/app/raw", researchDashboardFixture)).toMatchObject({
       title: "资料",
-      contextItems: expect.arrayContaining([{ label: "等待编译", value: "3 条" }])
+      subtitle: "",
     });
     expect(getAppRouteChrome("/app/ingest", researchDashboardFixture)).toMatchObject({
       title: "审阅",
-      contextItems: expect.arrayContaining([{ label: "待审阅", value: "3 条" }])
+      subtitle: "",
     });
     expect(getAppRouteChrome("/app/wiki/topic-001", researchDashboardFixture)).toMatchObject({
       title: "知识库",
-      contextItems: expect.arrayContaining([
-        { label: "开放问题", value: "3 个" },
-        { label: "高风险 claim", value: "2 条" }
-      ])
+      subtitle: "",
     });
     expect(getAppRouteChrome("/app/ask", researchDashboardFixture)).toMatchObject({
       title: "问答",
-      contextItems: expect.arrayContaining([{ label: "可写回", value: "1 条" }])
+      subtitle: "",
     });
   });
 
@@ -70,10 +66,8 @@ describe("app shell primitives", () => {
     };
 
     expect(getAppRouteChrome("/app/wiki", snapshot)).toMatchObject({
-      contextItems: expect.arrayContaining([
-        { label: "高风险 claim", value: "3 条" },
-        { label: "冲突 claim", value: "4 条" }
-      ])
+      title: "知识库",
+      subtitle: "",
     });
   });
 

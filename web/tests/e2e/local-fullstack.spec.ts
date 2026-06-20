@@ -24,7 +24,7 @@ test.describe("local full-stack loop", () => {
     "请通过 `npm run e2e:fullstack` 运行，并先启动 Docker 基础设施、Python 主后端与 Next.js 所需配置。"
   );
 
-  test("owner can complete the vault-first private LLM Wiki loop", async ({ page }) => {
+  test("owner can complete the Dev Run-first full loop", async ({ page }) => {
     test.setTimeout(120_000);
 
     await login(page);
@@ -86,6 +86,6 @@ test.describe("local full-stack loop", () => {
 
     await page.goto("/app/wiki");
     await expect(page).toHaveURL(/\/login$/);
-    await expect(page.getByRole("heading", { name: "进入私有 LLM Wiki" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Inkdesk 研发控制台" })).toBeVisible();
   });
 });

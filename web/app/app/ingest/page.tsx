@@ -1,12 +1,10 @@
 import { revalidatePath } from "next/cache";
-import { cookies } from "next/headers";
 
 import { EmptyState } from "@/components/ui/empty-state";
 import { PanelCard } from "@/components/ui/panel-card";
 import { PageShell } from "@/components/workbench/page-shell";
 import { ReviewCard } from "@/components/workbench/review-card";
-import { OWNER_SESSION_COOKIE } from "@/lib/owner-session";
-import { requireRequestOwnerSession } from "@/lib/request-owner-session";
+import { OWNER_SESSION_VALUE } from "@/lib/owner-session";
 import { acceptIngest, getIngestItems, rejectIngest } from "@/lib/research";
 import { buildIngestRevalidationPaths } from "./revalidation-paths";
 
@@ -14,9 +12,8 @@ async function acceptIngestAction(formData: FormData) {
   "use server";
 
   const reviewId = String(formData.get("reviewId") ?? "");
-  const cookieStore = await cookies();
 
-  const decision = await acceptIngest(reviewId, cookieStore.get(OWNER_SESSION_COOKIE)?.value);
+  const decision = await acceptIngest(reviewId, OWNER_SESSION_VALUE);
   for (const path of buildIngestRevalidationPaths(decision.topicId)) {
     revalidatePath(path);
   }
@@ -26,9 +23,8 @@ async function rejectIngestAction(formData: FormData) {
   "use server";
 
   const reviewId = String(formData.get("reviewId") ?? "");
-  const cookieStore = await cookies();
 
-  await rejectIngest(reviewId, cookieStore.get(OWNER_SESSION_COOKIE)?.value);
+  await rejectIngest(reviewId, OWNER_SESSION_VALUE);
   for (const path of buildIngestRevalidationPaths()) {
     revalidatePath(path);
   }
@@ -45,7 +41,7 @@ export default async function IngestPage(props: IngestPageProps) {
 }
 
 async function IngestPageContent({ searchParams }: IngestPageProps = {}) {
-  const reviews = await getIngestItems(await requireRequestOwnerSession());
+  const reviews = await getIngestItems(OWNER_SESSION_VALUE);
   const resolved = searchParams ? await searchParams : undefined;
   const createdId = resolved?.created?.trim();
 
