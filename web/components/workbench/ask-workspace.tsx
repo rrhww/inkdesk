@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { PanelCard } from "@/components/ui/panel-card";
-import { AskAnswerCard } from "@/components/workbench/ask-answer-card";
+import { AskAnswerPanel } from "@/components/workbench/ask-answer-panel";
 import { PageShell } from "@/components/workbench/page-shell";
 import { OWNER_SESSION_VALUE } from "@/lib/owner-session";
 import { askResearch, getAskBriefing, getResearchDashboard, getWikiPages, proposeAskWriteback } from "@/lib/research";
@@ -217,28 +217,27 @@ export async function AskWorkspacePage({ searchParams, basePath = "/app" }: AskW
             </form>
 
             <div className="mt-4 rounded-[22px] bg-ink-low px-4 py-4 text-sm leading-7 text-ink-muted">
-              默认先读 wiki 与 raw。只有你明确切到“显式联网补料”，系统才会把外部资料当作补充研究输入。
+              默认先读 wiki 与 raw。只有你明确切到&ldquo;显式联网补料&rdquo;，系统才会把外部资料当作补充研究输入。
             </div>
           </PanelCard>
 
-          <PanelCard className="p-8">
-            <AskAnswerCard
-              answer={answer}
-              continueFromAskTurnId={continueFromAskTurnId}
-              mode={mode}
-              renderFollowUpHref={(nextQuestion: string, nextMode?: ResearchAskMode) => askHref(nextQuestion, nextMode ?? mode)}
-              writebackAction={
-                answer ? (
-                  <form action={createAskWritebackAction}>
-                    <input name="askTurnId" type="hidden" value={answer.id} />
-                    <button className="rounded-full bg-ink-primary px-5 py-3 text-sm font-semibold text-white" type="submit">
-                      {answer.usedWebSources.length > 0 ? "沉淀到 wiki（会先保存外部来源到 raw）" : "沉淀到 wiki"}
-                    </button>
-                  </form>
-                ) : null
-              }
-            />
-          </PanelCard>
+          <AskAnswerPanel
+            answer={answer}
+            mode={mode}
+            continueFromAskTurnId={continueFromAskTurnId}
+            askHref={(nextQuestion: string, nextMode?: ResearchAskMode) => askHref(nextQuestion, nextMode ?? mode)}
+            writebackAction={
+              answer ? (
+                <form action={createAskWritebackAction}>
+                  <input name="askTurnId" type="hidden" value={answer.id} />
+                  <button className="rounded-full bg-ink-primary px-5 py-3 text-sm font-semibold text-white" type="submit">
+                    {answer.usedWebSources.length > 0 ? "沉淀到 wiki（会先保存外部来源到 raw）" : "沉淀到 wiki"}
+                  </button>
+                </form>
+              ) : null
+            }
+            runId={runId}
+          />
         </div>
 
         <div className="space-y-6">

@@ -25,7 +25,7 @@ export function AppHeader({ title, subtitle }: AppHeaderProps) {
                 <Link
                   key={tab.href}
                   aria-current={active ? "page" : undefined}
-                  className={`flex-1 rounded-full px-10 py-2.5 text-center text-lg font-medium transition ${
+                  className={`rounded-full px-5 py-2.5 text-center text-sm font-medium transition ${
                     active
                       ? "bg-ink-primary text-white shadow-paper"
                       : "text-ink-muted hover:bg-ink-low hover:text-ink-text"

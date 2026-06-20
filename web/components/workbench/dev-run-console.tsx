@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { createDevRun, getDevRuns } from "@/lib/research";
-import type { DevRunSummary, DevRunType } from "@/lib/types";
+import Link from "next/link";
+import { createDevRun, getDevRuns, getVaultHealth } from "@/lib/research";
+import type { DevRunSummary, DevRunType, HealthResponse } from "@/lib/types";
 
 const TYPE_LABELS: Record<DevRunType, string> = {
   PRD: "PRD",
@@ -20,9 +21,32 @@ const STAGE_LABELS: Record<string, string> = {
   deposit: "沉淀",
 };
 
+function HealthDigest({ health }: { health: HealthResponse }) {
+  const { summary } = health;
+  const totalIssues = summary.brokenLinkCount + summary.orphanPageCount + summary.missingFrontmatterCount + summary.missingSourceCount;
+  const hasIssues = totalIssues > 0;
+
+  return (
+    <Link
+      href="/app/health"
+      className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition ${
+        hasIssues
+          ? "bg-[#fff4ec] text-ink-tertiary hover:bg-[#ffe8d6]"
+          : "bg-green-50 text-green-700 hover:bg-green-100"
+      }`}
+    >
+      <span className="material-symbols-outlined text-[16px]">
+        {hasIssues ? "warning" : "verified"}
+      </span>
+      {hasIssues ? `${totalIssues} 个结构问题` : "知识库结构健康"}
+    </Link>
+  );
+}
+
 export function DevRunConsole() {
   const router = useRouter();
   const [runs, setRuns] = useState<DevRunSummary[]>([]);
+  const [health, setHealth] = useState<HealthResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [formType, setFormType] = useState<DevRunType>("PRD");
@@ -34,8 +58,12 @@ export function DevRunConsole() {
 
   const fetchRuns = useCallback(async () => {
     try {
-      const data = await getDevRuns();
+      const [data, healthData] = await Promise.all([
+        getDevRuns(),
+        getVaultHealth().catch(() => null),
+      ]);
       setRuns(data);
+      setHealth(healthData);
     } catch {
       setError("加载任务列表失败");
     } finally {
@@ -128,13 +156,18 @@ export function DevRunConsole() {
           <div className="text-[11px] uppercase tracking-[0.2em] text-ink-muted">任务</div>
           <h2 className="mt-3 font-headline text-4xl font-extrabold tracking-tight text-ink-text">Dev Run 任务</h2>
         </div>
-        <button
-          onClick={() => setShowCreate((v) => !v)}
-          className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-ink-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-ink-primary/90"
-        >
-          <span className="material-symbols-outlined text-[18px]">add</span>
-          新建任务
-        </button>
+        <div className="flex items-center gap-3">
+          {health && (
+            <HealthDigest health={health} />
+          )}
+          <button
+            onClick={() => setShowCreate((v) => !v)}
+            className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-ink-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-ink-primary/90"
+          >
+            <span className="material-symbols-outlined text-[18px]">add</span>
+            新建任务
+          </button>
+        </div>
       </div>
 
       {showCreate && (

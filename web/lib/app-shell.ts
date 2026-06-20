@@ -5,7 +5,9 @@ export const PRIMARY_SECTIONS = [
   { href: "/app/ask", label: "问答", matchers: ["/app/ask"] },
   { href: "/app/raw", label: "资料", matchers: ["/app/raw"] },
   { href: "/app/ingest", label: "审阅", matchers: ["/app/ingest"] },
-  { href: "/app/wiki", label: "知识库", matchers: ["/app/wiki"] }
+  { href: "/app/wiki", label: "知识库", matchers: ["/app/wiki"] },
+  { href: "/app/health", label: "健康", matchers: ["/app/health"] },
+  { href: "/app/compile", label: "编译", matchers: ["/app/compile"] },
 ] as const;
 
 export type AppRouteChrome = {
@@ -38,6 +40,20 @@ export function getAppRouteChrome(pathname: string, _snapshot: ResearchDashboard
   if (pathname === "/app/ingest" || pathname.startsWith("/app/ingest/")) {
     return {
       title: "审阅",
+      subtitle: "",
+    };
+  }
+
+  if (pathname === "/app/health" || pathname.startsWith("/app/health/")) {
+    return {
+      title: "知识库健康",
+      subtitle: "",
+    };
+  }
+
+  if (pathname === "/app/compile" || pathname.startsWith("/app/compile/")) {
+    return {
+      title: "编译流水线",
       subtitle: "",
     };
   }

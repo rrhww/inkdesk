@@ -1,4 +1,8 @@
 import type {
+  CompileStepResponse,
+  CompileTaskResponse,
+  CompileTaskSummary,
+  HealthResponse,
   ResearchAskBriefing,
   ResearchAskHistoryEntry,
   ResearchAskRequest,
@@ -835,4 +839,271 @@ export function createAskWritebackFixture(askTurnId: string): ResearchReviewItem
       ]
     }
   };
+}
+
+// ── Health fixtures ──
+
+export const vaultHealthFixture: HealthResponse = {
+  summary: {
+    totalPages: 7,
+    brokenLinkCount: 2,
+    orphanPageCount: 1,
+    missingFrontmatterCount: 1,
+    missingSourceCount: 2,
+  },
+  findings: [
+    {
+      type: "BROKEN_LINK",
+      severity: "warning",
+      page: "wiki/inkdesk-repositioning.md",
+      detail: "指向不存在的页面 [[Old Product Name]]",
+    },
+    {
+      type: "BROKEN_LINK",
+      severity: "warning",
+      page: "wiki/today-vault-panel.md",
+      detail: "指向不存在的页面 [[Legacy Dashboard]]",
+    },
+    {
+      type: "ORPHAN_PAGE",
+      severity: "info",
+      page: "wiki/ingest-queue-discipline.md",
+      detail: "未被任何 wiki 页面引用",
+    },
+    {
+      type: "MISSING_FRONTMATTER",
+      severity: "warning",
+      page: "raw/2026-04-13-research-first-wiki-note.md",
+      detail: "缺少必填字段: type, created, tags, status",
+    },
+    {
+      type: "MISSING_SOURCE",
+      severity: "warning",
+      page: "wiki/today-vault-panel.md",
+      detail: "状态为 stable 但未标注 source_file",
+    },
+    {
+      type: "MISSING_SOURCE",
+      severity: "warning",
+      page: "wiki/ingest-queue-discipline.md",
+      detail: "状态为 stable 但未标注 source_file",
+    },
+  ],
+};
+
+// ── Compile fixtures ──
+
+const compileStepsFixture: CompileStepResponse[] = [
+  {
+    id: "step-001",
+    stepName: "INSIGHT",
+    sortOrder: 1,
+    status: "COMPLETED",
+    errorMessage: null,
+    startedAt: "2026-05-11T09:00:00Z",
+    completedAt: "2026-05-11T09:00:02Z",
+  },
+  {
+    id: "step-002",
+    stepName: "EVIDENCE",
+    sortOrder: 2,
+    status: "COMPLETED",
+    errorMessage: null,
+    startedAt: "2026-05-11T09:00:02Z",
+    completedAt: "2026-05-11T09:00:04Z",
+  },
+  {
+    id: "step-003",
+    stepName: "ROUTER",
+    sortOrder: 3,
+    status: "COMPLETED",
+    errorMessage: null,
+    startedAt: "2026-05-11T09:00:04Z",
+    completedAt: "2026-05-11T09:00:05Z",
+  },
+  {
+    id: "step-004",
+    stepName: "CONFLICT",
+    sortOrder: 4,
+    status: "COMPLETED",
+    errorMessage: null,
+    startedAt: "2026-05-11T09:00:05Z",
+    completedAt: "2026-05-11T09:00:06Z",
+  },
+  {
+    id: "step-005",
+    stepName: "PATCH",
+    sortOrder: 5,
+    status: "COMPLETED",
+    errorMessage: null,
+    startedAt: "2026-05-11T09:00:06Z",
+    completedAt: "2026-05-11T09:00:08Z",
+  },
+];
+
+const failedCompileStepsFixture: CompileStepResponse[] = [
+  {
+    id: "step-101",
+    stepName: "INSIGHT",
+    sortOrder: 1,
+    status: "COMPLETED",
+    errorMessage: null,
+    startedAt: "2026-05-11T10:00:00Z",
+    completedAt: "2026-05-11T10:00:02Z",
+  },
+  {
+    id: "step-102",
+    stepName: "EVIDENCE",
+    sortOrder: 2,
+    status: "COMPLETED",
+    errorMessage: null,
+    startedAt: "2026-05-11T10:00:02Z",
+    completedAt: "2026-05-11T10:00:04Z",
+  },
+  {
+    id: "step-103",
+    stepName: "ROUTER",
+    sortOrder: 3,
+    status: "FAILED",
+    errorMessage: "无法匹配到已有 topic，也没有足够证据支持新建",
+    startedAt: "2026-05-11T10:00:04Z",
+    completedAt: "2026-05-11T10:00:05Z",
+  },
+  {
+    id: "step-104",
+    stepName: "CONFLICT",
+    sortOrder: 4,
+    status: "PENDING",
+    errorMessage: null,
+    startedAt: null,
+    completedAt: null,
+  },
+  {
+    id: "step-105",
+    stepName: "PATCH",
+    sortOrder: 5,
+    status: "PENDING",
+    errorMessage: null,
+    startedAt: null,
+    completedAt: null,
+  },
+];
+
+export const compileQueueFixture: CompileTaskSummary[] = [
+  {
+    id: "compile-001",
+    sourceId: "source-004",
+    sourceTitle: "Research-first wiki note",
+    status: "COMPLETED",
+    createdAt: "2026-05-11T09:00:00Z",
+    completedAt: "2026-05-11T09:00:08Z",
+  },
+  {
+    id: "compile-002",
+    sourceId: "source-002",
+    sourceTitle: "为什么 Today Vault Panel 应成为登录后的第一屏",
+    status: "COMPLETED",
+    createdAt: "2026-05-11T09:30:00Z",
+    completedAt: "2026-05-11T09:30:10Z",
+  },
+  {
+    id: "compile-003",
+    sourceId: "source-003",
+    sourceTitle: "ingest 队列如何保证 AI 编译可控",
+    status: "RUNNING",
+    createdAt: "2026-05-11T10:00:00Z",
+    completedAt: null,
+  },
+];
+
+export function getCompileTaskFixture(taskId: string): CompileTaskResponse | undefined {
+  const map: Record<string, CompileTaskResponse> = {
+    "compile-001": {
+      id: "compile-001",
+      sourceId: "source-004",
+      status: "COMPLETED",
+      errorMessage: null,
+      createdAt: "2026-05-11T09:00:00Z",
+      startedAt: "2026-05-11T09:00:00Z",
+      completedAt: "2026-05-11T09:00:08Z",
+      steps: compileStepsFixture,
+    },
+    "compile-002": {
+      id: "compile-002",
+      sourceId: "source-002",
+      status: "COMPLETED",
+      errorMessage: null,
+      createdAt: "2026-05-11T09:30:00Z",
+      startedAt: "2026-05-11T09:30:00Z",
+      completedAt: "2026-05-11T09:30:10Z",
+      steps: compileStepsFixture.map((s) => ({ ...s, id: s.id.replace("step-", "step-2-") })),
+    },
+    "compile-003": {
+      id: "compile-003",
+      sourceId: "source-003",
+      status: "RUNNING",
+      errorMessage: null,
+      createdAt: "2026-05-11T10:00:00Z",
+      startedAt: "2026-05-11T10:00:00Z",
+      completedAt: null,
+      steps: [
+        {
+          id: "step-201",
+          stepName: "INSIGHT",
+          sortOrder: 1,
+          status: "COMPLETED",
+          errorMessage: null,
+          startedAt: "2026-05-11T10:00:00Z",
+          completedAt: "2026-05-11T10:00:02Z",
+        },
+        {
+          id: "step-202",
+          stepName: "EVIDENCE",
+          sortOrder: 2,
+          status: "RUNNING",
+          errorMessage: null,
+          startedAt: "2026-05-11T10:00:02Z",
+          completedAt: null,
+        },
+        {
+          id: "step-203",
+          stepName: "ROUTER",
+          sortOrder: 3,
+          status: "PENDING",
+          errorMessage: null,
+          startedAt: null,
+          completedAt: null,
+        },
+        {
+          id: "step-204",
+          stepName: "CONFLICT",
+          sortOrder: 4,
+          status: "PENDING",
+          errorMessage: null,
+          startedAt: null,
+          completedAt: null,
+        },
+        {
+          id: "step-205",
+          stepName: "PATCH",
+          sortOrder: 5,
+          status: "PENDING",
+          errorMessage: null,
+          startedAt: null,
+          completedAt: null,
+        },
+      ],
+    },
+    "compile-failed": {
+      id: "compile-failed",
+      sourceId: "source-005",
+      status: "FAILED",
+      errorMessage: "Topic Router 失败：无法匹配到已有 topic",
+      createdAt: "2026-05-11T10:00:00Z",
+      startedAt: "2026-05-11T10:00:00Z",
+      completedAt: "2026-05-11T10:00:05Z",
+      steps: failedCompileStepsFixture,
+    },
+  };
+  return map[taskId];
 }

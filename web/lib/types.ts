@@ -365,3 +365,83 @@ export type CreateDevRunRequest = {
   goal: string;
   repoContext?: string;
 };
+
+// ── Health ──
+
+export type HealthFindingType = "BROKEN_LINK" | "ORPHAN_PAGE" | "MISSING_FRONTMATTER" | "MISSING_SOURCE";
+
+export type HealthSeverity = "info" | "warning";
+
+export type HealthFinding = {
+  type: HealthFindingType;
+  severity: HealthSeverity;
+  page: string;
+  detail: string;
+};
+
+export type HealthSummary = {
+  totalPages: number;
+  brokenLinkCount: number;
+  orphanPageCount: number;
+  missingFrontmatterCount: number;
+  missingSourceCount: number;
+};
+
+export type HealthResponse = {
+  summary: HealthSummary;
+  findings: HealthFinding[];
+};
+
+// ── Compile ──
+
+export type CompileStepStatus = "PENDING" | "RUNNING" | "COMPLETED" | "FAILED";
+
+export type CompileStepResponse = {
+  id: string;
+  stepName: string;
+  sortOrder: number;
+  status: CompileStepStatus;
+  errorMessage: string | null;
+  startedAt: string | null;
+  completedAt: string | null;
+};
+
+export type CompileTaskResponse = {
+  id: string;
+  sourceId: string | null;
+  status: string;
+  errorMessage: string | null;
+  createdAt: string;
+  startedAt: string | null;
+  completedAt: string | null;
+  steps: CompileStepResponse[];
+  isNew?: boolean;
+};
+
+export type CompileTaskSummary = {
+  id: string;
+  sourceId: string | null;
+  sourceTitle: string | null;
+  status: string;
+  createdAt: string;
+  completedAt: string | null;
+};
+
+// ── Deposit ──
+
+export type DepositSource = "answer" | "selection" | "stage_output";
+
+export type DepositRequest = {
+  source: DepositSource;
+  runId?: string;
+  askTurnId?: string;
+  stage?: string;
+  payload: Record<string, unknown>;
+};
+
+export type DepositResponse = {
+  reviewId: string;
+  status: string;
+  source: string;
+  isNew: boolean;
+};

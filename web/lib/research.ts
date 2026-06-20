@@ -1,18 +1,26 @@
 import {
   answerResearchQuestionFixture,
+  compileQueueFixture,
   createAskWritebackFixture,
   getAskBriefingFixture,
+  getCompileTaskFixture,
   getResearchTopicDetailFixture,
   researchDashboardFixture,
   researchReviewItemsFixture,
   researchSourcesFixture,
-  researchTopicSummariesFixture
+  researchTopicSummariesFixture,
+  vaultHealthFixture
 } from "@/lib/mock/research-fixtures";
 import { fetchInkdeskJson, hasApiBaseUrl, InkdeskApiError, postInkdeskJson } from "@/lib/server-api";
 import type {
+  CompileTaskResponse,
+  CompileTaskSummary,
   CreateDevRunRequest,
+  DepositRequest,
+  DepositResponse,
   DevRun,
   DevRunSummary,
+  HealthResponse,
   ResearchAskRequest,
   ResearchAskBriefing,
   ResearchAskResponse,
@@ -188,21 +196,59 @@ export async function createDevRun(request: CreateDevRunRequest, ownerSession?: 
   return postInkdeskJson<DevRun>("/runs", request, { ownerSession });
 }
 
-export type DepositRequest = {
-  source: string;
-  runId?: string;
-  askTurnId?: string;
-  stage?: string;
-  payload: Record<string, unknown>;
-};
-
-export type DepositResponse = {
-  reviewId: string;
-  status: string;
-  source: string;
-  isNew: boolean;
-};
-
 export async function depositResearch(request: DepositRequest, ownerSession?: string): Promise<DepositResponse> {
   return postInkdeskJson<DepositResponse>("/deposits", request, { ownerSession });
+}
+
+export async function getVaultHealth(ownerSession?: string): Promise<HealthResponse> {
+  return withResearchFallback(
+    () => fetchInkdeskJson<HealthResponse>("/health", { ownerSession }),
+    () => vaultHealthFixture
+  );
+}
+
+export async function getCompileQueue(ownerSession?: string): Promise<CompileTaskSummary[]> {
+  return withResearchFallback(
+    () => fetchInkdeskJson<CompileTaskSummary[]>("/compile/queue", { ownerSession }),
+    () => compileQueueFixture
+  );
+}
+
+export async function getCompileTask(taskId: string, ownerSession?: string): Promise<CompileTaskResponse> {
+  return withResearchFallback(
+    () => fetchInkdeskJson<CompileTaskResponse>(`/compile/${taskId}`, { ownerSession }),
+    () => {
+      const task = getCompileTaskFixture(taskId);
+      if (!task) throw new Error(`Unknown mock compile task ${taskId}`);
+      return task;
+    }
+  );
+}
+
+export async function retryCompileTask(taskId: string, ownerSession?: string): Promise<CompileTaskResponse> {
+  return withResearchFallback(
+    () => postInkdeskJson<CompileTaskResponse>(`/compile/${taskId}/retry`, {}, { ownerSession }),
+    () => {
+      const task = getCompileTaskFixture("compile-failed");
+      if (!task) throw new Error(`Unknown mock compile task ${taskId}`);
+      return { ...task, status: "PENDING", errorMessage: null };
+    }
+  );
+}
+
+export async function compileSource(sourceId: string, ownerSession?: string): Promise<CompileTaskResponse> {
+  return withResearchFallback(
+    () => postInkdeskJson<CompileTaskResponse>(`/raw/${sourceId}/compile`, {}, { ownerSession }),
+    () => ({
+      id: `compile-new-${sourceId}`,
+      sourceId,
+      status: "PENDING",
+      errorMessage: null,
+      createdAt: new Date().toISOString(),
+      startedAt: null,
+      completedAt: null,
+      steps: [],
+      isNew: true,
+    })
+  );
 }
