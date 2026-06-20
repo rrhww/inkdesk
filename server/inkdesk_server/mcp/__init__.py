@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 
 from pydantic import Field
-from starlette.requests import Request as StarletteRequest
 from mcp.server.fastmcp import Context, FastMCP
 from mcp.server.transport_security import TransportSecuritySettings
 
@@ -11,28 +10,127 @@ from inkdesk_server.core.config import Settings
 from inkdesk_server.db import session_scope
 from inkdesk_server.deposit_service import DepositService
 from inkdesk_server.health_service import HealthService
-from inkdesk_server.security import OwnerSessionService
 from inkdesk_server.run_service import RunService
 from inkdesk_server.vault import VaultService
 
 
 MAX_QUERY_LENGTH = 500
+CONTEXT_PACK_LIMIT = 20
 
 
 def _resolve_workspace_id(ctx: Context, settings: Settings) -> str:
-    starlette_req: StarletteRequest = ctx.request_context.request
-    token = starlette_req.cookies.get("inkdesk_owner_session", "")
-    if not token:
-        raise PermissionError("missing inkdesk_owner_session cookie")
+    from sqlalchemy import select
+    from inkdesk_server.models import Workspace
+    from inkdesk_server.research import DEFAULT_WORKSPACE_SLUG
 
-    session_service = OwnerSessionService(settings)
     with session_scope() as db:
-        session = session_service.verify_session_token(token, db)
-        if session is None:
-            raise PermissionError("session expired or invalid")
-        from inkdesk_server.security import get_current_workspace
-        workspace = get_current_workspace(db, session.username)
+        workspace = db.scalar(select(Workspace).where(Workspace.slug == DEFAULT_WORKSPACE_SLUG))
+        if workspace is None:
+            raise PermissionError(f"Workspace not found: {DEFAULT_WORKSPACE_SLUG}")
         return workspace.id
+
+
+def _build_context_pack(settings: Settings, workspace_id: str, run_id: str) -> str:
+    import json
+    from sqlalchemy import select, desc
+
+    with session_scope() as db:
+        from inkdesk_server.models import DevRun, AskTurn, ReviewItem
+
+        run = db.get(DevRun, run_id)
+        if run is None or run.workspace_id != workspace_id:
+            return json.dumps({"error": f"DevRun not found: {run_id}"}, ensure_ascii=False)
+
+        # --- 阶段事件 ---
+        events_data = []
+        for e in sorted(run.events, key=lambda x: x.created_at):
+            payload = {}
+            try:
+                payload = json.loads(e.payload_json)
+            except (json.JSONDecodeError, TypeError):
+                pass
+            events_data.append({
+                "id": e.id,
+                "type": e.event_type,
+                "stage": e.stage,
+                "payload": payload,
+            })
+
+        # --- 关联 Ask 历史（最近 CONTEXT_PACK_LIMIT 条）---
+        ask_turns = db.scalars(
+            select(AskTurn)
+            .where(AskTurn.run_id == run_id, AskTurn.workspace_id == workspace_id)
+            .order_by(desc(AskTurn.created_at))
+            .limit(CONTEXT_PACK_LIMIT)
+        ).all()
+        asks_data = []
+        for a in reversed(ask_turns):
+            gaps = []
+            try:
+                gaps = json.loads(a.knowledge_gaps_json)
+            except (json.JSONDecodeError, TypeError):
+                pass
+            asks_data.append({
+                "id": a.id,
+                "question": a.question,
+                "answer": a.answer[:800],
+                "confidence": a.confidence,
+                "knowledgeGaps": gaps[:10],
+                "canWriteback": a.can_writeback,
+                "createdAt": a.created_at.isoformat(),
+            })
+
+        # --- 关联 Deposit / Review（通过 proposal_payload_json 中的 runId）---
+        reviews = db.scalars(
+            select(ReviewItem)
+            .where(ReviewItem.workspace_id == workspace_id, ReviewItem.status == "PENDING")
+        ).all()
+        related_reviews = []
+        for r in reviews:
+            try:
+                pp = json.loads(r.proposal_payload_json)
+            except (json.JSONDecodeError, TypeError):
+                continue
+            if pp.get("runId") == run_id:
+                related_reviews.append({
+                    "id": r.id,
+                    "kind": r.kind,
+                    "title": r.title,
+                    "summary": r.summary[:300],
+                    "status": r.status,
+                })
+
+        pack = {
+            "id": run.id,
+            "type": run.type,
+            "title": run.title,
+            "goal": run.goal,
+            "repoContext": run.repo_context,
+            "status": run.status,
+            "currentStage": run.current_stage,
+            "stages": [
+                {"name": s, "status": (
+                    "completed" if _stage_passed(s, run.current_stage, run.stage_status)
+                    else ("active" if s == run.current_stage else "pending")
+                )} for s in ("context", "solution", "review", "coding", "testing", "deposit")
+            ],
+            "events": events_data,
+            "askHistory": asks_data,
+            "relatedReviews": related_reviews,
+        }
+        return json.dumps(pack, ensure_ascii=False)
+
+
+_STAGES = ("context", "solution", "review", "coding", "testing", "deposit")
+
+
+def _stage_passed(stage: str, current: str, stage_status: str) -> bool:
+    try:
+        idx = _STAGES.index(stage)
+        cur_idx = _STAGES.index(current)
+    except ValueError:
+        return False
+    return idx < cur_idx or (idx == cur_idx and stage_status in ("completed", "skipped"))
 
 
 def build_mcp_server(settings: Settings) -> FastMCP:
@@ -48,7 +146,7 @@ def build_mcp_server(settings: Settings) -> FastMCP:
     )
 
     @mcp.tool(name="context_pack", title="上下文包",
-              description="获取 DevRun 的完整上下文，包括任务信息、Ask 历史和阶段输出。")
+              description="获取 DevRun 完整上下文：任务信息、阶段事件、Ask 历史和相关待审提案。")
     def context_pack(
         ctx: Context,
         run_id: str = Field(validation_alias="runId"),
@@ -57,24 +155,7 @@ def build_mcp_server(settings: Settings) -> FastMCP:
             return json.dumps({"error": "runId is required"}, ensure_ascii=False)
 
         workspace_id = _resolve_workspace_id(ctx, settings)
-        with session_scope() as db:
-            try:
-                run = RunService(db).get_run(run_id, workspace_id)
-            except Exception:
-                return json.dumps({"error": f"DevRun not found: {run_id}"}, ensure_ascii=False)
-
-            pack = {
-                "id": run.id,
-                "type": run.type,
-                "title": run.title,
-                "goal": run.goal,
-                "repoContext": run.repoContext,
-                "status": run.status,
-                "currentStage": run.currentStage,
-                "stages": [{"name": s.name, "status": s.status} for s in run.stages],
-                "eventCount": len(run.events),
-            }
-            return json.dumps(pack, ensure_ascii=False)
+        return _build_context_pack(settings, workspace_id, run_id)
 
     @mcp.tool(name="search", title="搜索知识库",
               description="在 wiki 和 raw 目录中全文搜索，返回匹配的页面路径与摘要。")

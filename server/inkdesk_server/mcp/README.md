@@ -17,19 +17,15 @@ build_mcp_server(settings) → FastMCP("inkdesk", stateless_http=True)
     ├── search         → VaultService
     ├── deposit        → DepositService + VaultService
     └── health_check   → HealthService + VaultService
+    ├── deposit        → DepositService + VaultService
+    └── health_check   → HealthService + VaultService
 ```
 
-MCP 工具不直接访问数据库或文件系统，所有能力通过既有应用服务完成。
+MCP 工具不直接访问数据库或文件系统，所有能力通过既有应用服务完成。工具错误结构稳定，不泄漏密钥、绝对路径或内部堆栈。
 
 ## 认证
 
-MCP 请求通过 Cookie 传递 owner 身份。请求必须携带 `inkdesk_owner_session` cookie，服务端解析为 workspace 后执行操作。
-
-```
-Cookie: inkdesk_owner_session=<token>
-```
-
-未认证或无有效 workspace 时，工具返回 `PermissionError`。
+Inkdesk 为单租户应用，MCP 工具直接使用默认 workspace（`inkdesk`），无需额外认证。
 
 ## 挂载方式
 
@@ -54,13 +50,13 @@ app.mount("/mcp", mcp_app)
 
 ### 1. context_pack — 上下文包
 
-获取 DevRun 的完整上下文。
+获取 DevRun 完整上下文：任务信息、阶段事件、Ask 历史和相关待审提案。
 
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
 | `runId` | `string` | 是 | DevRun ID |
 
-**返回**：JSON 字符串，包含 `id`、`type`、`title`、`goal`、`repoContext`、`status`、`currentStage`、`stages` 数组和 `eventCount`。
+**返回**：JSON 字符串，包含 `id`、`type`、`title`、`goal`、`repoContext`、`status`、`currentStage`、`stages` 数组、`events` 数组（含每个事件的 `id`、`type`、`stage`、`payload`）、`askHistory` 数组（最近 20 条，每条含 `question`、`answer` 前 800 字、`confidence`、`knowledgeGaps`）、`relatedReviews` 数组（关联的待审提案摘要）。
 
 **错误**：`{"error": "runId is required"}` / `{"error": "DevRun not found: ..."}`
 
@@ -130,5 +126,5 @@ def my_tool(ctx: Context, arg1: str, arg2: int = 0) -> str:
 ```
 
 - 驼峰命名参数使用 `Field(validation_alias="camelCase")`，确保 JSON Schema 显示 `camelCase` 但函数体接收 `snake_case`
-- 需要认证时调用 `_resolve_workspace_id(ctx, settings)`
+- 需要 workspace 隔离时调用 `_resolve_workspace_id(ctx, settings)`（当前直接返回默认 workspace）
 - 返回类型必须是 `str`
