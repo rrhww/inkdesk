@@ -1,46 +1,23 @@
 import type { ReactNode } from "react";
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 
 import { AppChrome } from "@/components/app-chrome";
-import { logoutOwner } from "@/lib/owner-auth";
-import { getResearchDashboard, getVaultStatus } from "@/lib/research";
-import { InkdeskApiError } from "@/lib/server-api";
-import { OWNER_SESSION_COOKIE, hasOwnerSession } from "@/lib/owner-session";
-import type { ResearchDashboard } from "@/lib/types";
-
-async function logoutAction() {
-  "use server";
-
-  const cookieStore = await cookies();
-  await logoutOwner(cookieStore.get(OWNER_SESSION_COOKIE)?.value);
-  cookieStore.delete(OWNER_SESSION_COOKIE);
-  redirect("/login");
-}
+import { getDevRuns, getResearchDashboard } from "@/lib/research";
+import { OWNER_SESSION_VALUE } from "@/lib/owner-session";
+import type { DevRunSummary, ResearchDashboard } from "@/lib/types";
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
-  const cookieStore = await cookies();
-  const ownerSession = cookieStore.get(OWNER_SESSION_COOKIE)?.value;
-
-  if (!hasOwnerSession(ownerSession)) {
-    redirect("/login");
-  }
-
   let snapshot: ResearchDashboard;
+  let devRuns: DevRunSummary[];
 
-  try {
-    snapshot = await getResearchDashboard(ownerSession);
-  } catch (error) {
-    if (error instanceof InkdeskApiError && error.status === 401) {
-      cookieStore.delete(OWNER_SESSION_COOKIE);
-      redirect("/login");
-    }
+  const ownerSession = OWNER_SESSION_VALUE;
 
-    throw error;
-  }
+  [snapshot, devRuns] = await Promise.all([
+    getResearchDashboard(ownerSession),
+    getDevRuns(ownerSession),
+  ]);
 
   return (
-    <AppChrome logoutAction={logoutAction} snapshot={snapshot}>
+    <AppChrome snapshot={snapshot} devRuns={devRuns}>
       {children}
     </AppChrome>
   );

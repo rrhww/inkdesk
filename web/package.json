@@ -11,7 +11,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "test:smoke": "node --import tsx --test tests/owner-session.test.ts tests/owner-auth.test.ts tests/research-api.test.tsx tests/research-pages.test.tsx",
+    "test:smoke": "node --import tsx --test tests/research-api.test.tsx tests/research-pages.test.tsx",
     "unit": "vitest run",
     "test": "npm run test:smoke && npm run unit",
     "e2e": "playwright test",

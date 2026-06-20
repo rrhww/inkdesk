@@ -1,13 +1,12 @@
+import { InkSelect, type InkSelectOption } from "@/components/ui/ink-select";
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { PanelCard } from "@/components/ui/panel-card";
 import { AskAnswerCard } from "@/components/workbench/ask-answer-card";
 import { PageShell } from "@/components/workbench/page-shell";
-import { OWNER_SESSION_COOKIE } from "@/lib/owner-session";
-import { requireRequestOwnerSession } from "@/lib/request-owner-session";
+import { OWNER_SESSION_VALUE } from "@/lib/owner-session";
 import { askResearch, getAskBriefing, getResearchDashboard, getWikiPages, proposeAskWriteback } from "@/lib/research";
 import type { ResearchAskBriefing, ResearchAskMode } from "@/lib/types";
 
@@ -19,8 +18,7 @@ async function createAskWritebackAction(formData: FormData) {
     return;
   }
 
-  const cookieStore = await cookies();
-  const review = await proposeAskWriteback(askTurnId, cookieStore.get(OWNER_SESSION_COOKIE)?.value);
+  const review = await proposeAskWriteback(askTurnId, OWNER_SESSION_VALUE);
   revalidatePath("/app");
   revalidatePath("/app/ask");
   revalidatePath("/app/ingest");
@@ -56,37 +54,16 @@ function buildAskHref(input: {
   return `${input.basePath}?${params.toString()}`;
 }
 
-function ActionBadge({ briefing }: { briefing: ResearchAskBriefing }) {
-  const label = briefing.scope === "ask_turn" ? "问后判断" : briefing.scope === "topic" ? "主题判断" : "首屏判断";
-  return <div className="text-[11px] uppercase tracking-[0.2em] text-ink-muted">{label}</div>;
-}
-
-function signalLabel(type: string) {
-  if (type === "UNSUPPORTED_CLAIM") {
-    return "缺少直接证据";
-  }
-  if (type === "STALE_CLAIM") {
-    return "需要重审";
-  }
-  return type;
-}
-
 function BriefingPanel({ briefing }: { briefing: ResearchAskBriefing }) {
   return (
     <PanelCard className="p-8">
-      <ActionBadge briefing={briefing} />
-      <h2 className="mt-3 font-headline text-3xl font-extrabold tracking-tight text-ink-text">判断面板</h2>
+      <h2 className="font-headline text-3xl font-extrabold tracking-tight text-ink-text">判断面板</h2>
       <p className="mt-4 text-sm leading-7 text-ink-text">{briefing.summary}</p>
-      <div className="mt-4 flex flex-wrap gap-3 text-sm text-ink-muted">
-        <span className="rounded-full bg-ink-low px-3 py-2">判断置信度 {Math.round(briefing.confidence * 100)}%</span>
-        <span className="rounded-full bg-ink-low px-3 py-2">{briefing.knowledgeGaps.length} 条知识缺口</span>
-        <span className="rounded-full bg-ink-low px-3 py-2">{briefing.nextActions.length} 个下一步动作</span>
-      </div>
 
       <div className="mt-6 text-[11px] uppercase tracking-[0.2em] text-ink-muted">知识缺口</div>
       <div className="mt-4 space-y-3">
-        {briefing.knowledgeGaps.map((gap) => (
-          <Link key={`${gap.title}-${gap.href}`} className="block rounded-[22px] bg-[#fff5e9] px-4 py-4" href={gap.href}>
+        {briefing.knowledgeGaps.map((gap, i) => (
+          <Link key={`${gap.title}-${gap.href}-${i}`} className="block rounded-[22px] bg-[#fff5e9] px-4 py-4" href={gap.href}>
             <div className="font-headline text-xl font-bold tracking-tight text-ink-text">{gap.title}</div>
             <p className="mt-2 text-sm leading-7 text-ink-text">{gap.detail}</p>
           </Link>
@@ -95,28 +72,13 @@ function BriefingPanel({ briefing }: { briefing: ResearchAskBriefing }) {
 
       <div className="mt-6 text-[11px] uppercase tracking-[0.2em] text-ink-muted">下一步动作</div>
       <div className="mt-4 space-y-3">
-        {briefing.nextActions.map((action) => (
-          <Link key={`${action.kind}-${action.href}`} className="block rounded-[22px] bg-ink-low px-4 py-4 hover:bg-white" href={action.href}>
+        {briefing.nextActions.map((action, i) => (
+          <Link key={`${action.kind}-${action.href}-${i}`} className="block rounded-[22px] bg-ink-low px-4 py-4 hover:bg-white" href={action.href}>
             <div className="font-headline text-xl font-bold tracking-tight text-ink-text">{action.label}</div>
             <p className="mt-2 text-sm leading-7 text-ink-muted">{action.description}</p>
           </Link>
         ))}
       </div>
-
-      {briefing.supportingSignals.length > 0 ? (
-        <>
-          <div className="mt-6 text-[11px] uppercase tracking-[0.2em] text-ink-muted">支撑线索</div>
-          <div className="mt-4 space-y-3">
-            {briefing.supportingSignals.map((signal) => (
-              <Link key={`${signal.type}-${signal.href}`} className="block rounded-[22px] border border-black/5 px-4 py-4" href={signal.href}>
-                <div className="text-[11px] uppercase tracking-[0.2em] text-ink-muted">{signalLabel(signal.type)}</div>
-                <div className="mt-2 font-medium text-ink-text">{signal.title}</div>
-                <p className="mt-2 text-sm leading-7 text-ink-muted">{signal.summary}</p>
-              </Link>
-            ))}
-          </div>
-        </>
-      ) : null}
     </PanelCard>
   );
 }
@@ -134,7 +96,7 @@ function BriefingHero({
 }) {
   return (
     <PanelCard className="p-8">
-      <div className="text-[11px] uppercase tracking-[0.2em] text-ink-muted">Ask-first</div>
+      <div className="text-[11px] uppercase tracking-[0.2em] text-ink-muted">Context Ask</div>
       <h2 className="mt-3 font-headline text-4xl font-extrabold tracking-tight text-ink-text">先看当前缺什么证据，再决定下一步</h2>
       <p className="mt-4 max-w-3xl text-sm leading-7 text-ink-text">{briefing.summary}</p>
       <div className="mt-6 text-[11px] uppercase tracking-[0.2em] text-ink-muted">建议提问</div>
@@ -159,18 +121,17 @@ function BriefingHero({
 }
 
 export async function AskWorkspacePage({ searchParams, basePath = "/app" }: AskWorkspacePageProps) {
-  const ownerSession = await requireRequestOwnerSession();
-  const dashboard = await getResearchDashboard(ownerSession);
-  const wikiPages = await getWikiPages(ownerSession);
+  const dashboard = await getResearchDashboard(OWNER_SESSION_VALUE);
+  const wikiPages = await getWikiPages(OWNER_SESSION_VALUE);
   const resolved = await searchParams;
   const question = resolved.q?.trim();
   const topicId = resolved.topicId?.trim() || undefined;
   const mode: ResearchAskMode = resolved.mode === "vault_plus_web" ? "vault_plus_web" : "vault";
   const continueFromAskTurnId = resolved.continueFromAskTurnId?.trim() || undefined;
-  const answer = question ? await askResearch({ question, topicId, mode, continueFromAskTurnId }, ownerSession) : null;
+  const answer = question ? await askResearch({ question, topicId, mode, continueFromAskTurnId }, OWNER_SESSION_VALUE) : null;
   const briefing = answer
-    ? await getAskBriefing({ askTurnId: answer.id }, ownerSession)
-    : await getAskBriefing(topicId ? { topicId } : undefined, ownerSession);
+    ? await getAskBriefing({ askTurnId: answer.id }, OWNER_SESSION_VALUE)
+    : await getAskBriefing(topicId ? { topicId } : undefined, OWNER_SESSION_VALUE);
 
   function askHref(
     nextQuestion: string,
@@ -217,33 +178,26 @@ export async function AskWorkspacePage({ searchParams, basePath = "/app" }: AskW
                 <label className="mb-2 block text-sm font-medium text-ink-text" htmlFor="ask-topic">
                   提问范围
                 </label>
-                <select
-                  className="w-full rounded-[18px] border border-black/10 bg-white px-4 py-3 text-sm text-ink-text outline-none focus:ring-2 focus:ring-ink-primary/20"
-                  defaultValue={topicId ?? ""}
+                <InkSelect
                   id="ask-topic"
                   name="topicId"
-                >
-                  <option value="">全局 Ask</option>
-                  {wikiPages.map((topic) => (
-                    <option key={topic.id} value={topic.id}>
-                      {topic.title}
-                    </option>
-                  ))}
-                </select>
+                  value={topicId ?? ""}
+                  options={[{ value: "", label: "全局 Ask" }, ...wikiPages.map((topic) => ({ value: topic.id, label: topic.title }))]}
+                />
               </div>
               <div>
                 <label className="mb-2 block text-sm font-medium text-ink-text" htmlFor="ask-mode">
                   证据模式
                 </label>
-                <select
-                  className="w-full rounded-[18px] border border-black/10 bg-white px-4 py-3 text-sm text-ink-text outline-none focus:ring-2 focus:ring-ink-primary/20"
-                  defaultValue={mode}
+                <InkSelect
                   id="ask-mode"
                   name="mode"
-                >
-                  <option value="vault">仅基于 vault 回答</option>
-                  <option value="vault_plus_web">显式联网补料</option>
-                </select>
+                  value={mode}
+                  options={[
+                    { value: "vault", label: "仅基于 vault 回答" },
+                    { value: "vault_plus_web", label: "显式联网补料" },
+                  ]}
+                />
               </div>
               {continueFromAskTurnId ? <input name="continueFromAskTurnId" type="hidden" value={continueFromAskTurnId} /> : null}
               <button className="rounded-full bg-ink-primary px-5 py-3 text-sm font-semibold text-white" type="submit">

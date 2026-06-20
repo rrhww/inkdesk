@@ -84,11 +84,11 @@ export function DevRunConsole() {
 
   const statusBadge = (status: string) => {
     const map: Record<string, string> = {
-      active: "bg-blue-100 text-blue-800",
-      awaiting_review: "bg-yellow-100 text-yellow-800",
-      blocked: "bg-red-100 text-red-800",
-      completed: "bg-green-100 text-green-800",
-      cancelled: "bg-gray-100 text-gray-500",
+      active: "bg-ink-primarySoft text-ink-primary",
+      awaiting_review: "bg-[#fff4ec] text-ink-tertiary",
+      blocked: "bg-ink-errorSoft text-ink-errorText",
+      completed: "bg-ink-primarySoft text-ink-primary",
+      cancelled: "bg-ink-low text-ink-muted",
     };
     const labels: Record<string, string> = {
       active: "进行中",
@@ -98,26 +98,39 @@ export function DevRunConsole() {
       cancelled: "取消",
     };
     return (
-      <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${map[status] ?? "bg-gray-100 text-gray-600"}`}>
+      <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${map[status] ?? "bg-ink-low text-ink-muted"}`}>
         {labels[status] ?? status}
       </span>
     );
   };
 
+  const typeBadge = (type: DevRunType) => {
+    const map: Record<DevRunType, string> = {
+      PRD: "bg-ink-primarySoft text-ink-primary",
+      BUG: "bg-ink-errorSoft text-ink-errorText",
+      REFACTOR: "bg-ink-low text-ink-text",
+    };
+    return (
+      <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${map[type]}`}>
+        {TYPE_LABELS[type]}
+      </span>
+    );
+  };
+
   return (
-    <div className="max-w-4xl mx-auto px-6 py-8">
+    <main className="mx-auto max-w-shell px-6 py-10 lg:px-8">
       {error && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{error}</div>
+        <div className="mb-6 rounded-xl bg-ink-errorSoft px-4 py-3 text-sm text-ink-errorText">{error}</div>
       )}
 
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-start justify-between gap-6 mb-8">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900">Dev Run 任务</h2>
-          <p className="text-sm text-gray-500 mt-1">从 PRD / Bug / 改造任务出发，每个阶段推进可追踪</p>
+          <div className="text-[11px] uppercase tracking-[0.2em] text-ink-muted">任务</div>
+          <h2 className="mt-3 font-headline text-4xl font-extrabold tracking-tight text-ink-text">Dev Run 任务</h2>
         </div>
         <button
           onClick={() => setShowCreate((v) => !v)}
-          className="inline-flex items-center gap-1.5 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors"
+          className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-ink-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-ink-primary/90"
         >
           <span className="material-symbols-outlined text-[18px]">add</span>
           新建任务
@@ -125,10 +138,15 @@ export function DevRunConsole() {
       </div>
 
       {showCreate && (
-        <form onSubmit={handleCreate} className="mb-6 p-4 bg-white border border-gray-200 rounded-xl space-y-4">
+        <form onSubmit={handleCreate} className="paper-card p-6 mb-8 space-y-4">
+          <div className="text-[11px] uppercase tracking-[0.2em] text-ink-muted">任务类型</div>
           <div className="flex gap-3">
             {(["PRD", "BUG", "REFACTOR"] as DevRunType[]).map((t) => (
-              <label key={t} className={`flex items-center gap-1.5 text-sm cursor-pointer px-3 py-1.5 rounded-lg border ${formType === t ? "border-gray-900 bg-gray-50 text-gray-900" : "border-gray-200 text-gray-500"}`}>
+              <label key={t} className={`flex items-center gap-1.5 text-sm cursor-pointer px-4 py-2 rounded-full border transition ${
+                formType === t
+                  ? "border-ink-primary bg-ink-primarySoft text-ink-text"
+                  : "border-ink-high bg-white text-ink-muted hover:border-ink-line"
+              }`}>
                 <input
                   type="radio"
                   name="runType"
@@ -146,7 +164,7 @@ export function DevRunConsole() {
             placeholder="任务标题"
             value={formTitle}
             onChange={(e) => setFormTitle(e.target.value)}
-            className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-300"
+            className="w-full rounded-[18px] border border-black/10 bg-white px-4 py-3 text-sm text-ink-text outline-none focus:ring-2 focus:ring-ink-primary/20"
             required
           />
           <textarea
@@ -154,7 +172,7 @@ export function DevRunConsole() {
             value={formGoal}
             onChange={(e) => setFormGoal(e.target.value)}
             rows={2}
-            className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-300 resize-none"
+            className="w-full rounded-[18px] border border-black/10 bg-white px-4 py-3 text-sm leading-7 text-ink-text outline-none focus:ring-2 focus:ring-ink-primary/20 resize-none"
             required
           />
           <input
@@ -162,20 +180,20 @@ export function DevRunConsole() {
             placeholder="仓库上下文（可选）"
             value={formRepo}
             onChange={(e) => setFormRepo(e.target.value)}
-            className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-300"
+            className="w-full rounded-[18px] border border-black/10 bg-white px-4 py-3 text-sm text-ink-text outline-none focus:ring-2 focus:ring-ink-primary/20"
           />
           <div className="flex gap-2 justify-end">
             <button
               type="button"
               onClick={() => setShowCreate(false)}
-              className="px-3 py-1.5 text-sm text-gray-500 hover:text-gray-700"
+              className="rounded-full bg-ink-low px-5 py-2.5 text-sm font-semibold text-ink-muted hover:text-ink-text"
             >
               取消
             </button>
             <button
               type="submit"
               disabled={submitting || !formTitle.trim() || !formGoal.trim()}
-              className="px-4 py-1.5 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              className="rounded-full bg-ink-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-ink-primary/90 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {submitting ? "创建中…" : "创建"}
             </button>
@@ -184,14 +202,14 @@ export function DevRunConsole() {
       )}
 
       {loading ? (
-        <div className="text-sm text-gray-400 py-12 text-center">加载中…</div>
+        <div className="text-sm text-ink-muted py-12 text-center">加载中…</div>
       ) : runs.length === 0 ? (
-        <div className="text-center py-16">
-          <div className="text-4xl mb-3 text-gray-300">
-            <span className="material-symbols-outlined text-[48px]">rocket_launch</span>
+        <div className="paper-card p-12 text-center">
+          <div className="text-4xl mb-4">
+            <span className="material-symbols-outlined text-[48px] text-ink-muted">rocket_launch</span>
           </div>
-          <p className="text-gray-500 text-sm mb-1">还没有 Dev Run 任务</p>
-          <p className="text-gray-400 text-xs">点击「新建任务」创建第一个研发任务</p>
+          <h3 className="font-headline text-2xl font-extrabold tracking-tight text-ink-text">还没有 Dev Run 任务</h3>
+          <p className="mt-2 text-sm text-ink-muted">点击「新建任务」创建第一个研发任务</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -199,55 +217,57 @@ export function DevRunConsole() {
             <div
               key={run.id}
               onClick={() => router.push(`/app/runs/${run.id}`)}
-              className="block p-4 bg-white border border-gray-200 rounded-xl hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer"
+              className="paper-card p-5 hover:shadow-paper cursor-pointer"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-[11px] font-medium text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
-                      {TYPE_LABELS[run.type]}
-                    </span>
+                  <div className="flex items-center gap-2 mb-2">
+                    {typeBadge(run.type)}
                     {statusBadge(run.status)}
                   </div>
-                  <h3 className="text-sm font-medium text-gray-900 truncate">{run.title}</h3>
+                  <h3 className="font-headline text-base font-bold tracking-tight text-ink-text truncate">{run.title}</h3>
+                  {run.stageStatus === "awaiting_review" && (
+                    <div className="mt-3 flex items-center gap-1.5 text-xs text-ink-tertiary bg-[#fff4ec] rounded-2xl px-3 py-1.5">
+                      <span className="material-symbols-outlined text-[14px]">rate_review</span>
+                      有待确认的输出
+                    </div>
+                  )}
                 </div>
-                <div className="text-xs text-gray-400 shrink-0 flex items-center gap-1">
+                <div className="text-xs text-ink-muted shrink-0 flex items-center gap-1">
                   <span className="material-symbols-outlined text-[14px]">flag</span>
                   {STAGE_LABELS[run.currentStage] ?? run.currentStage}
                 </div>
               </div>
-              {run.stageStatus === "awaiting_review" && (
-                <div className="mt-2 flex items-center gap-1.5 text-xs text-yellow-700 bg-yellow-50 rounded-lg px-2.5 py-1.5">
-                  <span className="material-symbols-outlined text-[14px]">rate_review</span>
-                  有待确认的输出
-                </div>
-              )}
             </div>
           ))}
         </div>
       )}
 
-      <div className="mt-8 p-4 bg-white border border-gray-200 rounded-xl">
-        <h3 className="text-sm font-medium text-gray-700 mb-3">可用能力</h3>
-        <div className="grid grid-cols-2 gap-3">
-          <a href="/app/ask" className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg text-sm text-gray-700 hover:bg-gray-100 transition-colors">
-            <span className="material-symbols-outlined text-[18px] text-gray-400">psychology</span>
-            Context Ask
-          </a>
-          <a href="/app/raw" className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg text-sm text-gray-700 hover:bg-gray-100 transition-colors">
-            <span className="material-symbols-outlined text-[18px] text-gray-400">description</span>
-            资料导入
-          </a>
-          <a href="/app/ingest" className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg text-sm text-gray-700 hover:bg-gray-100 transition-colors">
-            <span className="material-symbols-outlined text-[18px] text-gray-400">fact_check</span>
-            审阅队列
-          </a>
-          <a href="/app/wiki" className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg text-sm text-gray-700 hover:bg-gray-100 transition-colors">
-            <span className="material-symbols-outlined text-[18px] text-gray-400">book</span>
-            知识库
-          </a>
+      {runs.length > 0 && (
+        <div className="mt-8 paper-card p-6">
+          <div className="text-[11px] uppercase tracking-[0.2em] text-ink-muted mb-4">任务概览</div>
+          <div className="grid grid-cols-5 gap-4">
+            {([
+              ["active", "进行中", "play_arrow"],
+              ["awaiting_review", "待确认", "rate_review"],
+              ["blocked", "阻塞", "block"],
+              ["completed", "完成", "check_circle"],
+              ["cancelled", "取消", "cancel"],
+            ] as const).map(([status, label, icon]) => {
+              const count = runs.filter((r) => r.status === status).length;
+              return (
+                <div key={status} className="text-center">
+                  <div className="text-2xl font-headline font-extrabold text-ink-text">{count}</div>
+                  <div className="mt-1 flex items-center justify-center gap-1 text-xs text-ink-muted">
+                    <span className="material-symbols-outlined text-[14px]">{icon}</span>
+                    {label}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
-      </div>
-    </div>
+      )}
+    </main>
   );
 }
