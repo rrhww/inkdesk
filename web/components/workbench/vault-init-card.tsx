@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { PanelCard } from "@/components/ui/panel-card";
 import { initializeVault } from "@/lib/research";
-import type { VaultStatus } from "@/lib/types";
 
 const PREVIEW_DIRS: Record<string, string[]> = {
   code: [

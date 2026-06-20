@@ -561,6 +561,18 @@ class ResearchWorkspaceService:
             created_at=now,
         )
         self.db.add(review)
+
+        # emit deposit event if this Ask turn is linked to a DevRun
+        if ask_turn.run_id:
+            from inkdesk_server.run_service import RunService
+            RunService(self.db).add_event(
+                run_id=ask_turn.run_id,
+                stage="deposit",
+                event_type="deposited",
+                payload={"reviewId": review.id, "source": "answer", "askTurnId": ask_turn_id},
+                workspace_id=ask_turn.workspace_id,
+            )
+
         self.db.commit()
         return self.to_review_response(review)
 

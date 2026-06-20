@@ -128,6 +128,73 @@ class RunService:
         self.db.refresh(run)
         return self._to_response(run)
 
+    def advance_run(self, run_id: str, action: str, workspace_id: str) -> DevRunResponse:
+        run = self._require_run(run_id, workspace_id)
+        if run.status not in ACTIVE_STATES:
+            raise ApiError(409, "RUN_NOT_ACTIVE", "Cannot advance a run that is completed or cancelled.")
+
+        if action not in ("approve", "complete"):
+            raise ApiError(422, "INVALID_ADVANCE_ACTION", "action must be 'approve' or 'complete'.")
+
+        now = datetime.now(UTC)
+
+        if action == "complete":
+            run.status = "completed"
+            run.stage_status = "completed"
+            run.completed_at = now
+            run.updated_at = now
+            event = RunEvent(
+                id=f"revent-{uuid4().hex[:12]}",
+                run_id=run.id,
+                event_type="completed",
+                stage=run.current_stage,
+                payload_json=json.dumps({"action": "complete"}, ensure_ascii=False),
+                created_at=now,
+            )
+            self.db.add(run)
+            self.db.add(event)
+            self.db.commit()
+            self.db.refresh(run)
+            return self._to_response(run)
+
+        # action == "approve": 当前阶段标记完成，推进到下一阶段
+        cur_idx = STAGES.index(run.current_stage)
+        run.stage_status = "completed"
+
+        event = RunEvent(
+            id=f"revent-{uuid4().hex[:12]}",
+            run_id=run.id,
+            event_type="stage_approved",
+            stage=run.current_stage,
+            payload_json=json.dumps({"action": "approve", "fromStage": run.current_stage}, ensure_ascii=False),
+            created_at=now,
+        )
+        self.db.add(event)
+
+        next_idx = cur_idx + 1
+        if next_idx >= len(STAGES):
+            # 所有阶段完成 = 整个 run 完成
+            run.status = "completed"
+            run.completed_at = now
+            event2 = RunEvent(
+                id=f"revent-{uuid4().hex[:12]}",
+                run_id=run.id,
+                event_type="completed",
+                payload_json=json.dumps({"action": "auto-completed"}, ensure_ascii=False),
+                created_at=now,
+            )
+            self.db.add(event2)
+        else:
+            run.current_stage = STAGES[next_idx]
+            run.stage_status = "pending"
+            run.status = "active"
+
+        run.updated_at = now
+        self.db.add(run)
+        self.db.commit()
+        self.db.refresh(run)
+        return self._to_response(run)
+
     def _require_run(self, run_id: str, workspace_id: str) -> DevRun:
         run = self.db.get(DevRun, run_id)
         if not run or run.workspace_id != workspace_id:

@@ -61,7 +61,9 @@ class DepositService:
         claim = payload.get("claim") or (payload.get("selectedText") if source == "selection" else None)
 
         # build content hash for idempotency
-        hash_input = f"deposit|{source}|{ask_turn_id or ''}|{run_id or ''}|{understanding}"
+        selected_text = payload.get("selectedText") or ""
+        rationale = payload.get("rationale") or ""
+        hash_input = f"deposit|{source}|{ask_turn_id or ''}|{run_id or ''}|{understanding}|{selected_text}|{rationale}"
         proposal_hash = self.vault_service.content_hash(hash_input)
 
         existing = self.db.scalar(

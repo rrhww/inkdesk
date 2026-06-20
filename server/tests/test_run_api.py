@@ -196,3 +196,99 @@ def test_stage_skip_must_record_reason(temp_app_env: Path) -> None:
     detail = client.get(f"/api/runs/{run_id}").json()
     last_payload = detail["events"][-1]["payload"]
     assert "skipReason" in last_payload or isinstance(last_payload, str)
+
+
+def test_advance_approve_moves_to_next_stage(temp_app_env: Path) -> None:
+    client = _make_client(temp_app_env)
+
+    run_resp = client.post("/api/runs", json={
+        "type": "PRD", "title": "推进阶段测试", "goal": "验证 approve 推进", "repoContext": "inkdesk",
+    })
+    run_id = run_resp.json()["id"]
+
+    # 先提交 stage output 进入 awaiting_review
+    client.post(f"/api/runs/{run_id}/events", json={
+        "stage": "context",
+        "eventType": "stage_output",
+        "payload": {"summary": "上下文收集完毕"},
+    })
+
+    # approve 当前阶段 → 推进到 solution
+    resp = client.post(f"/api/runs/{run_id}/advance", json={"action": "approve"})
+    assert resp.status_code == 200, f"got {resp.status_code}: {resp.text}"
+    data = resp.json()
+    assert data["currentStage"] == "solution"
+    assert data["stageStatus"] == "pending"
+    assert data["status"] == "active"
+
+    detail = client.get(f"/api/runs/{run_id}").json()
+    assert any(e["eventType"] == "stage_approved" for e in detail["events"])
+
+
+def test_advance_complete_ends_run(temp_app_env: Path) -> None:
+    client = _make_client(temp_app_env)
+
+    run_resp = client.post("/api/runs", json={
+        "type": "PRD", "title": "完成运行测试", "goal": "验证 complete", "repoContext": "inkdesk",
+    })
+    run_id = run_resp.json()["id"]
+
+    resp = client.post(f"/api/runs/{run_id}/advance", json={"action": "complete"})
+    assert resp.status_code == 200, f"got {resp.status_code}: {resp.text}"
+    data = resp.json()
+    assert data["status"] == "completed"
+    assert data["completedAt"] is not None
+
+    detail = client.get(f"/api/runs/{run_id}").json()
+    assert any(e["eventType"] == "completed" for e in detail["events"])
+
+
+def test_advance_invalid_action_rejected(temp_app_env: Path) -> None:
+    client = _make_client(temp_app_env)
+
+    run_resp = client.post("/api/runs", json={
+        "type": "PRD", "title": "无效动作测试", "goal": "x", "repoContext": "inkdesk",
+    })
+    run_id = run_resp.json()["id"]
+
+    resp = client.post(f"/api/runs/{run_id}/advance", json={"action": "invalid"})
+    assert resp.status_code == 422
+
+
+def test_advance_through_all_stages_completes(temp_app_env: Path) -> None:
+    client = _make_client(temp_app_env)
+
+    run_resp = client.post("/api/runs", json={
+        "type": "PRD", "title": "全阶段推进", "goal": "验证走完所有阶段", "repoContext": "inkdesk",
+    })
+    run_id = run_resp.json()["id"]
+
+    stages = ("context", "solution", "review", "coding", "testing", "deposit")
+    for stage in stages:
+        # 先提交 stage output 进入 awaiting_review
+        client.post(f"/api/runs/{run_id}/events", json={
+            "stage": stage,
+            "eventType": "stage_output",
+            "payload": {"summary": f"{stage} done"},
+        })
+        resp = client.post(f"/api/runs/{run_id}/advance", json={"action": "approve"})
+        data = resp.json()
+        assert resp.status_code == 200, f"stage={stage}: {resp.status_code} {resp.text}"
+
+    # 最后一个阶段 approve 后 run 应完成
+    final = client.get(f"/api/runs/{run_id}").json()
+    assert final["status"] == "completed"
+    assert final["completedAt"] is not None
+
+
+def test_advance_on_cancelled_run_rejected(temp_app_env: Path) -> None:
+    client = _make_client(temp_app_env)
+
+    run_resp = client.post("/api/runs", json={
+        "type": "PRD", "title": "取消后推进", "goal": "x", "repoContext": "inkdesk",
+    })
+    run_id = run_resp.json()["id"]
+    client.post(f"/api/runs/{run_id}/cancel")
+
+    resp = client.post(f"/api/runs/{run_id}/advance", json={"action": "approve"})
+    assert resp.status_code == 409

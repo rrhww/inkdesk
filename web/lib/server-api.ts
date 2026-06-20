@@ -56,6 +56,7 @@ async function requestInkdesk(path: string, options?: RequestInkdeskOptions) {
 
   const response = await fetch(`${apiBaseUrl}${path}`, {
     cache: "no-store",
+    credentials: "include",
     method: options?.method ?? "GET",
     headers: buildHeaders(options),
     body:

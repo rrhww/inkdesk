@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, File, Response, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -19,6 +20,7 @@ from inkdesk_server.research import ResearchWorkspaceService, get_research_servi
 from inkdesk_server.run_service import RunService
 from inkdesk_server.schemas import (
     AddRunEventRequest,
+    AdvanceRunRequest,
     ApiErrorResponse,
     AskBriefingResponse,
     AskRequest,
@@ -73,6 +75,14 @@ def create_app() -> FastAPI:
         compile_worker.stop()
 
     app = FastAPI(title="Inkdesk Python Server", version="0.1.0", lifespan=app_lifespan)
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["http://localhost:3000"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
     @app.exception_handler(ApiError)
     async def handle_api_error(_, exception: ApiError):
@@ -349,6 +359,17 @@ def create_app() -> FastAPI:
         workspace = get_current_workspace(db, owner.username)
         return RunService(db).cancel_run(run_id, workspace.id)
 
+    @app.post("/api/runs/{run_id}/advance", response_model=DevRunResponse)
+    def run_advance(
+        run_id: str,
+        request: AdvanceRunRequest,
+        owner: Annotated[VerifiedOwnerSession, Depends(require_owner)],
+        db: Annotated[Session, Depends(get_db)],
+        settings: Annotated[Settings, Depends(get_settings)],
+    ):
+        workspace = get_current_workspace(db, owner.username)
+        return RunService(db).advance_run(run_id, request.action, workspace.id)
+
     @app.post("/api/deposits", response_model=DepositResponse)
     def deposit_create(
         request: DepositRequest,
@@ -386,12 +407,13 @@ def create_app() -> FastAPI:
     @app.post("/api/raw/{source_id}/compile", status_code=202)
     def raw_compile(
         source_id: str,
-        _: Annotated[VerifiedOwnerSession, Depends(require_owner)],
+        owner: Annotated[VerifiedOwnerSession, Depends(require_owner)],
         db: Annotated[Session, Depends(get_db)],
         settings: Annotated[Settings, Depends(get_settings)],
     ):
+        workspace = get_current_workspace(db, owner.username)
         source = db.get(Source, source_id)
-        if source is None:
+        if source is None or source.workspace_id != workspace.id:
             raise ResourceNotFoundError(f"Source not found: {source_id}")
         if source.status == "WIKI_LINKED":
             raise ApiError(409, "SOURCE_ALREADY_LINKED", "Source is already linked to a wiki topic.")
@@ -423,25 +445,27 @@ def create_app() -> FastAPI:
     @app.get("/api/compile/{task_id}")
     def compile_task_status(
         task_id: str,
-        _: Annotated[VerifiedOwnerSession, Depends(require_owner)],
+        owner: Annotated[VerifiedOwnerSession, Depends(require_owner)],
         db: Annotated[Session, Depends(get_db)],
         settings: Annotated[Settings, Depends(get_settings)],
     ):
+        workspace = get_current_workspace(db, owner.username)
         task = db.get(CompileTask, task_id)
-        if task is None:
+        if task is None or task.workspace_id != workspace.id:
             raise ResourceNotFoundError(f"Compile task not found: {task_id}")
         return get_research_service(db, settings)._to_compile_task_response(task)
 
     @app.post("/api/compile/{task_id}/retry", status_code=202)
     def compile_retry(
         task_id: str,
-        _: Annotated[VerifiedOwnerSession, Depends(require_owner)],
+        owner: Annotated[VerifiedOwnerSession, Depends(require_owner)],
         db: Annotated[Session, Depends(get_db)],
         settings: Annotated[Settings, Depends(get_settings)],
     ):
         from inkdesk_server.compile_worker import get_compile_worker
+        workspace = get_current_workspace(db, owner.username)
         task = db.get(CompileTask, task_id)
-        if task is None:
+        if task is None or task.workspace_id != workspace.id:
             raise ResourceNotFoundError(f"Compile task not found: {task_id}")
         if task.status != "FAILED":
             raise ApiError(409, "TASK_NOT_FAILED", "Only FAILED tasks can be retried.")

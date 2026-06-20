@@ -214,6 +214,7 @@ export type ResearchAskRequest = {
   topicId?: string;
   mode?: ResearchAskMode;
   continueFromAskTurnId?: string;
+  runId?: string;
 };
 
 export type ResearchAskHistoryEntry = {

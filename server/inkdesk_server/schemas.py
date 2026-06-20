@@ -373,6 +373,10 @@ class AddRunEventRequest(BaseModel):
     payload: dict = Field(default_factory=dict)
 
 
+class AdvanceRunRequest(BaseModel):
+    action: str  # "approve" | "complete"
+
+
 class DepositRequest(BaseModel):
     source: str
     runId: str | None = None

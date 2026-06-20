@@ -187,3 +187,22 @@ export async function getDevRun(runId: string, ownerSession?: string): Promise<D
 export async function createDevRun(request: CreateDevRunRequest, ownerSession?: string): Promise<DevRun> {
   return postInkdeskJson<DevRun>("/runs", request, { ownerSession });
 }
+
+export type DepositRequest = {
+  source: string;
+  runId?: string;
+  askTurnId?: string;
+  stage?: string;
+  payload: Record<string, unknown>;
+};
+
+export type DepositResponse = {
+  reviewId: string;
+  status: string;
+  source: string;
+  isNew: boolean;
+};
+
+export async function depositResearch(request: DepositRequest, ownerSession?: string): Promise<DepositResponse> {
+  return postInkdeskJson<DepositResponse>("/deposits", request, { ownerSession });
+}

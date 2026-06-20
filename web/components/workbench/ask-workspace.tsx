@@ -1,4 +1,4 @@
-import { InkSelect, type InkSelectOption } from "@/components/ui/ink-select";
+import { InkSelect } from "@/components/ui/ink-select";
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -31,6 +31,7 @@ type AskWorkspacePageProps = {
     topicId?: string;
     mode?: string;
     continueFromAskTurnId?: string;
+    runId?: string;
   }>;
   basePath?: "/app" | "/app/ask";
 };
@@ -41,6 +42,7 @@ function buildAskHref(input: {
   mode: ResearchAskMode;
   topicId?: string;
   continueFromAskTurnId?: string;
+  runId?: string;
 }) {
   const params = new URLSearchParams();
   params.set("q", input.question);
@@ -49,6 +51,9 @@ function buildAskHref(input: {
   }
   if (input.continueFromAskTurnId) {
     params.set("continueFromAskTurnId", input.continueFromAskTurnId);
+  }
+  if (input.runId) {
+    params.set("runId", input.runId);
   }
   params.set("mode", input.mode);
   return `${input.basePath}?${params.toString()}`;
@@ -88,11 +93,13 @@ function BriefingHero({
   basePath,
   mode,
   topicId,
+  runId,
 }: {
   briefing: ResearchAskBriefing;
   basePath: "/app" | "/app/ask";
   mode: ResearchAskMode;
   topicId?: string;
+  runId?: string;
 }) {
   return (
     <PanelCard className="p-8">
@@ -109,7 +116,8 @@ function BriefingHero({
               basePath,
               question: item,
               mode,
-              topicId
+              topicId,
+              runId,
             })}
           >
             {item}
@@ -128,7 +136,8 @@ export async function AskWorkspacePage({ searchParams, basePath = "/app" }: AskW
   const topicId = resolved.topicId?.trim() || undefined;
   const mode: ResearchAskMode = resolved.mode === "vault_plus_web" ? "vault_plus_web" : "vault";
   const continueFromAskTurnId = resolved.continueFromAskTurnId?.trim() || undefined;
-  const answer = question ? await askResearch({ question, topicId, mode, continueFromAskTurnId }, OWNER_SESSION_VALUE) : null;
+  const runId = resolved.runId?.trim() || undefined;
+  const answer = question ? await askResearch({ question, topicId, mode, continueFromAskTurnId, runId }, OWNER_SESSION_VALUE) : null;
   const briefing = answer
     ? await getAskBriefing({ askTurnId: answer.id }, OWNER_SESSION_VALUE)
     : await getAskBriefing(topicId ? { topicId } : undefined, OWNER_SESSION_VALUE);
@@ -144,7 +153,8 @@ export async function AskWorkspacePage({ searchParams, basePath = "/app" }: AskW
       question: nextQuestion,
       mode: nextMode,
       topicId: nextTopicId,
-      continueFromAskTurnId: nextContinueFromAskTurnId
+      continueFromAskTurnId: nextContinueFromAskTurnId,
+      runId,
     });
   }
 
@@ -154,7 +164,7 @@ export async function AskWorkspacePage({ searchParams, basePath = "/app" }: AskW
       title="研究问答"
       description="先看当前知识缺口，再决定继续追问、补 raw、打开 ingest，还是把稳定结论沉淀到知识库。"
     >
-      {!answer ? <BriefingHero basePath={basePath} briefing={briefing} mode={mode} topicId={topicId ?? dashboard.focusTopic?.id ?? undefined} /> : null}
+      {!answer ? <BriefingHero basePath={basePath} briefing={briefing} mode={mode} topicId={topicId ?? dashboard.focusTopic?.id ?? undefined} runId={runId} /> : null}
 
       <div className="mt-8 grid gap-6 xl:grid-cols-[0.92fr_1.08fr]">
         <div className="space-y-6">
@@ -200,6 +210,7 @@ export async function AskWorkspacePage({ searchParams, basePath = "/app" }: AskW
                 />
               </div>
               {continueFromAskTurnId ? <input name="continueFromAskTurnId" type="hidden" value={continueFromAskTurnId} /> : null}
+              {runId ? <input name="runId" type="hidden" value={runId} /> : null}
               <button className="rounded-full bg-ink-primary px-5 py-3 text-sm font-semibold text-white" type="submit">
                 提问
               </button>
