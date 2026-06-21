@@ -139,6 +139,10 @@ class RunService:
         now = datetime.now(UTC)
 
         if action == "complete":
+            if run.current_stage != "deposit":
+                raise ApiError(409, "INVALID_STAGE", "Run can only be completed from the deposit stage.")
+            if run.stage_status != "awaiting_review":
+                raise ApiError(409, "STAGE_NOT_AWAITING_REVIEW", "Deposit stage must be in awaiting_review to complete.")
             run.status = "completed"
             run.stage_status = "completed"
             run.completed_at = now
@@ -157,7 +161,9 @@ class RunService:
             self.db.refresh(run)
             return self._to_response(run)
 
-        # action == "approve": 当前阶段标记完成，推进到下一阶段
+        # action == "approve"
+        if run.stage_status != "awaiting_review":
+            raise ApiError(409, "STAGE_NOT_AWAITING_REVIEW", "Current stage must be in awaiting_review to approve.")
         cur_idx = STAGES.index(run.current_stage)
         run.stage_status = "completed"
 

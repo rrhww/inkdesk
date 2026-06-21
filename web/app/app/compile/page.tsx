@@ -2,7 +2,6 @@ import Link from "next/link";
 
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageShell } from "@/components/workbench/page-shell";
-import { OWNER_SESSION_VALUE } from "@/lib/owner-session";
 import { getCompileQueue } from "@/lib/research";
 import type { CompileTaskSummary } from "@/lib/types";
 
@@ -56,7 +55,7 @@ function CompileTaskRow({ task }: { task: CompileTaskSummary }) {
 }
 
 export default async function CompileQueuePage() {
-  const tasks = await getCompileQueue(OWNER_SESSION_VALUE).catch(() => []);
+  const tasks = await getCompileQueue().catch(() => []);
 
   return (
     <PageShell

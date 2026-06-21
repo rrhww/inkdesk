@@ -4,7 +4,6 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { PanelCard } from "@/components/ui/panel-card";
 import { PageShell } from "@/components/workbench/page-shell";
 import { ReviewCard } from "@/components/workbench/review-card";
-import { OWNER_SESSION_VALUE } from "@/lib/owner-session";
 import { acceptIngest, getIngestItems, rejectIngest } from "@/lib/research";
 import { buildIngestRevalidationPaths } from "./revalidation-paths";
 
@@ -13,7 +12,7 @@ async function acceptIngestAction(formData: FormData) {
 
   const reviewId = String(formData.get("reviewId") ?? "");
 
-  const decision = await acceptIngest(reviewId, OWNER_SESSION_VALUE);
+  const decision = await acceptIngest(reviewId);
   for (const path of buildIngestRevalidationPaths(decision.topicId)) {
     revalidatePath(path);
   }
@@ -24,7 +23,7 @@ async function rejectIngestAction(formData: FormData) {
 
   const reviewId = String(formData.get("reviewId") ?? "");
 
-  await rejectIngest(reviewId, OWNER_SESSION_VALUE);
+  await rejectIngest(reviewId);
   for (const path of buildIngestRevalidationPaths()) {
     revalidatePath(path);
   }
@@ -41,7 +40,7 @@ export default async function IngestPage(props: IngestPageProps) {
 }
 
 async function IngestPageContent({ searchParams }: IngestPageProps = {}) {
-  const reviews = await getIngestItems(OWNER_SESSION_VALUE);
+  const reviews = await getIngestItems();
   const resolved = searchParams ? await searchParams : undefined;
   const createdId = resolved?.created?.trim();
 

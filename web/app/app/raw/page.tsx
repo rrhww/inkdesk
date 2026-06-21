@@ -4,7 +4,6 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { PageShell } from "@/components/workbench/page-shell";
 import { RawImportPanel } from "@/components/workbench/raw-import-panel";
 import { SourceCard } from "@/components/workbench/source-card";
-import { OWNER_SESSION_VALUE } from "@/lib/owner-session";
 import { getRawSources, importPdfSource, importTextSource, importWebSource } from "@/lib/research";
 
 async function importWebAction(formData: FormData) {
@@ -15,7 +14,6 @@ async function importWebAction(formData: FormData) {
       url: String(formData.get("url") ?? ""),
       title: String(formData.get("title") ?? "").trim() || undefined,
     },
-    OWNER_SESSION_VALUE,
   );
   revalidatePath("/app");
   revalidatePath("/app/raw");
@@ -32,7 +30,6 @@ async function importTextAction(formData: FormData) {
       body: String(formData.get("body") ?? ""),
       excerpt: String(formData.get("excerpt") ?? "").trim() || undefined,
     },
-    OWNER_SESSION_VALUE,
   );
   revalidatePath("/app");
   revalidatePath("/app/raw");
@@ -50,7 +47,6 @@ async function importPdfAction(formData: FormData) {
   await importPdfSource(
     file,
     String(formData.get("title") ?? "").trim() || undefined,
-    OWNER_SESSION_VALUE,
     String(formData.get("locator") ?? "").trim() || undefined,
   );
   revalidatePath("/app");
@@ -59,7 +55,7 @@ async function importPdfAction(formData: FormData) {
 }
 
 export default async function RawPage() {
-  const sources = await getRawSources(OWNER_SESSION_VALUE);
+  const sources = await getRawSources();
   const pending = sources.filter((source) => source.status === "RAW" || source.status === "INGEST_PENDING");
   const recentSources = sources.slice(0, 5);
 

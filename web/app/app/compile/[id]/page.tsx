@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PanelCard } from "@/components/ui/panel-card";
 import { PageShell } from "@/components/workbench/page-shell";
-import { OWNER_SESSION_VALUE } from "@/lib/owner-session";
 import { getCompileTask, retryCompileTask } from "@/lib/research";
 import type { CompileStepResponse } from "@/lib/types";
 
@@ -48,7 +47,7 @@ async function retryAction(formData: FormData) {
   "use server";
   const taskId = String(formData.get("taskId") ?? "").trim();
   if (!taskId) return;
-  await retryCompileTask(taskId, OWNER_SESSION_VALUE);
+  await retryCompileTask(taskId);
   revalidatePath(`/app/compile/${taskId}`);
   revalidatePath("/app/compile");
 }
@@ -90,7 +89,7 @@ export default async function CompileTaskPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const task = await getCompileTask(id, OWNER_SESSION_VALUE).catch(() => null);
+  const task = await getCompileTask(id).catch(() => null);
 
   if (!task) {
     return (

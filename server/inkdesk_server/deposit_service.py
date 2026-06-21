@@ -30,6 +30,7 @@ class DepositService:
         run_id: str | None = None,
         ask_turn_id: str | None = None,
         stage: str | None = None,
+        source_id: str | None = None,
     ) -> DepositResponse:
         if source not in VALID_SOURCES:
             raise ApiError(422, "INVALID_SOURCE", f"source must be one of: {','.join(sorted(VALID_SOURCES))}")
@@ -85,7 +86,7 @@ class DepositService:
         review = ReviewItem(
             id=f"review-{uuid4().hex[:12]}",
             workspace_id=workspace_id,
-            source_id=None,
+            source_id=source_id,
             target_topic=target_topic,
             kind="TOPIC_CREATE" if target_topic is None else "TOPIC_PATCH",
             proposal_kind="TOPIC_CREATE" if target_topic is None else "TOPIC_PATCH",

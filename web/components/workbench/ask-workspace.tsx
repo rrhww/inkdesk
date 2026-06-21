@@ -6,7 +6,6 @@ import { redirect } from "next/navigation";
 import { PanelCard } from "@/components/ui/panel-card";
 import { AskAnswerPanel } from "@/components/workbench/ask-answer-panel";
 import { PageShell } from "@/components/workbench/page-shell";
-import { OWNER_SESSION_VALUE } from "@/lib/owner-session";
 import { askResearch, getAskBriefing, getResearchDashboard, getWikiPages, proposeAskWriteback } from "@/lib/research";
 import type { ResearchAskBriefing, ResearchAskMode } from "@/lib/types";
 
@@ -18,7 +17,7 @@ async function createAskWritebackAction(formData: FormData) {
     return;
   }
 
-  const review = await proposeAskWriteback(askTurnId, OWNER_SESSION_VALUE);
+  const review = await proposeAskWriteback(askTurnId);
   revalidatePath("/app");
   revalidatePath("/app/ask");
   revalidatePath("/app/ingest");
@@ -129,18 +128,18 @@ function BriefingHero({
 }
 
 export async function AskWorkspacePage({ searchParams, basePath = "/app" }: AskWorkspacePageProps) {
-  const dashboard = await getResearchDashboard(OWNER_SESSION_VALUE);
-  const wikiPages = await getWikiPages(OWNER_SESSION_VALUE);
+  const dashboard = await getResearchDashboard();
+  const wikiPages = await getWikiPages();
   const resolved = await searchParams;
   const question = resolved.q?.trim();
   const topicId = resolved.topicId?.trim() || undefined;
   const mode: ResearchAskMode = resolved.mode === "vault_plus_web" ? "vault_plus_web" : "vault";
   const continueFromAskTurnId = resolved.continueFromAskTurnId?.trim() || undefined;
   const runId = resolved.runId?.trim() || undefined;
-  const answer = question ? await askResearch({ question, topicId, mode, continueFromAskTurnId, runId }, OWNER_SESSION_VALUE) : null;
+  const answer = question ? await askResearch({ question, topicId, mode, continueFromAskTurnId, runId }) : null;
   const briefing = answer
-    ? await getAskBriefing({ askTurnId: answer.id }, OWNER_SESSION_VALUE)
-    : await getAskBriefing(topicId ? { topicId } : undefined, OWNER_SESSION_VALUE);
+    ? await getAskBriefing({ askTurnId: answer.id })
+    : await getAskBriefing(topicId ? { topicId } : undefined);
 
   function askHref(
     nextQuestion: string,

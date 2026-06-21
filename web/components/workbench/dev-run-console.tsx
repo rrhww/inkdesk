@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createDevRun, getDevRuns, getVaultHealth } from "@/lib/research";
@@ -45,6 +45,7 @@ function HealthDigest({ health }: { health: HealthResponse }) {
 
 export function DevRunConsole() {
   const router = useRouter();
+  const runsMutationVersion = useRef(0);
   const [runs, setRuns] = useState<DevRunSummary[]>([]);
   const [health, setHealth] = useState<HealthResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -57,12 +58,15 @@ export function DevRunConsole() {
   const [error, setError] = useState<string | null>(null);
 
   const fetchRuns = useCallback(async () => {
+    const mutationVersion = runsMutationVersion.current;
     try {
       const [data, healthData] = await Promise.all([
         getDevRuns(),
         getVaultHealth().catch(() => null),
       ]);
-      setRuns(data);
+      if (mutationVersion === runsMutationVersion.current) {
+        setRuns(data);
+      }
       setHealth(healthData);
     } catch {
       setError("加载任务列表失败");
@@ -87,6 +91,7 @@ export function DevRunConsole() {
         goal: formGoal.trim(),
         repoContext: formRepo.trim() || undefined,
       });
+      runsMutationVersion.current += 1;
       setRuns((prev) => [
         {
           id: run.id,

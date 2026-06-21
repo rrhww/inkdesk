@@ -233,6 +233,18 @@ def test_advance_complete_ends_run(temp_app_env: Path) -> None:
     })
     run_id = run_resp.json()["id"]
 
+    # advance through all stages to deposit awaiting_review
+    stages = ("context", "solution", "review", "coding", "testing", "deposit")
+    for stage in stages:
+        client.post(f"/api/runs/{run_id}/events", json={
+            "stage": stage,
+            "eventType": "stage_output",
+            "payload": {"summary": f"{stage} done"},
+        })
+        if stage != "deposit":
+            client.post(f"/api/runs/{run_id}/advance", json={"action": "approve"})
+
+    # now in deposit stage with awaiting_review — complete should work
     resp = client.post(f"/api/runs/{run_id}/advance", json={"action": "complete"})
     assert resp.status_code == 200, f"got {resp.status_code}: {resp.text}"
     data = resp.json()
@@ -292,3 +304,66 @@ def test_advance_on_cancelled_run_rejected(temp_app_env: Path) -> None:
 
     resp = client.post(f"/api/runs/{run_id}/advance", json={"action": "approve"})
     assert resp.status_code == 409
+
+
+def test_approve_without_awaiting_review_rejected(temp_app_env: Path) -> None:
+    """approve 仅在 stage_status == 'awaiting_review' 时允许"""
+    client = _make_client(temp_app_env)
+
+    run_resp = client.post("/api/runs", json={
+        "type": "PRD", "title": "未进入 awaiting_review", "goal": "x", "repoContext": "inkdesk",
+    })
+    run_id = run_resp.json()["id"]
+    # run 刚创建时 stage_status == "pending"，不能直接 approve
+    resp = client.post(f"/api/runs/{run_id}/advance", json={"action": "approve"})
+    assert resp.status_code == 409
+    assert resp.json()["code"] == "STAGE_NOT_AWAITING_REVIEW"
+
+
+def test_complete_not_in_deposit_rejected(temp_app_env: Path) -> None:
+    """complete 仅在 current_stage == 'deposit' 且处于 awaiting_review 时允许"""
+    client = _make_client(temp_app_env)
+
+    run_resp = client.post("/api/runs", json={
+        "type": "PRD", "title": "非 deposit 阶段完成", "goal": "x", "repoContext": "inkdesk",
+    })
+    run_id = run_resp.json()["id"]
+
+    # 先推进到 context 的 awaiting_review
+    client.post(f"/api/runs/{run_id}/events", json={
+        "stage": "context",
+        "eventType": "stage_output",
+        "payload": {"summary": "done"},
+    })
+
+    # 在 context 阶段（非 deposit）尝试 complete 应被拒绝
+    resp = client.post(f"/api/runs/{run_id}/advance", json={"action": "complete"})
+    assert resp.status_code == 409
+    assert resp.json()["code"] == "INVALID_STAGE"
+
+
+def test_double_approve_rejected(temp_app_env: Path) -> None:
+    """同一阶段不能重复 approve——approve 后 stage_status 变为 completed，不再是 awaiting_review"""
+    client = _make_client(temp_app_env)
+
+    run_resp = client.post("/api/runs", json={
+        "type": "PRD", "title": "重复 approve", "goal": "x", "repoContext": "inkdesk",
+    })
+    run_id = run_resp.json()["id"]
+
+    # 进入 awaiting_review
+    client.post(f"/api/runs/{run_id}/events", json={
+        "stage": "context",
+        "eventType": "stage_output",
+        "payload": {"summary": "done"},
+    })
+
+    # 第一次 approve — 成功
+    r1 = client.post(f"/api/runs/{run_id}/advance", json={"action": "approve"})
+    assert r1.status_code == 200
+
+    # 已经推进到下一阶段（solution），stage_status 是 "pending"
+    # 不能直接 approve
+    r2 = client.post(f"/api/runs/{run_id}/advance", json={"action": "approve"})
+    assert r2.status_code == 409
+    assert r2.json()["code"] == "STAGE_NOT_AWAITING_REVIEW"

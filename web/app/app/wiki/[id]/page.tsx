@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 import { PanelCard } from "@/components/ui/panel-card";
 import { StatusPill } from "@/components/ui/status-pill";
 import { PageShell } from "@/components/workbench/page-shell";
-import { OWNER_SESSION_VALUE } from "@/lib/owner-session";
 import { getWikiDetail } from "@/lib/research";
 import type { ResearchClaimProvenanceStatus, ResearchTopicClaim } from "@/lib/types";
 
@@ -102,7 +101,7 @@ function formatUsedAt(value?: string | null) {
 
 export default async function WikiDetailPage({ params }: WikiDetailPageProps) {
   const { id } = await params;
-  const topic = await getWikiDetail(id, OWNER_SESSION_VALUE).catch(() => null);
+  const topic = await getWikiDetail(id).catch(() => null);
 
   if (!topic) {
     notFound();

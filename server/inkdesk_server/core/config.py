@@ -5,7 +5,7 @@ from datetime import timedelta
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import AliasChoices, Field
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -41,13 +41,6 @@ class Settings(BaseSettings):
         alias="INKDESK_DB_URL",
     )
     vault_root: Path = Field(default=Path("./inkdesk-vault"), alias="INKDESK_VAULT_ROOT")
-    auth_secret: str = Field(
-        default="inkdesk-local-owner-session-secret",
-        validation_alias=AliasChoices("INKDESK_AUTH_SECRET", "APP_JWT_SECRET"),
-    )
-    auth_session_duration: timedelta = Field(default=timedelta(hours=8), alias="INKDESK_AUTH_SESSION_DURATION")
-    auth_allow_legacy_owner_cookie: bool = Field(default=True, alias="INKDESK_AUTH_ALLOW_LEGACY_OWNER_COOKIE")
-    owner_session_cookie: str = "inkdesk_owner_session"
     agent_runtime: str = Field(default="langgraph", alias="INKDESK_AGENT_RUNTIME")
     agent_provider_profile: str = Field(default="openai", alias="INKDESK_AGENT_PROVIDER_PROFILE")
     agent_model: str | None = Field(default=None, alias="INKDESK_AGENT_MODEL")

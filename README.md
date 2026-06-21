@@ -103,13 +103,13 @@ PostgreSQL 负责索引、队列和工作流状态。已接受的知识必须能
 | 健康检查 | 手动跑 lint | 自动定期扫描 + 仪表盘 + 趋势图 |
 | 评测 | `claude -p` 子进程 | 评测中心：golden tasks → 跑分 → 版本对比 |
 | 多平台 | 手动配置各平台 | MCP 作为可选扩展 |
-| 上手 | 需学会 Obsidian + qmd + Git + Claude Code | 打开浏览器，登录，开始 |
+| 上手 | 需学会 Obsidian + qmd + Git + Claude Code | 自行部署后打开浏览器即可使用 |
 
 ## 开发进度
 
 ### 已完成：阶段一主体闭环
 
-- [x] 单 owner 私有登录，`/app` 工作区。
+- [x] 单实例、单用户、无登录的 `/app` 工作区。
 - [x] `raw -> ingest -> wiki -> ask` 闭环。
 - [x] raw 文本、网页、PDF 导入。
 - [x] AI 审阅提案，接受 / 拒绝。
@@ -160,8 +160,7 @@ PostgreSQL 负责索引、队列和工作流状态。已接受的知识必须能
 
 ## 当前路由
 
-- `/`：根据 owner session 跳转。
-- `/login`：隐藏 owner 登录入口。
+- `/`：直接跳转到 `/app`。
 - `/app`：当前已实现为 Ask 工作区；目标是 Dev Run Console。
 - `/app/raw`：原始 vault 材料。
 - `/app/ingest`：待处理的 AI 提案。
@@ -188,7 +187,6 @@ cp infra/.env.example infra/.env
 至少设置：
 
 ```env
-INKDESK_AUTH_SECRET=replace-with-a-long-random-secret
 INKDESK_AGENT_RUNTIME=langgraph
 INKDESK_AGENT_PROVIDER_PROFILE=openai
 OPENAI_API_KEY=sk-xxxx
@@ -213,9 +211,8 @@ INKDESK_AGENT_MODEL=deepseek-v4-flash
 docker compose --env-file infra/.env -f infra/docker-compose.local-docker.yml up -d --build
 ```
 
-- 应用：`http://localhost:3000/login`
+- 应用：`http://localhost:3000/app`
 - 后端健康：`http://localhost:8080/actuator/health`
-- 默认账号：`owner@inkdesk.local` / `inkdesk-owner`
 
 停止（保留数据）：
 ```bash

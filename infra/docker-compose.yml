@@ -42,7 +42,6 @@ services:
     environment:
       INKDESK_DB_URL: postgresql+psycopg://${POSTGRES_USER:-inkdesk}:${POSTGRES_PASSWORD:-inkdesk}@postgres:5432/${POSTGRES_DB:-inkdesk}
       INKDESK_VAULT_ROOT: /app/inkdesk-vault
-      INKDESK_AUTH_SECRET: ${INKDESK_AUTH_SECRET:-replace-with-a-long-random-secret}
       INKDESK_AGENT_PROVIDER_PROFILE: ${INKDESK_AGENT_PROVIDER_PROFILE:-openai}
       INKDESK_AGENT_MODEL: ${INKDESK_AGENT_MODEL:-}
       INKDESK_AGENT_API_KEY: ${INKDESK_AGENT_API_KEY:-}

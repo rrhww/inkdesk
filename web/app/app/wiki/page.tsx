@@ -3,12 +3,11 @@ import { PanelCard } from "@/components/ui/panel-card";
 import { StatusPill } from "@/components/ui/status-pill";
 import { PageShell } from "@/components/workbench/page-shell";
 import { WikiCard } from "@/components/workbench/wiki-card";
-import { OWNER_SESSION_VALUE } from "@/lib/owner-session";
 import { getResearchDashboard, getWikiPages } from "@/lib/research";
 
 export default async function WikiPage() {
-  const dashboard = await getResearchDashboard(OWNER_SESSION_VALUE);
-  const topics = await getWikiPages(OWNER_SESSION_VALUE);
+  const dashboard = await getResearchDashboard();
+  const topics = await getWikiPages();
   const unsupportedClaimCount = dashboard.health.unsupportedClaimCount;
   const staleClaimCount = dashboard.health.staleClaimCount;
   const conflictingClaimCount = dashboard.health.conflictingClaimCount;

@@ -508,17 +508,13 @@ class ResearchWorkspaceService:
 
     def create_ask_writeback_proposal(self, ask_turn_id: str) -> ReviewItemResponse:
         self.ensure_research_seed_state()
-        now = datetime.now(UTC)
         ask_turn = self.db.scalar(select(AskTurn).where(AskTurn.id == ask_turn_id).options(selectinload(AskTurn.topic)))
         if not ask_turn:
             raise ResourceNotFoundError(f"Ask turn not found: {ask_turn_id}")
+
         package = self.decode_writeback_package(ask_turn.writeback_package_json)
-        materialized_sources = self.materialize_writeback_sources(ask_turn, now)
-        available_sources = self._sources()
-        citations = self.resolve_citation_sources(ask_turn.citation_source_ids, available_sources)
-        materialized_source_ids = {source.id for source in materialized_sources}
-        supporting_sources = materialized_sources + [source for source in citations if source.id not in materialized_source_ids]
-        primary_source = supporting_sources[0] if supporting_sources else None
+        materialized_sources = self.materialize_writeback_sources(ask_turn, datetime.now(UTC))
+        primary_source = materialized_sources[0] if materialized_sources else None
         target_topic = ask_turn.topic
         if package and package.targetTopicId:
             requested_topic = self.db.scalar(select(Topic).where(Topic.id == package.targetTopicId))
@@ -527,6 +523,7 @@ class ResearchWorkspaceService:
             target_topic = None
         if package is None and target_topic is None and primary_source is not None:
             target_topic = self.find_matching_topic(primary_source, self._topics())
+
         proposed_topic_title = (
             package.proposedTopicTitle
             if package and package.proposedTopicTitle
@@ -536,44 +533,37 @@ class ResearchWorkspaceService:
         proposal_understanding = package.proposedUnderstanding if package else ask_turn.answer
         proposal_claim = package.proposedClaim if package else self.first_sentence(ask_turn.answer)
         proposal_open_question = package.proposedOpenQuestion if package else self.derive_ask_writeback_open_question(ask_turn)
-        proposal_hash = self.vault_service.content_hash(
-            f"ask-writeback|{ask_turn.id}|{proposed_vault_path}|{proposal_understanding}|{','.join(source.id for source in materialized_sources)}"
-        )
-        existing = self.db.scalar(select(ReviewItem).where(ReviewItem.content_hash == proposal_hash, ReviewItem.status == "PENDING"))
-        if existing:
-            return self.to_review_response(existing)
-        review = ReviewItem(
-            id=self.new_id("review"),
-            workspace=ask_turn.workspace,
-            source=primary_source,
-            target_topic=target_topic,
-            kind="TOPIC_CREATE" if target_topic is None else "TOPIC_PATCH",
-            proposal_kind="TOPIC_CREATE" if target_topic is None else "TOPIC_PATCH",
-            status="PENDING",
-            title="从 Ask 回答建立 wiki 页面" if target_topic is None else "把 Ask 结论补充进现有 wiki",
-            summary=self.build_ask_writeback_summary(ask_turn, target_topic, proposed_topic_title),
-            proposed_topic_title=proposed_topic_title,
-            proposed_understanding=proposal_understanding,
-            proposed_open_questions=proposal_open_question,
-            proposed_claim=proposal_claim,
-            proposed_vault_path=proposed_vault_path,
-            content_hash=proposal_hash,
-            created_at=now,
-        )
-        self.db.add(review)
 
-        # emit deposit event if this Ask turn is linked to a DevRun
-        if ask_turn.run_id:
-            from inkdesk_server.run_service import RunService
-            RunService(self.db).add_event(
-                run_id=ask_turn.run_id,
-                stage="deposit",
-                event_type="deposited",
-                payload={"reviewId": review.id, "source": "answer", "askTurnId": ask_turn_id},
-                workspace_id=ask_turn.workspace_id,
-            )
+        from inkdesk_server.deposit_service import DepositService
 
-        self.db.commit()
+        materialized_source_ids = [s.id for s in materialized_sources]
+        primary_source_id = materialized_source_ids[0] if materialized_source_ids else None
+
+        deposit_payload = {
+            "title": "从 Ask 回答建立 wiki 页面" if target_topic is None else "把 Ask 结论补充进现有 wiki",
+            "summary": self.build_ask_writeback_summary(ask_turn, target_topic, proposed_topic_title),
+            "understanding": proposal_understanding,
+            "claim": proposal_claim,
+            "openQuestions": proposal_open_question,
+            "proposedTopicTitle": proposed_topic_title,
+            "proposedVaultPath": proposed_vault_path,
+            "targetTopicId": target_topic.id if target_topic else None,
+            "materializedSourceIds": materialized_source_ids,
+        }
+
+        deposit_service = DepositService(self.db, self.vault_service)
+        result = deposit_service.deposit(
+            workspace_id=ask_turn.workspace_id,
+            source="answer",
+            payload=deposit_payload,
+            run_id=ask_turn.run_id,
+            ask_turn_id=ask_turn_id,
+            source_id=primary_source_id,
+        )
+
+        review = self.db.scalar(select(ReviewItem).where(ReviewItem.id == result.reviewId))
+        if not review:
+            raise ResourceNotFoundError(f"Review not found after deposit: {result.reviewId}")
         return self.to_review_response(review)
 
     def ensure_research_seed_state(self) -> None:
