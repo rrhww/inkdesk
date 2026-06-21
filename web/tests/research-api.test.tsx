@@ -42,8 +42,6 @@ test("research helper calls the backend dashboard and preserves the vault-first 
     const url = new URL(String(input));
 
     if (url.pathname === "/api/admin/home") {
-      assert.equal((init?.headers as Record<string, string> | undefined)?.Cookie, "inkdesk_owner_session=owner");
-
       return createJsonResponse({
         summary: {
           activeTopics: 2,
@@ -193,7 +191,7 @@ test("research helper calls the backend dashboard and preserves the vault-first 
     throw new Error(`Unexpected fetch URL: ${url.toString()}`);
   }, async () => {
     const module = await import("../lib/research");
-    const snapshot = await module.getResearchDashboard("owner");
+    const snapshot = await module.getResearchDashboard();
 
     assert.equal(snapshot.summary.activeTopics, 2);
     assert.equal(snapshot.health.rawBacklogCount, 4);
@@ -390,12 +388,11 @@ test("research helper fetches wiki detail, raw list, ingest items, and grounded 
   }, async () => {
     const module = await import("../lib/research");
     const [topic, sources, ingestItems, answer] = await Promise.all([
-      module.getWikiDetail("topic-001", "owner"),
-      module.getRawSources("owner"),
-      module.getIngestItems("owner"),
+      module.getWikiDetail("topic-001"),
+      module.getRawSources(),
+      module.getIngestItems(),
       module.askResearch(
         askRequest,
-        "owner"
       )
     ]);
 
@@ -509,9 +506,9 @@ test("research helper fetches ask briefing by scope", async () => {
   }, async () => {
     const module = await import("../lib/research");
     const [workspace, topic, askTurn] = await Promise.all([
-      module.getAskBriefing(undefined, "owner"),
-      module.getAskBriefing({ topicId: "topic-001" }, "owner"),
-      module.getAskBriefing({ askTurnId: "ask-001" }, "owner")
+      module.getAskBriefing(undefined),
+      module.getAskBriefing({ topicId: "topic-001" }),
+      module.getAskBriefing({ askTurnId: "ask-001" })
     ]);
 
     assert.equal(workspace.scope, "workspace");
@@ -551,8 +548,8 @@ test("research helper returns ingest review decisions so pages can refresh affec
     throw new Error(`Unexpected fetch URL: ${url.toString()}`);
   }, async () => {
     const module = await import("../lib/research");
-    const accepted = await module.acceptIngest("review-001", "owner");
-    const rejected = await module.rejectIngest("review-001", "owner");
+    const accepted = await module.acceptIngest("review-001");
+    const rejected = await module.rejectIngest("review-001");
 
     assert.equal(accepted.reviewId, "review-001");
     assert.equal(accepted.status, "ACCEPTED");
@@ -626,7 +623,6 @@ test("research helper imports raw sources through dedicated web text and pdf ent
         url: "https://example.com/topic-memory",
         title: "Topic memory capture"
       },
-      "owner"
     );
     await module.importTextSource(
       {
@@ -635,9 +631,8 @@ test("research helper imports raw sources through dedicated web text and pdf ent
         excerpt: "Manual excerpt",
         body: "Manual body"
       },
-      "owner"
     );
-    await module.importPdfSource(new File(["pdf"], "topic-memory.pdf", { type: "application/pdf" }), "Topic memory PDF", "owner");
+    await module.importPdfSource(new File(["pdf"], "topic-memory.pdf", { type: "application/pdf" }), "Topic memory PDF");
   });
 
   delete process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -705,7 +700,7 @@ test("research helper can turn an explicit ask answer card into an ingest propos
     throw new Error(`Unexpected fetch URL: ${url.toString()}`);
   }, async () => {
     const module = await import("../lib/research");
-    const review = await module.proposeAskWriteback("ask-001", "owner");
+    const review = await module.proposeAskWriteback("ask-001");
 
     assert.equal(review.id, "review-ask-001");
     assert.equal(review.targetTopicId, "topic-001");

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState, useEffect } from "react";
+import { depositResearch } from "@/lib/research";
 
 type SelectionDepositProps = {
   answerId: string;
@@ -13,9 +14,9 @@ export function SelectionDeposit({ answerId, runId, children }: SelectionDeposit
   const [selection, setSelection] = useState<{ text: string; top: number; left: number } | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
+  const [errMsg, setErrMsg] = useState<string | null>(null);
 
   const handleMouseUp = useCallback(() => {
-    // Small delay to let the selection settle
     setTimeout(() => {
       const sel = window.getSelection();
       if (!sel || sel.isCollapsed || !sel.toString().trim()) {
@@ -59,24 +60,21 @@ export function SelectionDeposit({ answerId, runId, children }: SelectionDeposit
   const handleDeposit = async () => {
     if (!selection) return;
     setSubmitting(true);
+    setErrMsg(null);
     try {
-      await fetch("/api/deposits", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          source: "selection",
-          askTurnId: answerId,
-          runId: runId || undefined,
-          payload: {
-            selectedText: selection.text,
-            selectionReason: "用户手动选中片段沉淀",
-          },
-        }),
+      await depositResearch({
+        source: "selection",
+        askTurnId: answerId,
+        runId: runId || undefined,
+        payload: {
+          selectedText: selection.text,
+          rationale: "用户手动选中片段沉淀",
+        },
       });
       setDone(true);
       setSelection(null);
-    } catch {
-      // silently fail, user can retry
+    } catch (e) {
+      setErrMsg(e instanceof Error ? e.message : "沉淀失败");
     } finally {
       setSubmitting(false);
     }
@@ -104,12 +102,17 @@ export function SelectionDeposit({ answerId, runId, children }: SelectionDeposit
               </button>
             )}
             <button
-              onClick={() => { setSelection(null); setDone(false); }}
+              onClick={() => { setSelection(null); setDone(false); setErrMsg(null); }}
               className="shrink-0 material-symbols-outlined text-[16px] text-white/60 hover:text-white"
             >
               close
             </button>
           </div>
+          {errMsg && (
+            <div className="mt-2 rounded-xl bg-ink-errorSoft px-3 py-1.5 text-xs text-ink-errorText">
+              {errMsg}
+            </div>
+          )}
         </div>
       )}
     </div>

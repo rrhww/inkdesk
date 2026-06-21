@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { getDevRun } from "@/lib/research";
+import { postInkdeskJson } from "@/lib/server-api";
 import type { DevRun } from "@/lib/types";
 import { PanelCard } from "@/components/ui/panel-card";
 import { PageShell } from "@/components/workbench/page-shell";
@@ -24,6 +25,18 @@ export default function DevRunDetailPage() {
   const [run, setRun] = useState<DevRun | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  async function refreshRun() {
+    if (!params.id) return;
+    try {
+      const data = await getDevRun(params.id);
+      setRun(data);
+    } catch {
+      setError("任务不存在或无法访问");
+    }
+  }
 
   useEffect(() => {
     if (!params.id) return;
@@ -38,6 +51,25 @@ export default function DevRunDetailPage() {
       }
     })();
   }, [params.id]);
+
+  async function handleAction(action: "approve" | "complete" | "cancel") {
+    if (!run) return;
+    setSubmitting(true);
+    setActionError(null);
+    try {
+      if (action === "cancel") {
+        await postInkdeskJson(`/runs/${run.id}/cancel`, {});
+      } else {
+        await postInkdeskJson(`/runs/${run.id}/advance`, { action });
+      }
+      await refreshRun();
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "操作失败";
+      setActionError(msg);
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
   if (loading) {
     return (
@@ -156,6 +188,48 @@ export default function DevRunDetailPage() {
         {run.completedAt && <span>完成于 {new Date(run.completedAt).toLocaleString("zh-CN")}</span>}
         {run.cancelledAt && <span>取消于 {new Date(run.cancelledAt).toLocaleString("zh-CN")}</span>}
       </div>
+
+      {run.status !== "completed" && run.status !== "cancelled" && (
+        <PanelCard className="p-6 mt-6">
+          <div className="text-[11px] uppercase tracking-[0.2em] text-ink-muted mb-4">操作</div>
+          <div className="flex flex-wrap items-center gap-3">
+            {run.stageStatus === "awaiting_review" && (
+              <button
+                onClick={() => handleAction("approve")}
+                disabled={submitting}
+                className="rounded-full bg-ink-primary px-5 py-2.5 text-sm font-semibold text-white hover:bg-ink-primary/90 disabled:opacity-40"
+              >
+                批准推进
+              </button>
+            )}
+            {run.currentStage === "deposit" && run.stageStatus === "awaiting_review" && (
+              <button
+                onClick={() => handleAction("complete")}
+                disabled={submitting}
+                className="rounded-full bg-green-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-40"
+              >
+                完成任务
+              </button>
+            )}
+            <button
+              onClick={() => handleAction("cancel")}
+              disabled={submitting}
+              className="rounded-full bg-ink-errorSoft px-5 py-2.5 text-sm font-semibold text-ink-errorText hover:bg-ink-errorSoft/70 disabled:opacity-40"
+            >
+              取消任务
+            </button>
+            <a
+              href={`/app/ask?runId=${run.id}`}
+              className="rounded-full bg-ink-low px-5 py-2.5 text-sm font-medium text-ink-text hover:bg-white inline-block"
+            >
+              Ask 追问
+            </a>
+          </div>
+          {actionError && (
+            <div className="mt-4 rounded-2xl bg-ink-errorSoft px-4 py-3 text-sm text-ink-errorText">{actionError}</div>
+          )}
+        </PanelCard>
+      )}
     </PageShell>
   );
 }

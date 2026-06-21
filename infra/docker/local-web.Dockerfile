@@ -30,6 +30,6 @@ RUN npm run build
 
 EXPOSE 3000
 
-HEALTHCHECK --interval=15s --timeout=5s --retries=10 CMD curl -fsS http://localhost:3000/login > /dev/null || exit 1
+HEALTHCHECK --interval=15s --timeout=5s --retries=10 CMD curl -fsS http://localhost:3000/app > /dev/null || exit 1
 
 CMD ["npm", "run", "start", "--", "--hostname", "0.0.0.0", "--port", "3000"]

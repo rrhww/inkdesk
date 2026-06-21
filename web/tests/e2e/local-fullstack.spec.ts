@@ -1,22 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 
-async function login(page: Page) {
-  await page.goto("/login");
-  await page.getByLabel("邮箱").fill("owner@inkdesk.local");
-  await page.getByLabel("密码").fill("inkdesk-owner");
-  await page.getByRole("button", { name: "进入工作区" }).click();
-  await expect(page).toHaveURL(/\/app$/);
-}
-
-function healthSignal(page: Page) {
-  return page
-    .getByText(/wiki 里还有 \d+ 个开放问题/)
-    .or(page.getByText(/ingest 队列有 \d+ 条待审阅提案/))
-    .or(page.getByText(/raw 里有 \d+ 条材料等待编译/))
-    .first();
-}
-
-test.describe("local full-stack loop", () => {
+test.describe("local full-stack loop (no auth)", () => {
   test.describe.configure({ mode: "serial" });
 
   test.skip(
@@ -24,68 +8,129 @@ test.describe("local full-stack loop", () => {
     "请通过 `npm run e2e:fullstack` 运行，并先启动 Docker 基础设施、Python 主后端与 Next.js 所需配置。"
   );
 
-  test("owner can complete the Dev Run-first full loop", async ({ page }) => {
-    test.setTimeout(120_000);
-
-    await login(page);
-
-    await expect(page.getByRole("heading", { name: "研究问答" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "判断面板" })).toBeVisible();
-    await expect(page.getByText("建议提问", { exact: true })).toBeVisible();
-    await expect(page.getByRole("link", { name: "问答", exact: true })).toBeVisible();
-    await expect(page.getByRole("link", { name: "健康", exact: true })).toHaveCount(0);
-    await expect(healthSignal(page)).toBeVisible();
-
-    await page.goto("/app/ingest");
-    await expect(page.getByRole("heading", { name: "AI 编译提案队列" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "接受写入 wiki" }).first()).toBeVisible();
-    await page.getByRole("button", { name: "接受写入 wiki" }).first().click();
+  test("home page is Dev Run Console (no login required)", async ({ page }) => {
+    test.setTimeout(30_000);
 
     await page.goto("/app");
-    await expect(healthSignal(page)).toBeVisible();
+    await expect(page).toHaveURL(/\/app$/);
+    await expect(page.getByText(/Dev Run|研发任务|创建任务/).first()).toBeVisible();
+  });
 
-    await page.goto("/app/ask");
-    await expect(healthSignal(page)).toBeVisible();
+  test("can navigate to compile and health pages without redirect to login", async ({ page }) => {
+    test.setTimeout(30_000);
 
-    await page.goto("/app/wiki");
-    await expect(page.getByRole("heading", { name: "沉淀后的知识页面" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "将 Inkdesk 重定位为私有研究型 LLM Wiki" })).toBeVisible();
-    await page
-      .getByRole("heading", { name: "将 Inkdesk 重定位为私有研究型 LLM Wiki" })
-      .locator("..")
-      .getByRole("link", { name: "打开 wiki" })
-      .click();
+    await page.goto("/app/compile");
+    await expect(page).toHaveURL("/app/compile");
+    await expect(page.getByRole("heading", { name: "编译流水线" })).toBeVisible();
 
-    await expect(page.getByText("Current Understanding", { exact: true })).toBeVisible();
-    await expect(page.getByText("Key Claims", { exact: true })).toBeVisible();
-    await expect(page.getByText("Research Thread", { exact: true })).toBeVisible();
-    await expect(page.getByText(/supported/i).first()).toBeVisible();
-    await expect(page.getByText(/最近验证/).first()).toBeVisible();
-    await expect(page.getByText(/最近使用/).first()).toBeVisible();
-    await expect(page.getByText(/证据 1 条/).first()).toBeVisible();
-    await expect(page.getByText(/最近验证 \d{4}-\d{2}-\d{2}/).first()).toBeVisible();
-    await expect(page.getByText(/把产品中心收回到 raw \/ ingest \/ wiki/).first()).toBeVisible();
+    await page.goto("/app/health");
+    await expect(page).toHaveURL("/app/health");
+    await expect(page.getByRole("heading", { name: "知识库健康" })).toBeVisible();
+  });
 
-    await page.goto("/app/ask");
-    await expect(page.getByRole("heading", { name: "研究问答" })).toBeVisible();
-    await page.locator('a[href*="/app/ask?q="], a[href*="/app?q="]').first().click();
-    await expect(page.getByText("引用来源")).toBeVisible();
-    await expect(healthSignal(page)).toBeVisible();
-    await page.locator('a[href*="continueFromAskTurnId="]').first().click();
-    await expect(page.getByText("正在延续上一轮问答")).toBeVisible();
-    await page.getByRole("button", { name: "沉淀到 wiki" }).click();
-    await expect(page).toHaveURL(/\/app\/ingest\?created=/);
-    await expect(page.getByText("已从 Ask 当前回答生成一条新的 ingest 提案")).toBeVisible();
+  test("resource not found shows 404 without redirect", async ({ page }) => {
+    test.setTimeout(30_000);
 
-    await page.goto("/app/raw");
-    await expect(page.getByRole("heading", { name: "原始材料 vault" })).toBeVisible();
-    await expect(page.getByText(/legacy-note:\/\/note-001/)).toBeVisible();
+    await page.goto("/app/wiki/nonexistent-404-test");
+    // should show a 404 or not-found page, NOT redirect to /login
+    await expect(page.locator("body")).not.toContainText("Inkdesk 研发控制台");
+  });
 
-    await page.getByRole("button", { name: "退出" }).click();
-    await expect(page).toHaveURL(/\/login$/);
+  test("Dev Run full loop: create run → Ask → deposit → approve → complete", async ({ page, request }) => {
+    test.setTimeout(120_000);
 
-    await page.goto("/app/wiki");
-    await expect(page).toHaveURL(/\/login$/);
-    await expect(page.getByRole("heading", { name: "Inkdesk 研发控制台" })).toBeVisible();
+    // 1. 创建 Dev Run
+    const createResp = await request.post("/api/runs", {
+      data: {
+        type: "PRD",
+        title: "E2E 全链路测试",
+        goal: "验证创建 Run → Ask 追问 → deposit → 审阅 → approve 推进 → complete 的完整闭环",
+        repoContext: "inkdesk",
+      },
+    });
+    expect(createResp.ok()).toBeTruthy();
+    const run = await createResp.json();
+    const runId: string = run.id;
+    expect(runId).toBeTruthy();
+
+    // 2. 在 Dev Run 上下文中发起 Ask
+    const askResp = await request.post("/api/ask", {
+      data: {
+        question: "Inkdesk 的产品定位是什么？",
+        mode: "vault",
+        runId,
+      },
+    });
+    expect(askResp.ok()).toBeTruthy();
+    const ask = await askResp.json();
+    const askTurnId: string = ask.id;
+    expect(askTurnId).toBeTruthy();
+
+    // 3. Ask 回答 Deposit
+    const depositResp = await request.post("/api/deposits", {
+      data: {
+        source: "answer",
+        runId,
+        askTurnId,
+        payload: { title: "E2E 测试沉淀", understanding: ask.answer.slice(0, 200) },
+      },
+    });
+    expect(depositResp.ok()).toBeTruthy();
+    const deposit = await depositResp.json();
+    expect(deposit.reviewId).toBeTruthy();
+
+    // 4. 前端打开任务详情页并检查阶段轨道
+    await page.goto(`/app/runs/${runId}`);
+    await expect(page.getByText("E2E 全链路测试")).toBeVisible();
+    await expect(page.getByText("阶段轨道")).toBeVisible();
+
+    // 5. 通过 API 推进所有阶段 → 完成
+    const stages = ["context", "solution", "review", "coding", "testing", "deposit"];
+    for (const stage of stages) {
+      await request.post(`/api/runs/${runId}/events`, {
+        data: { stage, eventType: "stage_output", payload: { summary: `${stage} done` } },
+      });
+      if (stage !== "deposit") {
+        const adv = await request.post(`/api/runs/${runId}/advance`, { data: { action: "approve" } });
+        expect(adv.ok()).toBeTruthy();
+      }
+    }
+    // complete
+    const completeResp = await request.post(`/api/runs/${runId}/advance`, { data: { action: "complete" } });
+    expect(completeResp.ok()).toBeTruthy();
+    const completed = await completeResp.json();
+    expect(completed.status).toBe("completed");
+    expect(completed.completedAt).toBeTruthy();
+
+    // 6. 页面刷新后应显示已完成
+    await page.reload();
+    await expect(page.getByText(/完成于/)).toBeVisible();
+  });
+
+  test("illegal state transitions are rejected", async ({ request }) => {
+    test.setTimeout(30_000);
+
+    const createResp = await request.post("/api/runs", {
+      data: {
+        type: "REFACTOR",
+        title: "状态机边界测试",
+        goal: "验证非法状态转换被拒绝",
+        repoContext: "inkdesk",
+      },
+    });
+    expect(createResp.ok()).toBeTruthy();
+    const run = await createResp.json();
+
+    // 刚创建不能 approve（stage_status == "pending"）
+    const badApprove = await request.post(`/api/runs/${run.id}/advance`, { data: { action: "approve" } });
+    expect(badApprove.status()).toBe(409);
+
+    // 不能从未知 ID 访问
+    const missing = await request.get("/api/runs/nonexistent-run-id");
+    expect(missing.status()).toBe(404);
+
+    // 非空 runId 不能访问跨资源
+    const cross = await request.get(`/api/runs/nonexistent-run-id/events`);
+    expect(cross.status()).toBe(404);
   });
 });

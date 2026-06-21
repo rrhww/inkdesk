@@ -1,5 +1,3 @@
-import { OWNER_SESSION_COOKIE } from "@/lib/owner-session";
-
 export class InkdeskApiError extends Error {
   status: number;
 
@@ -29,22 +27,14 @@ export function hasApiBaseUrl() {
 
 type RequestInkdeskOptions = {
   method?: "GET" | "POST" | "PATCH";
-  ownerSession?: string;
   body?: unknown | FormData;
 };
 
 function buildHeaders(options?: RequestInkdeskOptions) {
-  const headers: Record<string, string> = {};
-
-  if (options?.ownerSession) {
-    headers.Cookie = `${OWNER_SESSION_COOKIE}=${options?.ownerSession}`;
-  }
-
   if (options?.body !== undefined && !(options.body instanceof FormData)) {
-    headers["Content-Type"] = "application/json";
+    return { "Content-Type": "application/json" };
   }
-
-  return Object.keys(headers).length > 0 ? headers : undefined;
+  return undefined;
 }
 
 async function requestInkdesk(path: string, options?: RequestInkdeskOptions) {
@@ -56,7 +46,6 @@ async function requestInkdesk(path: string, options?: RequestInkdeskOptions) {
 
   const response = await fetch(`${apiBaseUrl}${path}`, {
     cache: "no-store",
-    credentials: "include",
     method: options?.method ?? "GET",
     headers: buildHeaders(options),
     body:
@@ -74,49 +63,26 @@ async function requestInkdesk(path: string, options?: RequestInkdeskOptions) {
   return response;
 }
 
-export async function fetchInkdeskJson<T>(path: string, options?: { ownerSession?: string }) {
-  const response = await requestInkdesk(path, {
-    method: "GET",
-    ownerSession: options?.ownerSession
-  });
-
+export async function fetchInkdeskJson<T>(path: string) {
+  const response = await requestInkdesk(path, { method: "GET" });
   return (await response.json()) as T;
 }
 
-export async function postInkdeskJson<T>(path: string, body: unknown, options?: { ownerSession?: string }) {
-  const response = await requestInkdesk(path, {
-    method: "POST",
-    ownerSession: options?.ownerSession,
-    body
-  });
-
+export async function postInkdeskJson<T>(path: string, body: unknown) {
+  const response = await requestInkdesk(path, { method: "POST", body });
   return (await response.json()) as T;
 }
 
-export async function patchInkdeskJson<T>(path: string, body: unknown, options?: { ownerSession?: string }) {
-  const response = await requestInkdesk(path, {
-    method: "PATCH",
-    ownerSession: options?.ownerSession,
-    body
-  });
-
+export async function patchInkdeskJson<T>(path: string, body: unknown) {
+  const response = await requestInkdesk(path, { method: "PATCH", body });
   return (await response.json()) as T;
 }
 
-export async function postInkdesk(path: string, options?: { ownerSession?: string; body?: unknown }) {
-  await requestInkdesk(path, {
-    method: "POST",
-    ownerSession: options?.ownerSession,
-    body: options?.body
-  });
+export async function postInkdesk(path: string, options?: { body?: unknown }) {
+  await requestInkdesk(path, { method: "POST", body: options?.body });
 }
 
-export async function postInkdeskFormData<T>(path: string, body: FormData, options?: { ownerSession?: string }) {
-  const response = await requestInkdesk(path, {
-    method: "POST",
-    ownerSession: options?.ownerSession,
-    body
-  });
-
+export async function postInkdeskFormData<T>(path: string, body: FormData) {
+  const response = await requestInkdesk(path, { method: "POST", body });
   return (await response.json()) as T;
 }

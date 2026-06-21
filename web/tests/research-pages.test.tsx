@@ -35,14 +35,6 @@ async function captureConsoleDuring(run: () => Promise<void> | void) {
 
 (globalThis as typeof globalThis & { React: typeof React }).React = React;
 
-test("Dev Run Console is the authenticated home experience", { skip: true }, async () => {
-  const page = await import("../app/app/page");
-  const html = compact(renderToStaticMarkup(await page.default()));
-
-  assert.ok(typeof html === "string");
-  assert.ok(html.length > 0);
-});
-
 test("legacy compatibility app routes are no longer product entry points", () => {
   const legacyRouteFiles = [
     "app/app/inbox/page.tsx",

@@ -11,8 +11,8 @@ describe("app shell primitives", () => {
   });
 
   it("exposes Chinese primary sections in product order", () => {
-    expect(PRIMARY_SECTIONS.map((item) => item.label)).toEqual(["任务", "问答", "资料", "审阅", "知识库"]);
-    expect(PRIMARY_SECTIONS.map((item) => item.href)).toEqual(["/app", "/app/ask", "/app/raw", "/app/ingest", "/app/wiki"]);
+    expect(PRIMARY_SECTIONS.map((item) => item.label)).toEqual(["任务", "问答", "资料", "审阅", "知识库", "健康", "编译"]);
+    expect(PRIMARY_SECTIONS.map((item) => item.href)).toEqual(["/app", "/app/ask", "/app/raw", "/app/ingest", "/app/wiki", "/app/health", "/app/compile"]);
     expect(PRIMARY_SECTIONS.flatMap((item) => item.matchers)).not.toEqual(
       expect.arrayContaining(["/app/inbox", "/app/sources", "/app/review", "/app/topics"])
     );

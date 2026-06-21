@@ -53,23 +53,23 @@ async function withResearchFallback<T>(run: () => Promise<T>, fallback: () => T)
   }
 }
 
-export async function getResearchDashboard(ownerSession?: string): Promise<ResearchDashboard> {
+export async function getResearchDashboard(): Promise<ResearchDashboard> {
   return withResearchFallback(
-    () => fetchInkdeskJson<ResearchDashboard>("/admin/home", { ownerSession }),
+    () => fetchInkdeskJson<ResearchDashboard>("/admin/home"),
     () => researchDashboardFixture
   );
 }
 
-export async function getWikiPages(ownerSession?: string): Promise<ResearchTopicSummary[]> {
+export async function getWikiPages(): Promise<ResearchTopicSummary[]> {
   return withResearchFallback(
-    () => fetchInkdeskJson<ResearchTopicSummary[]>("/wiki", { ownerSession }),
+    () => fetchInkdeskJson<ResearchTopicSummary[]>("/wiki"),
     () => researchTopicSummariesFixture
   );
 }
 
-export async function getWikiDetail(topicId: string, ownerSession?: string): Promise<ResearchTopicDetail> {
+export async function getWikiDetail(topicId: string): Promise<ResearchTopicDetail> {
   return withResearchFallback(
-    () => fetchInkdeskJson<ResearchTopicDetail>(`/wiki/${topicId}`, { ownerSession }),
+    () => fetchInkdeskJson<ResearchTopicDetail>(`/wiki/${topicId}`),
     () => {
       const topic = getResearchTopicDetailFixture(topicId);
       if (!topic) {
@@ -80,30 +80,29 @@ export async function getWikiDetail(topicId: string, ownerSession?: string): Pro
   );
 }
 
-export async function getRawSources(ownerSession?: string): Promise<ResearchSourceRecord[]> {
+export async function getRawSources(): Promise<ResearchSourceRecord[]> {
   return withResearchFallback(
-    () => fetchInkdeskJson<ResearchSourceRecord[]>("/raw", { ownerSession }),
+    () => fetchInkdeskJson<ResearchSourceRecord[]>("/raw"),
     () => researchSourcesFixture
   );
 }
 
-export async function getIngestItems(ownerSession?: string): Promise<ResearchReviewItem[]> {
+export async function getIngestItems(): Promise<ResearchReviewItem[]> {
   return withResearchFallback(
-    () => fetchInkdeskJson<ResearchReviewItem[]>("/ingest", { ownerSession }),
+    () => fetchInkdeskJson<ResearchReviewItem[]>("/ingest"),
     () => researchReviewItemsFixture
   );
 }
 
-export async function askResearch(request: ResearchAskRequest, ownerSession?: string): Promise<ResearchAskResponse> {
+export async function askResearch(request: ResearchAskRequest): Promise<ResearchAskResponse> {
   return withResearchFallback(
-    () => postInkdeskJson<ResearchAskResponse>("/ask", request, { ownerSession }),
+    () => postInkdeskJson<ResearchAskResponse>("/ask", request),
     () => answerResearchQuestionFixture(request)
   );
 }
 
 export async function getAskBriefing(
-  input?: { topicId?: string; askTurnId?: string },
-  ownerSession?: string
+  input?: { topicId?: string; askTurnId?: string }
 ): Promise<ResearchAskBriefing> {
   return withResearchFallback(
     () => {
@@ -115,32 +114,32 @@ export async function getAskBriefing(
         params.set("askTurnId", input.askTurnId);
       }
       const suffix = params.toString() ? `?${params.toString()}` : "";
-      return fetchInkdeskJson<ResearchAskBriefing>(`/ask/briefing${suffix}`, { ownerSession });
+      return fetchInkdeskJson<ResearchAskBriefing>(`/ask/briefing${suffix}`);
     },
     () => getAskBriefingFixture(input)
   );
 }
 
-export async function proposeAskWriteback(askTurnId: string, ownerSession?: string): Promise<ResearchReviewItem> {
+export async function proposeAskWriteback(askTurnId: string): Promise<ResearchReviewItem> {
   return withResearchFallback(
-    () => postInkdeskJson<ResearchReviewItem>(`/ask/${askTurnId}/writeback`, {}, { ownerSession }),
+    () => postInkdeskJson<ResearchReviewItem>(`/ask/${askTurnId}/writeback`, {}),
     () => createAskWritebackFixture(askTurnId)
   );
 }
 
-export async function acceptIngest(reviewId: string, ownerSession?: string) {
-  return postInkdeskJson<ResearchReviewDecision>(`/ingest/${reviewId}/accept`, {}, { ownerSession });
+export async function acceptIngest(reviewId: string) {
+  return postInkdeskJson<ResearchReviewDecision>(`/ingest/${reviewId}/accept`, {});
 }
 
-export async function rejectIngest(reviewId: string, ownerSession?: string) {
-  return postInkdeskJson<ResearchReviewDecision>(`/ingest/${reviewId}/reject`, {}, { ownerSession });
+export async function rejectIngest(reviewId: string) {
+  return postInkdeskJson<ResearchReviewDecision>(`/ingest/${reviewId}/reject`, {});
 }
 
-export async function importWebSource(request: ResearchWebImportRequest, ownerSession?: string) {
-  return postInkdeskJson<ResearchSourceRecord>("/raw/web", request, { ownerSession });
+export async function importWebSource(request: ResearchWebImportRequest) {
+  return postInkdeskJson<ResearchSourceRecord>("/raw/web", request);
 }
 
-export async function importTextSource(request: ResearchTextImportRequest, ownerSession?: string) {
+export async function importTextSource(request: ResearchTextImportRequest) {
   return postInkdeskJson<ResearchSourceRecord>(
     "/raw",
     {
@@ -149,12 +148,11 @@ export async function importTextSource(request: ResearchTextImportRequest, owner
       locator: request.locator,
       excerpt: request.excerpt,
       body: request.body
-    },
-    { ownerSession }
+    }
   );
 }
 
-export async function importPdfSource(file: File, title?: string, ownerSession?: string, locator?: string) {
+export async function importPdfSource(file: File, title?: string, locator?: string) {
   const formData = new FormData();
   formData.set("file", file);
   if (title?.trim()) {
@@ -163,7 +161,7 @@ export async function importPdfSource(file: File, title?: string, ownerSession?:
   if (locator?.trim()) {
     formData.set("locator", locator.trim());
   }
-  return postInkdeskFormData<ResearchSourceRecord>("/raw/pdf", formData, { ownerSession });
+  return postInkdeskFormData<ResearchSourceRecord>("/raw/pdf", formData);
 }
 
 export const getTopics = getWikiPages;
@@ -173,50 +171,50 @@ export const getReviewItems = getIngestItems;
 export const acceptReview = acceptIngest;
 export const rejectReview = rejectIngest;
 
-export async function getVaultStatus(ownerSession?: string): Promise<VaultStatus> {
-  return fetchInkdeskJson<VaultStatus>("/vault/status", { ownerSession });
+export async function getVaultStatus(): Promise<VaultStatus> {
+  return fetchInkdeskJson<VaultStatus>("/vault/status");
 }
 
-export async function initializeVault(request: VaultInitializeRequest, ownerSession?: string): Promise<VaultStatus> {
-  return postInkdeskJson<VaultStatus>("/vault/initialize", request, { ownerSession });
+export async function initializeVault(request: VaultInitializeRequest): Promise<VaultStatus> {
+  return postInkdeskJson<VaultStatus>("/vault/initialize", request);
 }
 
-export async function getDevRuns(ownerSession?: string): Promise<DevRunSummary[]> {
+export async function getDevRuns(): Promise<DevRunSummary[]> {
   return withResearchFallback(
-    () => fetchInkdeskJson<DevRunSummary[]>("/runs", { ownerSession }),
+    () => fetchInkdeskJson<DevRunSummary[]>("/runs"),
     () => []
   );
 }
 
-export async function getDevRun(runId: string, ownerSession?: string): Promise<DevRun> {
-  return fetchInkdeskJson<DevRun>(`/runs/${runId}`, { ownerSession });
+export async function getDevRun(runId: string): Promise<DevRun> {
+  return fetchInkdeskJson<DevRun>(`/runs/${runId}`);
 }
 
-export async function createDevRun(request: CreateDevRunRequest, ownerSession?: string): Promise<DevRun> {
-  return postInkdeskJson<DevRun>("/runs", request, { ownerSession });
+export async function createDevRun(request: CreateDevRunRequest): Promise<DevRun> {
+  return postInkdeskJson<DevRun>("/runs", request);
 }
 
-export async function depositResearch(request: DepositRequest, ownerSession?: string): Promise<DepositResponse> {
-  return postInkdeskJson<DepositResponse>("/deposits", request, { ownerSession });
+export async function depositResearch(request: DepositRequest): Promise<DepositResponse> {
+  return postInkdeskJson<DepositResponse>("/deposits", request);
 }
 
-export async function getVaultHealth(ownerSession?: string): Promise<HealthResponse> {
+export async function getVaultHealth(): Promise<HealthResponse> {
   return withResearchFallback(
-    () => fetchInkdeskJson<HealthResponse>("/health", { ownerSession }),
+    () => fetchInkdeskJson<HealthResponse>("/health"),
     () => vaultHealthFixture
   );
 }
 
-export async function getCompileQueue(ownerSession?: string): Promise<CompileTaskSummary[]> {
+export async function getCompileQueue(): Promise<CompileTaskSummary[]> {
   return withResearchFallback(
-    () => fetchInkdeskJson<CompileTaskSummary[]>("/compile/queue", { ownerSession }),
+    () => fetchInkdeskJson<CompileTaskSummary[]>("/compile/queue"),
     () => compileQueueFixture
   );
 }
 
-export async function getCompileTask(taskId: string, ownerSession?: string): Promise<CompileTaskResponse> {
+export async function getCompileTask(taskId: string): Promise<CompileTaskResponse> {
   return withResearchFallback(
-    () => fetchInkdeskJson<CompileTaskResponse>(`/compile/${taskId}`, { ownerSession }),
+    () => fetchInkdeskJson<CompileTaskResponse>(`/compile/${taskId}`),
     () => {
       const task = getCompileTaskFixture(taskId);
       if (!task) throw new Error(`Unknown mock compile task ${taskId}`);
@@ -225,9 +223,9 @@ export async function getCompileTask(taskId: string, ownerSession?: string): Pro
   );
 }
 
-export async function retryCompileTask(taskId: string, ownerSession?: string): Promise<CompileTaskResponse> {
+export async function retryCompileTask(taskId: string): Promise<CompileTaskResponse> {
   return withResearchFallback(
-    () => postInkdeskJson<CompileTaskResponse>(`/compile/${taskId}/retry`, {}, { ownerSession }),
+    () => postInkdeskJson<CompileTaskResponse>(`/compile/${taskId}/retry`, {}),
     () => {
       const task = getCompileTaskFixture("compile-failed");
       if (!task) throw new Error(`Unknown mock compile task ${taskId}`);
@@ -236,9 +234,9 @@ export async function retryCompileTask(taskId: string, ownerSession?: string): P
   );
 }
 
-export async function compileSource(sourceId: string, ownerSession?: string): Promise<CompileTaskResponse> {
+export async function compileSource(sourceId: string): Promise<CompileTaskResponse> {
   return withResearchFallback(
-    () => postInkdeskJson<CompileTaskResponse>(`/raw/${sourceId}/compile`, {}, { ownerSession }),
+    () => postInkdeskJson<CompileTaskResponse>(`/raw/${sourceId}/compile`, {}),
     () => ({
       id: `compile-new-${sourceId}`,
       sourceId,
