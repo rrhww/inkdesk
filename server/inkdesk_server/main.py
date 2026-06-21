@@ -3,7 +3,7 @@ from __future__ import annotations
 from contextlib import asynccontextmanager
 from typing import Annotated
 
-from fastapi import Depends, FastAPI, File, Response, UploadFile
+from fastapi import Depends, FastAPI, File, Query, Request, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy import select
@@ -13,6 +13,8 @@ from inkdesk_server.core.config import Settings, get_settings
 from inkdesk_server.db import get_db, init_db, session_scope
 from inkdesk_server.deposit_service import DepositService
 from inkdesk_server.health_service import HealthService
+from inkdesk_server.health_history_service import HealthHistoryService
+from inkdesk_server.evaluation_service import EvaluationService
 from inkdesk_server.mcp import build_mcp_server
 from inkdesk_server.models import CompileTask, CompileStep, Source, Workspace
 from inkdesk_server.vault import VaultService
@@ -33,6 +35,8 @@ from inkdesk_server.schemas import (
     DevRunResponse,
     DevRunSummaryResponse,
     HealthResponse,
+    HealthRunSummary,
+    HealthTrendResponse,
     ResearchDashboardResponse,
     ReviewDecisionResponse,
     ReviewItemResponse,
@@ -338,6 +342,83 @@ def create_app() -> FastAPI:
     ):
         service = HealthService(settings, VaultService(settings))
         return service.scan()
+
+    # ── Health 快照与趋势 ──
+
+    @app.post("/api/health/runs")
+    def health_run_create(
+        settings: Annotated[Settings, Depends(get_settings)],
+    ):
+        vault = VaultService(settings)
+        service = HealthService(settings, vault)
+        history = HealthHistoryService(settings, vault)
+        scan = service.scan()
+        manifest = history.save_snapshot(scan)
+        return manifest
+
+    @app.get("/api/health/runs", response_model=HealthTrendResponse)
+    def health_run_list(
+        settings: Annotated[Settings, Depends(get_settings)],
+        limit: int = Query(20, ge=1, le=100),
+    ):
+        vault = VaultService(settings)
+        history = HealthHistoryService(settings, vault)
+        return history.trend(limit)
+
+    @app.get("/api/health/runs/{run_id}")
+    def health_run_detail(
+        run_id: str,
+        settings: Annotated[Settings, Depends(get_settings)],
+    ):
+        vault = VaultService(settings)
+        history = HealthHistoryService(settings, vault)
+        run = history.get_run(run_id)
+        if run is None:
+            raise ResourceNotFoundError(f"Health run not found: {run_id}")
+        return run
+
+    # ── Evaluation 边界 ──
+
+    @app.get("/api/evals/golden")
+    def evals_golden(
+        settings: Annotated[Settings, Depends(get_settings)],
+    ):
+        vault = VaultService(settings)
+        evals = EvaluationService(settings, vault)
+        return evals.get_golden_tasks()
+
+    @app.post("/api/evals/runs")
+    async def evals_run_create(
+        request: Request,
+        settings: Annotated[Settings, Depends(get_settings)],
+    ):
+        body = await request.json()
+        task_ids = body.get("taskIds", []) if isinstance(body, dict) else []
+        rubric_ids = body.get("rubricIds", []) if isinstance(body, dict) else []
+        vault = VaultService(settings)
+        health = HealthService(settings, vault)
+        scan = health.scan()
+        gate = scan.get("gateStatus", "FAILED")
+        history = HealthHistoryService(settings, vault)
+        manifest = history.save_snapshot(scan)
+        evals = EvaluationService(settings, vault)
+        try:
+            eval_manifest = evals.create_eval_run(task_ids, rubric_ids, gate, manifest["healthRunId"])
+            return eval_manifest
+        except ValueError as e:
+            raise ApiError(409, "EVAL_RUN_REJECTED", str(e))
+
+    @app.get("/api/evals/runs/{eval_run_id}")
+    def evals_run_detail(
+        eval_run_id: str,
+        settings: Annotated[Settings, Depends(get_settings)],
+    ):
+        vault = VaultService(settings)
+        evals = EvaluationService(settings, vault)
+        run = evals.get_eval_run(eval_run_id)
+        if run is None:
+            raise ResourceNotFoundError(f"Eval run not found: {eval_run_id}")
+        return run
 
     # --- 编译流水线 ---
 

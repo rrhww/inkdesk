@@ -20,7 +20,11 @@ import type {
   DepositResponse,
   DevRun,
   DevRunSummary,
+  EvalRunManifest,
+  GoldenTasksResponse,
+  HealthRunSummary,
   HealthResponse,
+  HealthTrendResponse,
   ResearchAskRequest,
   ResearchAskBriefing,
   ResearchAskResponse,
@@ -249,4 +253,41 @@ export async function compileSource(sourceId: string): Promise<CompileTaskRespon
       isNew: true,
     })
   );
+}
+
+// ── Health History ──
+
+export async function createHealthSnapshot(): Promise<HealthResponse> {
+  return withResearchFallback(
+    () => postInkdeskJson<HealthResponse>("/health/runs", {}),
+    () => vaultHealthFixture
+  );
+}
+
+export async function getHealthTrend(): Promise<HealthTrendResponse> {
+  return withResearchFallback(
+    () => fetchInkdeskJson<HealthTrendResponse>("/health/runs"),
+    () => ({ current: null, recent: [], currentFindings: null })
+  );
+}
+
+export async function getHealthRun(runId: string): Promise<HealthRunSummary> {
+  return fetchInkdeskJson<HealthRunSummary>(`/health/runs/${runId}`);
+}
+
+// ── Golden Tasks ──
+
+export async function getGoldenTasks(): Promise<GoldenTasksResponse> {
+  return withResearchFallback(
+    () => fetchInkdeskJson<GoldenTasksResponse>("/evals/golden"),
+    () => ({ schemaVersion: "1.0.0", tasks: [] })
+  );
+}
+
+export async function createEvalRun(taskIds: string[], rubricIds: string[]): Promise<EvalRunManifest> {
+  return postInkdeskJson<EvalRunManifest>("/evals/runs", { taskIds, rubricIds });
+}
+
+export async function getEvalRun(evalRunId: string): Promise<EvalRunManifest> {
+  return fetchInkdeskJson<EvalRunManifest>(`/evals/runs/${evalRunId}`);
 }

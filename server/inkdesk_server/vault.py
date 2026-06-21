@@ -93,28 +93,155 @@ class VaultService:
         return self.resolve(relative_path).exists()
 
     def update_wiki_index(self, topics: list) -> None:
-        """根据当前 wiki 文件列表重建 wiki/index.md"""
-        wiki_files = self.list_markdown_files("wiki")
-        topic_files = [
+        """根据当前 wiki 文件列表重建 wiki/index.md（多维视图 + 成熟度统计）。"""
+        wiki_files = self._list_recursive("wiki")
+        topic_files = sorted(
             f for f in wiki_files
             if f not in ("wiki/index.md", "wiki/log.md")
-        ]
+        )
+
+        # 收集每个页面的 frontmatter 信息
+        page_meta: dict[str, dict] = {}
+        for path in topic_files:
+            try:
+                content = self.read_vault_file(path)
+                fm = self._parse_frontmatter(content)
+                page_meta[path] = fm or {}
+            except Exception:
+                page_meta[path] = {}
+
         timestamp = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S UTC")
+
+        # 按 frontmatter type 分类
+        by_type: dict[str, list[str]] = {}
+        for path in topic_files:
+            pt = page_meta.get(path, {}).get("type", "unknown")
+            by_type.setdefault(pt, []).append(path)
+
+        # 按标签维度分类（business-line/* 或 topic/*）
+        by_dimension: dict[str, list[str]] = {}
+        unclassified: list[str] = []
+        for path in topic_files:
+            tags = page_meta.get(path, {}).get("tags", "")
+            dims = self._extract_dimensions(tags)
+            if dims:
+                for d in dims:
+                    by_dimension.setdefault(d, []).append(path)
+            else:
+                unclassified.append(path)
+
+        # 成熟度统计
+        status_counts: dict[str, int] = {"stub": 0, "draft": 0, "stable": 0, "outdated": 0, "unknown": 0}
+        for path in topic_files:
+            s = page_meta.get(path, {}).get("status", "")
+            if s in status_counts:
+                status_counts[s] += 1
+            else:
+                status_counts["unknown"] += 1
+
         lines = [
             "# 知识库目录",
             "",
             f"## 页面列表（{len(topic_files)} 页）",
             "",
         ]
-        for path in sorted(topic_files):
+        for path in topic_files:
             display = path.replace("wiki/", "").replace(".md", "")
             lines.append(f"- [[{display}]]")
-        lines.extend([
-            "",
-            f"最后更新：{timestamp}",
-            "",
-        ])
+        lines.append("")
+
+        # ── 按页面类型 ──
+        lines.append("## 按页面类型")
+        for pt in sorted(by_type.keys()):
+            lines.append(f"### {pt}（{len(by_type[pt])} 页）")
+            for path in sorted(by_type[pt]):
+                display = path.replace("wiki/", "").replace(".md", "")
+                lines.append(f"- [[{display}]]")
+            lines.append("")
+        if not by_type:
+            lines.append("（暂无分类页面）\n")
+
+        # ── 按维度 ──
+        lines.append("## 按维度")
+        if by_dimension:
+            for dim in sorted(by_dimension.keys()):
+                label = dim.replace("business-line/", "业务线: ").replace("topic/", "主题: ")
+                lines.append(f"### {label}（{len(by_dimension[dim])} 页）")
+                for path in sorted(by_dimension[dim]):
+                    display = path.replace("wiki/", "").replace(".md", "")
+                    lines.append(f"- [[{display}]]")
+                lines.append("")
+        if unclassified:
+            lines.append(f"### 待分类（{len(unclassified)} 页）")
+            for path in sorted(unclassified):
+                display = path.replace("wiki/", "").replace(".md", "")
+                lines.append(f"- [[{display}]]")
+            lines.append("")
+
+        # ── 成熟度统计 ──
+        lines.append("## 成熟度统计")
+        lines.append(f"- stub: {status_counts['stub']}")
+        lines.append(f"- draft: {status_counts['draft']}")
+        lines.append(f"- stable: {status_counts['stable']}")
+        lines.append(f"- outdated: {status_counts['outdated']}")
+        if status_counts["unknown"] > 0:
+            lines.append(f"- 未标状态: {status_counts['unknown']}")
+        lines.append("")
+
+        # ── 统计区 ──
+        lines.append("## 统计")
+        lines.append(f"- 总页数：{len(topic_files)}")
+        type_counts = {pt: len(ps) for pt, ps in by_type.items()}
+        for pt in sorted(type_counts.keys()):
+            lines.append(f"- {pt}：{type_counts[pt]}")
+        lines.append(f"- 最后更新：{timestamp}")
+        lines.append("")
+
         self.write_vault_file("wiki/index.md", "\n".join(lines))
+
+    @staticmethod
+    def _parse_frontmatter(content: str) -> dict:
+        import re
+        m = re.match(r"^---\s*\n(.*?)\n---", content, re.DOTALL)
+        if not m:
+            return {}
+        raw = m.group(1)
+        result: dict = {}
+        for line in raw.split("\n"):
+            line = line.strip()
+            if ":" in line:
+                key, _, val = line.partition(":")
+                result[key.strip()] = val.strip()
+        return result
+
+    @staticmethod
+    def _extract_dimensions(tags_raw: str | list) -> list[str]:
+        """Extract dimension labels from frontmatter tags."""
+        tags: list[str] = []
+        if isinstance(tags_raw, list):
+            tags = [str(t).strip() for t in tags_raw if str(t).strip()]
+        elif isinstance(tags_raw, str):
+            import re
+            tags_str = tags_raw.strip()
+            if tags_str.startswith("[") and tags_str.endswith("]"):
+                tags_str = tags_str[1:-1]
+            tags = [t.strip() for t in re.split(r"[,，]", tags_str) if t.strip()]
+        dims = []
+        for t in tags:
+            if t.startswith("business-line/") or t.startswith("topic/"):
+                dims.append(t)
+        return dims
+
+    def _list_recursive(self, directory: str) -> list[str]:
+        """Recursively list all .md files in a directory."""
+        directory_path = self.resolve(directory)
+        if not directory_path.is_dir():
+            return []
+        results: list[str] = []
+        for path in directory_path.rglob("*.md"):
+            relative = str(path.relative_to(self.root)).replace("\\", "/")
+            results.append(relative)
+        return results
 
     def append_log_entry(self, entry: str) -> None:
         """向 wiki/log.md 追加一条时间戳条目"""

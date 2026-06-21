@@ -368,15 +368,36 @@ export type CreateDevRunRequest = {
 
 // ── Health ──
 
-export type HealthFindingType = "BROKEN_LINK" | "ORPHAN_PAGE" | "MISSING_FRONTMATTER" | "MISSING_SOURCE";
+export type HealthFindingType =
+  | "BROKEN_LINK"
+  | "ORPHAN_PAGE"
+  | "MISSING_FRONTMATTER"
+  | "MISSING_SOURCE"
+  | "INVALID_STATUS"
+  | "SHORT_PAGE"
+  | "DUPLICATE_TITLE"
+  | "SIMILAR_TITLE"
+  | "STALE_PAGE"
+  | "OUTDATED_REFERENCE"
+  | "EXPLICIT_OUTDATED"
+  | "MISSING_SECTION";
 
-export type HealthSeverity = "info" | "warning";
+export type HealthSeverity = "info" | "warning" | "error";
 
 export type HealthFinding = {
   type: HealthFindingType;
   severity: HealthSeverity;
   page: string;
   detail: string;
+  ruleId?: string | null;
+  evidence?: Record<string, unknown> | null;
+  fingerprint?: string | null;
+};
+
+export type HealthCategoryCounts = {
+  error: number;
+  warning: number;
+  info: number;
 };
 
 export type HealthSummary = {
@@ -390,6 +411,79 @@ export type HealthSummary = {
 export type HealthResponse = {
   summary: HealthSummary;
   findings: HealthFinding[];
+  ruleVersion?: string | null;
+  healthScore?: number | null;
+  gateStatus?: string | null;
+  categoryCounts?: HealthCategoryCounts | null;
+  notApplicable?: boolean;
+};
+
+// ── Health History ──
+
+export type HealthDiff = {
+  newCount: number;
+  continuedCount: number;
+  resolvedCount: number;
+};
+
+export type HealthRunSummary = {
+  healthRunId: string | null;
+  evaluatedAt: string | null;
+  healthScore: number | null;
+  gateStatus: string;
+  totalPages: number;
+  findingCount: number;
+  diff: HealthDiff | null;
+};
+
+export type HealthTrendResponse = {
+  current: HealthRunSummary | null;
+  recent: HealthRunSummary[];
+  currentFindings: HealthFinding[] | null;
+};
+
+// ── Evaluation ──
+
+export type GoldenTaskCandidate = {
+  id: string;
+  title: string;
+  description: string;
+  inputs: Record<string, unknown>;
+  taskType: "PRD" | "BUG" | "REFACTOR" | "CONTEXT_ASK" | "KNOWLEDGE_DEPOSIT";
+  expectedEvidence: string[];
+  allowedBehaviors: string[];
+  forbiddenBehaviors: string[];
+  source: string;
+  status: "candidate" | "active" | "retired";
+  rubricId?: string | null;
+  createdAt?: string | null;
+};
+
+export type GoldenTasksResponse = {
+  schemaVersion: string;
+  tasks: GoldenTaskCandidate[];
+};
+
+export type RubricDimension = {
+  name: string;
+  description: string;
+  maxScore: number;
+  passThreshold: number;
+  reviewNotes?: string | null;
+};
+
+export type EvalRunManifest = {
+  evalRunId: string;
+  schemaVersion: string;
+  taskIds: string[];
+  rubricIds: string[];
+  vaultCommitHash?: string | null;
+  ruleVersion: string;
+  gateStatusAtStart: string;
+  healthRunId?: string | null;
+  createdAt: string;
+  status: "created" | "failed";
+  outputDir: string;
 };
 
 // ── Compile ──
