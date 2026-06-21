@@ -89,6 +89,23 @@ def test_context_pack_returns_run_summary(temp_app_env: Path) -> None:
         assert run_id in text
 
 
+def test_context_pack_service_aggregates_run_and_ask_history(temp_app_env: Path) -> None:
+    from inkdesk_server.db import session_scope
+    from inkdesk_server.mcp_services import ContextPackService
+
+    with _make_client(temp_app_env) as client:
+        _init_vault(client)
+        run_id = _create_run(client)
+        _ask(client, "应用服务应聚合哪些信息？", run_id=run_id)
+
+        with session_scope() as db:
+            context_pack = ContextPackService(db).build("workspace-inkdesk", run_id)
+
+        assert context_pack["id"] == run_id
+        assert context_pack["askHistory"][0]["question"] == "应用服务应聚合哪些信息？"
+        assert context_pack["relatedReviews"] == []
+
+
 def test_context_pack_run_not_found(temp_app_env: Path) -> None:
     with _make_client(temp_app_env) as client:
         _init_vault(client)
@@ -120,6 +137,25 @@ def test_search_returns_wiki_and_raw_results(temp_app_env: Path) -> None:
         assert len(content) >= 1
         text = content[0]["text"]
         assert "知识库" in text or "index" in text.lower()
+
+
+def test_vault_search_service_returns_matching_documents(temp_app_env: Path) -> None:
+    from inkdesk_server.core.config import get_settings
+    from inkdesk_server.mcp_services import VaultSearchService
+    from inkdesk_server.vault import VaultService
+
+    with _make_client(temp_app_env) as client:
+        _init_vault(client)
+
+    vault = VaultService(get_settings())
+    vault.write_vault_file("wiki/service-boundary.md", "MCP 应用服务边界")
+
+    results = VaultSearchService(vault).search("应用服务边界")
+
+    assert results == [{
+        "path": "wiki/service-boundary.md",
+        "snippet": "MCP 应用服务边界",
+    }]
 
 
 def test_search_empty_query_rejected(temp_app_env: Path) -> None:

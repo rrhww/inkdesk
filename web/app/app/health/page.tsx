@@ -1,7 +1,6 @@
 import { EmptyState } from "@/components/ui/empty-state";
 import { PanelCard } from "@/components/ui/panel-card";
 import { PageShell } from "@/components/workbench/page-shell";
-import { OWNER_SESSION_VALUE } from "@/lib/owner-session";
 import { getVaultHealth } from "@/lib/research";
 import type { HealthFinding, HealthSummary } from "@/lib/types";
 
@@ -74,7 +73,7 @@ function FindingCard({ finding }: { finding: HealthFinding }) {
 }
 
 export default async function HealthPage() {
-  const health = await getVaultHealth(OWNER_SESSION_VALUE).catch(() => null);
+  const health = await getVaultHealth().catch(() => null);
 
   if (!health) {
     return (
