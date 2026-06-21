@@ -19,23 +19,6 @@ class VaultInitializeRequest(BaseModel):
     vaultType: str
 
 
-class AuthLoginRequest(BaseModel):
-    email: str
-    password: str
-
-
-class AuthLoginResponse(BaseModel):
-    sessionToken: str
-
-
-class AuthMeResponse(BaseModel):
-    userId: str
-    username: str
-    workspaceId: str
-    workspaceName: str
-    workspaceSlug: str
-
-
 class CreateSourceRequest(BaseModel):
     kind: str = "TEXT"
     title: str | None = None
@@ -397,19 +380,125 @@ class HealthFinding(BaseModel):
     severity: str
     page: str
     detail: str
+    ruleId: str | None = None
+    evidence: dict | None = None
+    fingerprint: str | None = None
 
 
 class HealthSummary(BaseModel):
     totalPages: int
-    brokenLinkCount: int
-    orphanPageCount: int
-    missingFrontmatterCount: int
-    missingSourceCount: int
+    brokenLinkCount: int = 0
+    orphanPageCount: int = 0
+    missingFrontmatterCount: int = 0
+    missingSourceCount: int = 0
+
+
+class HealthCategoryCounts(BaseModel):
+    error: int = 0
+    warning: int = 0
+    info: int = 0
 
 
 class HealthResponse(BaseModel):
     summary: HealthSummary
     findings: list[HealthFinding]
+    ruleVersion: str | None = None
+    healthScore: float | None = None
+    gateStatus: str | None = None  # PASSED | FAILED
+    categoryCounts: HealthCategoryCounts | None = None
+    notApplicable: bool = False
+
+
+# ── Health History ──
+
+
+class HealthDiff(BaseModel):
+    newCount: int = 0
+    continuedCount: int = 0
+    resolvedCount: int = 0
+
+
+class HealthRunManifest(BaseModel):
+    healthRunId: str
+    vaultType: str | None = None
+    ruleVersion: str
+    evaluatedAt: str
+    durationMs: int | None = None
+    healthScore: float | None = None
+    gateStatus: str  # PASSED | FAILED
+    categoryCounts: HealthCategoryCounts
+    totalPages: int
+    findingCount: int
+    findings: list[HealthFinding]
+
+
+class HealthRunSummary(BaseModel):
+    healthRunId: str
+    evaluatedAt: str
+    healthScore: float | None = None
+    gateStatus: str
+    totalPages: int
+    findingCount: int
+    diff: HealthDiff | None = None
+
+
+class HealthTrendResponse(BaseModel):
+    current: HealthRunSummary | None = None
+    recent: list[HealthRunSummary] = []
+    currentFindings: list[HealthFinding] | None = None
+
+
+# ── Evaluation ──
+
+
+class GoldenTaskCandidate(BaseModel):
+    id: str
+    title: str
+    description: str
+    inputs: dict
+    taskType: str  # PRD | BUG | REFACTOR | CONTEXT_ASK | KNOWLEDGE_DEPOSIT
+    expectedEvidence: list[str]
+    allowedBehaviors: list[str]
+    forbiddenBehaviors: list[str]
+    source: str  # e.g. real dev run id, ask turn id
+    status: str  # candidate | active | retired
+    rubricId: str | None = None
+    createdAt: str | None = None
+
+
+class GoldenTasksSet(BaseModel):
+    schemaVersion: str
+    tasks: list[GoldenTaskCandidate]
+
+
+class RubricDimension(BaseModel):
+    name: str
+    description: str
+    maxScore: int
+    passThreshold: int
+    reviewNotes: str | None = None
+
+
+class EvalRubric(BaseModel):
+    id: str
+    schemaVersion: str
+    dimensions: list[RubricDimension]
+    passCondition: str
+    createdAt: str | None = None
+
+
+class EvalRunManifest(BaseModel):
+    evalRunId: str
+    schemaVersion: str
+    taskIds: list[str]
+    rubricIds: list[str]
+    vaultCommitHash: str | None = None
+    ruleVersion: str
+    gateStatusAtStart: str
+    healthRunId: str | None = None
+    createdAt: str
+    status: str  # created | failed
+    outputDir: str  # relative path within evals/runs/
 
 
 # ── 编译任务 ──
