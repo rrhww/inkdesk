@@ -255,9 +255,9 @@ def test_safety_self_bypass():
 def test_registry_discover_valid_only():
     registry = SkillRegistry([FIXTURES / "valid"])
     packages = registry.discover()
-    assert len(packages) == 2
+    assert len(packages) == 3
     names = {p.name for p in packages}
-    assert names == {"minimal-producer", "comprehensive-router"}
+    assert names == {"minimal-producer", "comprehensive-router", "minimal-reviewer"}
 
 
 def test_registry_resolve():
@@ -281,8 +281,8 @@ def test_registry_resolve_invalid():
 def test_registry_get_summary():
     registry = SkillRegistry([FIXTURES / "valid"])
     summary = registry.get_summary()
-    assert summary["total"] == 2
-    assert summary["valid"] == 2
+    assert summary["total"] == 3
+    assert summary["valid"] == 3
 
 
 # ——— graph ———
@@ -291,9 +291,10 @@ def test_registry_get_summary():
 def test_graph_build():
     registry = SkillRegistry([FIXTURES / "valid"])
     graph = build_graph(registry)
-    assert len(graph.nodes) == 2
+    assert len(graph.nodes) == 3
     assert "minimal-producer" in graph.nodes
     assert "comprehensive-router" in graph.nodes
+    assert "minimal-reviewer" in graph.nodes
 
 
 def test_graph_cycle_detection():

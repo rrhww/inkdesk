@@ -1,0 +1,7 @@
+interface:
+  display_name: "Minimal Reviewer"
+  short_description: "一个最小合法 reviewer Skill，用于验证校验器能正确识别 reviewer 类型 package"
+  default_prompt: "Use $minimal-reviewer to check review targets and produce structured findings with evidence."
+
+policy:
+  allow_implicit_invocation: false

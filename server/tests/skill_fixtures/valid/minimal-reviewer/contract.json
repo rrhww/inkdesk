@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0",
+  "id": "minimal-reviewer",
+  "version": "0.1.0",
+  "status": "draft",
+  "category": "engineering",
+  "kind": "reviewer",
+  "summary": "一个最小合法 reviewer Skill，用于验证校验器能正确识别 reviewer 类型 package",
+  "inputs": [
+    {
+      "name": "review_target",
+      "type": "string",
+      "required": true,
+      "constraints": "min_length:1"
+    }
+  ],
+  "contextRequirements": [],
+  "outputs": [
+    {
+      "type": "review_report",
+      "location": "runs/<run_id>/review.json",
+      "needsReview": false
+    }
+  ],
+  "hardGates": [
+    {
+      "id": "g-target",
+      "kind": "required_input",
+      "params": { "field": "review_target" },
+      "on_failure": "待审查内容不得为空，请提供 review_target"
+    }
+  ],
+  "capabilities": ["read_vault"],
+  "writePolicy": {
+    "canonicalWiki": "proposal-only",
+    "runArtifacts": "allowed",
+    "codeRepository": "denied"
+  },
+  "verification": [
+    {
+      "kind": "lint",
+      "description": "contract structural/semantic/safety lint 全部通过"
+    }
+  ],
+  "nextSkills": [],
+  "supportedRuntimes": ["inkdesk"]
+}

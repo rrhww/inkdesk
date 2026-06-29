@@ -23,6 +23,18 @@
 
 - behavioral contract cases 的具体执行方式 — 格式已定（`evals/skills/<id>/contract-cases.json`），但 4.1.4 不包含实际执行，runtime 由 4.2.1 的 Harness 决定
 
+## 已理解（4.1.4 验收后更新）
+
+### Fixture 覆盖
+
+- valid fixtures: minimal-producer + minimal-reviewer + comprehensive-router，覆盖 3 种 kind
+- invalid fixtures: 10 个，每种 lint 规则至少一个
+
+### Schema 资产
+
+- 4 份 schema 资产注册在 skill_assets.py，其中 contract JSON Schema 由 Pydantic 动态生成，drift test 确认与存储一致
+
 ## 黑盒区（完全不懂）
 
 - 外部 Agent 加载 Skill package 后的实际执行行为 — 当前只保证 package 可校验，执行语义未定义
+- behavioral contract cases 实际执行 — 格式已定，runtime 由 4.2.1 Harness 决定
