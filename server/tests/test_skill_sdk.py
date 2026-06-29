@@ -448,3 +448,121 @@ def test_cli_graph(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     from inkdesk_skill_sdk.cli import main
     rc = main()
     assert rc == 0
+
+
+# ——— 4.2.1 integration tests ———
+
+
+def test_real_skills_all_validate():
+    """All 13 real skill packages in vault/skills/ must pass full validation."""
+    registry = SkillRegistry([Path("vault/skills")])
+    packages = registry.discover()
+    # At minimum we expect 13 skills; fixture dirs don't count
+    assert len(packages) >= 13
+    failed = []
+    for p in packages:
+        meta = registry.resolve(p)
+        assert meta is not None, f"Registry could not resolve {p.name}"
+        vr = meta.validation_result
+        if not vr.passed:
+            failed.append((meta.name, vr.findings))
+    assert not failed, f"Skills failed validation: {failed}"
+
+
+def test_real_skills_graph_integrity():
+    """Routing graph for real skills must have no cycles."""
+    registry = SkillRegistry([Path("vault/skills")])
+    graph = build_graph(registry)
+    assert len(graph.nodes) >= 13
+    findings = validate_graph(graph)
+    errors = [f for f in findings if f.severity == Severity.ERROR]
+    assert not errors, f"Graph errors: {errors}"
+
+
+def test_real_skills_link_completeness():
+    """Every nextSkills reference must resolve to an existing skill (check raw contract)."""
+    import json
+    registry = SkillRegistry([Path("vault/skills")])
+    packages = registry.discover()
+    all_ids = {p.name for p in packages}
+    missing = []
+    for p in packages:
+        ct = json.loads((p / "contract.json").read_text(encoding="utf-8"))
+        for ns in ct.get("nextSkills", []):
+            if ns["skillId"] not in all_ids:
+                missing.append(f"{p.name} -> {ns['skillId']}")
+    assert not missing, f"Broken nextSkills links: {missing}"
+
+
+def test_real_skills_router_has_all_links():
+    """skill-router should have nextSkills covering all other skills."""
+    import json
+    registry = SkillRegistry([Path("vault/skills")])
+    rt_ct = json.loads(Path("vault/skills/skill-router/contract.json").read_text(encoding="utf-8"))
+    router_targets = {ns["skillId"] for ns in rt_ct.get("nextSkills", [])}
+    all_ids = {p.name for p in registry.discover()}
+    all_ids.discard("skill-router")
+    missing = all_ids - router_targets
+    assert not missing, f"skill-router missing links to: {missing}"
+
+
+def test_real_skills_knowledge_chain():
+    """Knowledge chain: all producers link to patch-wiki-page or deposit-answer."""
+    import json
+    knowledge_ids = {"ingest-source", "answer-from-wiki", "deposit-answer",
+                     "patch-wiki-page", "run-wiki-health", "extract-insight"}
+    for sid in knowledge_ids:
+        ct = json.loads(Path(f"vault/skills/{sid}/contract.json").read_text(encoding="utf-8"))
+        if sid != "patch-wiki-page":
+            targets = {ns["skillId"] for ns in ct.get("nextSkills", [])}
+            assert targets, f"{sid} has no nextSkills"
+            assert targets & {"patch-wiki-page", "deposit-answer"}, \
+                f"{sid} should link to patch-wiki-page or deposit-answer, got {targets}"
+
+
+def test_real_skills_dev_chain():
+    """Dev chain: tech-solution -> tech-review -> coding -> test-prep -> test-fix."""
+    import json
+    chain = ["tech-solution", "tech-review", "coding", "test-prep", "test-fix"]
+    for i, sid in enumerate(chain):
+        ct = json.loads(Path(f"vault/skills/{sid}/contract.json").read_text(encoding="utf-8"))
+        if i < len(chain) - 1:
+            targets = {ns["skillId"] for ns in ct.get("nextSkills", [])}
+            expected_next = chain[i + 1]
+            assert expected_next in targets, \
+                f"{sid} should link to {expected_next}, got {targets}"
+
+
+def test_real_skills_diagnostic_write_policy():
+    """diagnostic skills must not claim direct wiki write."""
+    import json
+    for sid in ["test-fix", "problem-solve", "run-wiki-health"]:
+        ct = json.loads(Path(f"vault/skills/{sid}/contract.json").read_text(encoding="utf-8"))
+        cw = ct.get("writePolicy", {}).get("canonicalWiki", "")
+        assert cw in ("denied", "proposal-only"), \
+            f"{sid} canonicalWiki={cw}, must be denied or proposal-only"
+
+
+def test_real_skills_producer_has_hard_gates():
+    """Every producer skill must declare at least required_input gate."""
+    import json
+    registry = SkillRegistry([Path("vault/skills")])
+    for p in registry.discover():
+        if p.name == "skill-router":
+            continue
+        ct = json.loads((p / "contract.json").read_text(encoding="utf-8"))
+        if ct.get("kind") == "producer":
+            kinds = {g["kind"] for g in ct.get("hardGates", [])}
+            assert "required_input" in kinds, \
+                f"{p.name} producer missing required_input gate"
+
+
+def test_real_skills_no_direct_wiki_write_claim():
+    """Sweep: no skill contract should claim direct wiki write."""
+    import json
+    registry = SkillRegistry([Path("vault/skills")])
+    for p in registry.discover():
+        raw = (p / "contract.json").read_text(encoding="utf-8")
+        data = json.loads(raw)
+        cw = data.get("writePolicy", {}).get("canonicalWiki", "")
+        assert cw != "direct", f"{p.name} has canonicalWiki=direct"

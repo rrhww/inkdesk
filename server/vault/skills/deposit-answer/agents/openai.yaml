@@ -1,0 +1,7 @@
+interface:
+  display_name: Deposit Answer
+  short_description: 将回答中有复用价值的知识片段沉淀为 wiki 审阅提案。当回答包含可被 wiki 收录的结构化知识时触发。不应在回答内容纯属一次性对话、无长期保留价值时触发。
+  default_prompt: Use $deposit-answer to 将回答中有复用价值的知识片段沉淀为 wiki 审阅提案。当回答包含可被 wiki
+    收录的结构化知识时触发。不应在回答内容纯属一次性对话、无长期保留价值时触发。
+policy:
+  allow_implicit_invocation: false

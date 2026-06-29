@@ -1,0 +1,6 @@
+interface:
+  display_name: Test Fix
+  short_description: 从真实失败信号（测试日志、报错输出）出发，定位并修复测试或实现缺陷。必须有可复现的失败证据才能启动。不应在猜测式修复、没有失败信号、或测试环境未就绪时触发。
+  default_prompt: Use $test-fix to 从真实失败信号（测试日志、报错输出）出发，定位并修复测试或实现缺陷。必须有可复现的失败证据才能启动。不应在猜测式修复、没有失败信号、或测试环境未就绪时触发。
+policy:
+  allow_implicit_invocation: false

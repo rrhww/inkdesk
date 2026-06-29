@@ -1,0 +1,7 @@
+interface:
+  display_name: Test Prep
+  short_description: 基于 PRD、技术方案和变更范围生成测试计划——测试范围、测试数据、验收点。当 coding 完成后用户准备进入测试阶段时触发。不应在没有代码变更或变更范围未明确时触发。
+  default_prompt: Use $test-prep to 基于 PRD、技术方案和变更范围生成测试计划——测试范围、测试数据、验收点。当 coding
+    完成后用户准备进入测试阶段时触发。不应在没有代码变更或变更范围未明确时触发。
+policy:
+  allow_implicit_invocation: false

@@ -1,0 +1,7 @@
+interface:
+  display_name: Extract Insight
+  short_description: 从对话、评论、日志或非正式文本中提取可复用知识片段。当对话或文档中包含值得存入 wiki 的结构化知识时触发。不应在内容仅为闲聊或无实质信息时触发。
+  default_prompt: Use $extract-insight to 从对话、评论、日志或非正式文本中提取可复用知识片段。当对话或文档中包含值得存入
+    wiki 的结构化知识时触发。不应在内容仅为闲聊或无实质信息时触发。
+policy:
+  allow_implicit_invocation: false

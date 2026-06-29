@@ -1,0 +1,8 @@
+interface:
+  display_name: Skill Router
+  short_description: Inkdesk 唯一宽入口——根据用户意图路由到正确的领域 Skill。当用户描述了研发意图或任务目标时触发。不应在用户已经指定了具体
+    Skill 名称的显式调用场景下拦截。
+  default_prompt: Use $skill-router as the single entry point for routing user intents
+    to domain skills.
+policy:
+  allow_implicit_invocation: true

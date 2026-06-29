@@ -1,0 +1,6 @@
+interface:
+  display_name: Problem Solve
+  short_description: 从报错、线上现象、近期变更和 KB 出发诊断根因并产出复盘文档。当出现异常现象需要排查时触发。不应在现象描述为空、或仅为咨询性问题时触发。
+  default_prompt: Use $problem-solve to 从报错、线上现象、近期变更和 KB 出发诊断根因并产出复盘文档。当出现异常现象需要排查时触发。不应在现象描述为空、或仅为咨询性问题时触发。
+policy:
+  allow_implicit_invocation: false

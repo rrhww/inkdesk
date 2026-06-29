@@ -1,0 +1,74 @@
+{
+  "schemaVersion": "1.0",
+  "id": "tech-review",
+  "version": "0.1.0",
+  "status": "draft",
+  "category": "engineering",
+  "kind": "reviewer",
+  "summary": "[engineering/reviewer] 结构化审查技术方案——检查边界、风险、依赖、测试覆盖和实现可行性",
+  "inputs": [
+    {
+      "name": "solution_doc",
+      "type": "string",
+      "required": true,
+      "constraints": "path to solution document"
+    }
+  ],
+  "contextRequirements": [
+    {
+      "name": "vault_status",
+      "description": "需要确认 vault 已初始化"
+    },
+    {
+      "name": "dev_run",
+      "description": "需要当前 Dev Run 状态和阶段信息"
+    }
+  ],
+  "outputs": [
+    {
+      "type": "review_report",
+      "location": "runs/<run_id>/tech-review.md",
+      "needsReview": false
+    }
+  ],
+  "hardGates": [
+    {
+      "id": "g-solution",
+      "kind": "required_input",
+      "params": {
+        "field": "solution_doc"
+      },
+      "on_failure": "待审方案不得为空"
+    },
+    {
+      "id": "g-exists",
+      "kind": "artifact_exists",
+      "params": {
+        "field": "solution_doc"
+      },
+      "on_failure": "方案文件必须真实存在"
+    }
+  ],
+  "capabilities": [
+    "read_vault"
+  ],
+  "writePolicy": {
+    "canonicalWiki": "denied",
+    "runArtifacts": "allowed",
+    "codeRepository": "delegated"
+  },
+  "verification": [
+    {
+      "kind": "lint",
+      "description": "contract structural/semantic/safety lint 全部通过"
+    }
+  ],
+  "nextSkills": [
+    {
+      "skillId": "coding"
+    }
+  ],
+  "supportedRuntimes": [
+    "inkdesk"
+  ]
+}

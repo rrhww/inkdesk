@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "inkdesk-web",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["./node_modules/.bin/next", "dev", "--port", "3301"],
+      "port": 3301
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "inkdesk-web",
+      "runtimeExecutable": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+      "runtimeArgs": ["-Command", "cd E:/dev/projects/inkdesk/web; E:/Program4java/nodejs/npm.cmd run dev"],
+      "port": 3301,
+      "autoPort": false
+    }
+  ]
+}

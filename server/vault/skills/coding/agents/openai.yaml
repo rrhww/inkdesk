@@ -1,0 +1,8 @@
+interface:
+  display_name: Coding
+  short_description: 在方案已确认后执行受控代码实现。当 tech-review 通过且用户确认进入实现阶段时触发。不应在方案未确认、或有未解决的
+    Hard Gate 阻塞时触发。
+  default_prompt: Use $coding to 在方案已确认后执行受控代码实现。当 tech-review 通过且用户确认进入实现阶段时触发。不应在方案未确认、或有未解决的
+    Hard Gate 阻塞时触发。
+policy:
+  allow_implicit_invocation: false

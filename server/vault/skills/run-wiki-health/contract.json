@@ -1,0 +1,63 @@
+{
+  "schemaVersion": "1.0",
+  "id": "run-wiki-health",
+  "version": "0.1.0",
+  "status": "draft",
+  "category": "knowledge",
+  "kind": "diagnostic",
+  "summary": "[knowledge/diagnostic] 执行 wiki 健康检查——断链、孤页、缺 frontmatter、短页、stale/outdated",
+  "inputs": [],
+  "contextRequirements": [
+    {
+      "name": "vault_status",
+      "description": "需要确认 vault 已初始化"
+    },
+    {
+      "name": "kb_meta",
+      "description": "需要 KB-META.md 获取路径和元信息"
+    }
+  ],
+  "outputs": [
+    {
+      "type": "health_report",
+      "location": "runs/<run_id>/health-report.md",
+      "needsReview": false
+    }
+  ],
+  "hardGates": [
+    {
+      "id": "g-vault",
+      "kind": "vault_initialized",
+      "params": {},
+      "on_failure": "KB 未初始化时返回 blocked"
+    },
+    {
+      "id": "g-schema",
+      "kind": "schema_gate_passed",
+      "params": {},
+      "on_failure": "schema 不合规时提示修复"
+    }
+  ],
+  "capabilities": [
+    "read_vault"
+  ],
+  "writePolicy": {
+    "canonicalWiki": "proposal-only",
+    "runArtifacts": "allowed",
+    "codeRepository": "denied"
+  },
+  "verification": [
+    {
+      "kind": "lint",
+      "description": "contract structural/semantic/safety lint 全部通过"
+    }
+  ],
+  "nextSkills": [
+    {
+      "skillId": "patch-wiki-page"
+    }
+  ],
+  "supportedRuntimes": [
+    "inkdesk"
+  ]
+}

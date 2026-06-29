@@ -121,14 +121,31 @@ def _check_abs_paths(text: str, path_in_pkg: str) -> list[Finding]:
     return findings
 
 
+_NEGATION_PREFIX = re.compile(
+    r"(?:\*\*)?(?:不做|不[得应能可允许]|禁止|严禁|不应|不可|不能)(?:\*\*)?\s*[：:\-—]",
+    re.IGNORECASE,
+)
+
+_IMMEDIATE_NEGATION = re.compile(r"(?:不|not?)\s*$", re.IGNORECASE)
+
+
 def _check_bypass(text: str, path_in_pkg: str) -> list[Finding]:
     findings: list[Finding] = []
-    for pat in _BYPASS_PATTERNS:
-        if pat.search(text):
+    lines = text.splitlines()
+    for lineno, line in enumerate(lines, 1):
+        for pat in _BYPASS_PATTERNS:
+            m = pat.search(line)
+            if not m:
+                continue
+            before = line[: m.start()]
+            if _NEGATION_PREFIX.search(before):
+                continue
+            if _IMMEDIATE_NEGATION.search(before):
+                continue
             findings.append(
                 Finding(
                     code="SAFETY_BYPASS_CLAIM",
-                    path=path_in_pkg,
+                    path=f"{path_in_pkg}:{lineno}",
                     message=f"Claims to bypass review/schema/confirmation: matched {pat.pattern!r}",
                     severity=Severity.ERROR,
                 )

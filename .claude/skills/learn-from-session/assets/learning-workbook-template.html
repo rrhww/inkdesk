@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="{{LANG}}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>{{PAGE_TITLE}}</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f3f0e8;
+      --surface: #fffdf7;
+      --surface-raised: #ffffff;
+      --text: #18201d;
+      --muted: #58635e;
+      --border: #cbd3ce;
+      --accent: #235c4b;
+      --accent-strong: #174538;
+      --accent-soft: #dfece5;
+      --evidence: #1d6047;
+      --reconstruction: #7a4c00;
+      --recommendation: #7c3050;
+      --shadow: 0 18px 50px rgba(24, 32, 29, 0.08);
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 17px;
+      line-height: 1.68;
+    }
+    a { color: var(--accent-strong); }
+    .skip-link {
+      position: absolute;
+      left: 16px;
+      top: -80px;
+      z-index: 20;
+      padding: 10px 14px;
+      border-radius: 8px;
+      background: var(--text);
+      color: var(--surface);
+    }
+    .skip-link:focus { top: 12px; }
+    .shell { width: min(100% - 32px, 840px); margin: 0 auto; }
+    .hero { padding: 64px 0 32px; }
+    .eyebrow {
+      margin: 0 0 8px;
+      color: var(--accent-strong);
+      font-size: 0.78rem;
+      font-weight: 760;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    h1, h2, h3 { line-height: 1.2; text-wrap: balance; }
+    h1 { margin: 0; max-width: 18ch; font-size: clamp(2.25rem, 7vw, 4.8rem); letter-spacing: -0.045em; }
+    h2 { margin: 0 0 18px; font-size: clamp(1.55rem, 3vw, 2.15rem); letter-spacing: -0.025em; }
+    h3 { margin: 0 0 8px; font-size: 1.08rem; }
+    p, ul, ol { margin-top: 0; }
+    .lede { max-width: 64ch; margin: 20px 0 0; color: var(--muted); font-size: 1.06rem; }
+    .meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 24px; }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      min-height: 34px;
+      padding: 5px 11px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--surface) 86%, transparent);
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 650;
+    }
+    main { padding-bottom: 72px; }
+    section {
+      margin: 22px 0;
+      padding: clamp(22px, 4vw, 38px);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+    .quiet { box-shadow: none; }
+    .event-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .event-card { padding: 16px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface-raised); }
+    .event-card[aria-current="true"] { border-color: var(--accent); box-shadow: inset 4px 0 0 var(--accent); }
+    .event-card p { margin: 4px 0 0; color: var(--muted); font-size: 0.9rem; }
+    .fact-list, .checklist { padding-left: 1.25rem; }
+    .fact-list li, .checklist li { margin: 8px 0; padding-left: 4px; }
+    .rewind {
+      border-color: var(--accent);
+      background: linear-gradient(155deg, var(--surface), var(--accent-soft));
+    }
+    .question { font-size: 1.18rem; font-weight: 720; }
+    .prompt-list { color: var(--muted); }
+    label { display: block; margin: 22px 0 8px; font-weight: 720; }
+    textarea {
+      display: block;
+      width: 100%;
+      min-height: 140px;
+      resize: vertical;
+      padding: 14px 15px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--surface-raised);
+      color: var(--text);
+      font: inherit;
+      line-height: 1.55;
+    }
+    button {
+      min-height: 44px;
+      margin-top: 14px;
+      padding: 10px 16px;
+      border: 0;
+      border-radius: 10px;
+      background: var(--accent);
+      color: #ffffff;
+      font: inherit;
+      font-weight: 720;
+      cursor: pointer;
+    }
+    button:hover { background: var(--accent-strong); }
+    :focus-visible { outline: 3px solid #d59125; outline-offset: 3px; }
+    .status { min-height: 1.5em; margin: 8px 0 0; color: var(--muted); font-size: 0.9rem; }
+    .no-script-note { color: var(--muted); font-size: 0.9rem; }
+    details { margin-top: 22px; border-top: 1px solid var(--border); padding-top: 18px; }
+    summary { min-height: 44px; cursor: pointer; color: var(--accent-strong); font-weight: 760; }
+    .trace { display: grid; gap: 14px; margin-top: 18px; }
+    .trace-item { padding: 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-raised); }
+    .trace-item p { margin-bottom: 7px; }
+    .trace-item .outcome { color: var(--muted); font-size: 0.94rem; }
+    .badge { display: inline-flex; margin-bottom: 10px; font-size: 0.78rem; font-weight: 760; letter-spacing: 0.04em; }
+    .badge-evidence { color: var(--evidence); }
+    .badge-reconstruction { color: var(--reconstruction); }
+    .badge-recommendation { color: var(--recommendation); }
+    .callout { margin-top: 18px; padding: 16px; border-left: 4px solid var(--recommendation); background: var(--surface-raised); }
+    .principle-grid { display: grid; gap: 12px; }
+    .principle { padding: 16px; border-radius: 12px; background: var(--surface-raised); border: 1px solid var(--border); }
+    .mastery { display: flex; gap: 14px; align-items: flex-start; }
+    .mastery-mark { flex: 0 0 auto; width: 14px; height: 14px; margin-top: 7px; border: 3px solid var(--accent); border-radius: 50%; }
+    footer { padding: 0 0 48px; color: var(--muted); font-size: 0.88rem; }
+
+    @media (max-width: 640px) {
+      body { font-size: 16px; }
+      .shell { width: min(100% - 22px, 840px); }
+      .hero { padding-top: 40px; }
+      .event-grid { grid-template-columns: 1fr; }
+      section { margin: 14px 0; padding: 20px; border-radius: 14px; }
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #111714;
+        --surface: #19211d;
+        --surface-raised: #202a25;
+        --text: #eef4f0;
+        --muted: #b4c0ba;
+        --border: #3a4741;
+        --accent: #77bea3;
+        --accent-strong: #a7dbc6;
+        --accent-soft: #233a31;
+        --evidence: #83d2b1;
+        --reconstruction: #f0bd6c;
+        --recommendation: #f0a3c1;
+        --shadow: 0 18px 55px rgba(0, 0, 0, 0.2);
+      }
+      button { color: #10231b; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; animation: none !important; }
+    }
+
+    @media print {
+      :root { color-scheme: light; --bg: #ffffff; --surface: #ffffff; --surface-raised: #ffffff; --text: #000000; --muted: #333333; --border: #aaaaaa; }
+      body { background: #ffffff; font-size: 11pt; }
+      .shell { width: 100%; }
+      .hero { padding-top: 0; }
+      section { break-inside: avoid; box-shadow: none; }
+      button, .status, .no-script-note, .skip-link { display: none !important; }
+      details { display: block; }
+      details > *, details:not([open]) > :not(summary) { display: block !important; }
+      details::details-content { content-visibility: visible !important; height: auto !important; }
+      summary { list-style: none; }
+    }
+  </style>
+</head>
+<body data-report-key="{{REPORT_KEY}}">
+{{CONTENT}}
+<script>
+  (function () {
+    "use strict";
+    var fields = Array.prototype.slice.call(document.querySelectorAll("textarea[data-learning-answer]"));
+    var button = document.getElementById("copy-answers");
+    var status = document.getElementById("copy-status");
+    var storageKey = "learn-from-session:" + document.body.getAttribute("data-report-key");
+
+    try {
+      var saved = JSON.parse(window.localStorage.getItem(storageKey) || "{}");
+      fields.forEach(function (field) {
+        if (typeof saved[field.id] === "string") field.value = saved[field.id];
+        field.addEventListener("input", function () {
+          var next = {};
+          fields.forEach(function (item) { next[item.id] = item.value; });
+          try { window.localStorage.setItem(storageKey, JSON.stringify(next)); } catch (error) { /* optional only */ }
+        });
+      });
+    } catch (error) { /* local drafts are optional */ }
+
+    function setStatus(message) {
+      if (status) status.textContent = message;
+    }
+
+    function fallbackCopy(text) {
+      var helper = document.createElement("textarea");
+      helper.value = text;
+      helper.setAttribute("readonly", "");
+      helper.style.position = "fixed";
+      helper.style.opacity = "0";
+      document.body.appendChild(helper);
+      helper.select();
+      var copied = document.execCommand("copy");
+      document.body.removeChild(helper);
+      return copied;
+    }
+
+    if (button) {
+      button.addEventListener("click", function () {
+        var text = fields.map(function (field) {
+          var label = document.querySelector('label[for="' + field.id + '"]');
+          return (label ? label.textContent.trim() : field.id) + "\n" + (field.value.trim() || "（尚未作答）");
+        }).join("\n\n");
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(function () {
+            setStatus("回答已复制，可以粘贴回 Agent 获取反馈。");
+          }).catch(function () {
+            setStatus(fallbackCopy(text) ? "回答已复制。" : "复制失败，请手动选择文本。");
+          });
+        } else {
+          setStatus(fallbackCopy(text) ? "回答已复制。" : "复制失败，请手动选择文本。");
+        }
+      });
+    }
+  }());
+</script>
+</body>
+</html>

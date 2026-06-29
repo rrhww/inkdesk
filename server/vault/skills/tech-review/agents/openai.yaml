@@ -1,0 +1,6 @@
+interface:
+  display_name: Tech Review
+  short_description: 结构化审查技术方案——检查边界、风险、依赖、测试覆盖和实现可行性。每条结论必须附带 evidence。当存在待审技术方案时触发。不应在没有方案文档或方案为草稿大纲时触发。
+  default_prompt: Use $tech-review to 结构化审查技术方案——检查边界、风险、依赖、测试覆盖和实现可行性。每条结论必须附带 evidence。当存在待审技术方案时触发。不应在没有方案文档或方案为草稿大纲时触发。
+policy:
+  allow_implicit_invocation: false

@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>从 4.1.3 深度治理中学到评分/门禁分离设计</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f3f0e8;
+      --surface: #fffdf7;
+      --surface-raised: #ffffff;
+      --text: #18201d;
+      --muted: #58635e;
+      --border: #cbd3ce;
+      --accent: #235c4b;
+      --accent-strong: #174538;
+      --accent-soft: #dfece5;
+      --evidence: #1d6047;
+      --reconstruction: #7a4c00;
+      --recommendation: #7c3050;
+      --shadow: 0 18px 50px rgba(24, 32, 29, 0.08);
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 17px;
+      line-height: 1.68;
+    }
+    a { color: var(--accent-strong); }
+    .skip-link {
+      position: absolute;
+      left: 16px;
+      top: -80px;
+      z-index: 20;
+      padding: 10px 14px;
+      border-radius: 8px;
+      background: var(--text);
+      color: var(--surface);
+    }
+    .skip-link:focus { top: 12px; }
+    .shell { width: min(100% - 32px, 840px); margin: 0 auto; }
+    .hero { padding: 64px 0 32px; }
+    .eyebrow {
+      margin: 0 0 8px;
+      color: var(--accent-strong);
+      font-size: 0.78rem;
+      font-weight: 760;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    h1, h2, h3 { line-height: 1.2; text-wrap: balance; }
+    h1 { margin: 0; max-width: 18ch; font-size: clamp(2.25rem, 7vw, 4.8rem); letter-spacing: -0.045em; }
+    h2 { margin: 0 0 18px; font-size: clamp(1.55rem, 3vw, 2.15rem); letter-spacing: -0.025em; }
+    h3 { margin: 0 0 8px; font-size: 1.08rem; }
+    p, ul, ol { margin-top: 0; }
+    .lede { max-width: 64ch; margin: 20px 0 0; color: var(--muted); font-size: 1.06rem; }
+    .meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 24px; }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      min-height: 34px;
+      padding: 5px 11px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--surface) 86%, transparent);
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 650;
+    }
+    main { padding-bottom: 72px; }
+    section {
+      margin: 22px 0;
+      padding: clamp(22px, 4vw, 38px);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+    .quiet { box-shadow: none; }
+    .event-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .event-card { padding: 16px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface-raised); }
+    .event-card[aria-current="true"] { border-color: var(--accent); box-shadow: inset 4px 0 0 var(--accent); }
+    .event-card p { margin: 4px 0 0; color: var(--muted); font-size: 0.9rem; }
+    .fact-list, .checklist { padding-left: 1.25rem; }
+    .fact-list li, .checklist li { margin: 8px 0; padding-left: 4px; }
+    .rewind {
+      border-color: var(--accent);
+      background: linear-gradient(155deg, var(--surface), var(--accent-soft));
+    }
+    .question { font-size: 1.18rem; font-weight: 720; }
+    .prompt-list { color: var(--muted); }
+    label { display: block; margin: 22px 0 8px; font-weight: 720; }
+    textarea {
+      display: block;
+      width: 100%;
+      min-height: 140px;
+      resize: vertical;
+      padding: 14px 15px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--surface-raised);
+      color: var(--text);
+      font: inherit;
+      line-height: 1.55;
+    }
+    button {
+      min-height: 44px;
+      margin-top: 14px;
+      padding: 10px 16px;
+      border: 0;
+      border-radius: 10px;
+      background: var(--accent);
+      color: #ffffff;
+      font: inherit;
+      font-weight: 720;
+      cursor: pointer;
+    }
+    button:hover { background: var(--accent-strong); }
+    :focus-visible { outline: 3px solid #d59125; outline-offset: 3px; }
+    .status { min-height: 1.5em; margin: 8px 0 0; color: var(--muted); font-size: 0.9rem; }
+    .no-script-note { color: var(--muted); font-size: 0.9rem; }
+    details { margin-top: 22px; border-top: 1px solid var(--border); padding-top: 18px; }
+    summary { min-height: 44px; cursor: pointer; color: var(--accent-strong); font-weight: 760; }
+    .trace { display: grid; gap: 14px; margin-top: 18px; }
+    .trace-item { padding: 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-raised); }
+    .trace-item p { margin-bottom: 7px; }
+    .trace-item .outcome { color: var(--muted); font-size: 0.94rem; }
+    .badge { display: inline-flex; margin-bottom: 10px; font-size: 0.78rem; font-weight: 760; letter-spacing: 0.04em; }
+    .badge-evidence { color: var(--evidence); }
+    .badge-reconstruction { color: var(--reconstruction); }
+    .badge-recommendation { color: var(--recommendation); }
+    .callout { margin-top: 18px; padding: 16px; border-left: 4px solid var(--recommendation); background: var(--surface-raised); }
+    .principle-grid { display: grid; gap: 12px; }
+    .principle { padding: 16px; border-radius: 12px; background: var(--surface-raised); border: 1px solid var(--border); }
+    .mastery { display: flex; gap: 14px; align-items: flex-start; }
+    .mastery-mark { flex: 0 0 auto; width: 14px; height: 14px; margin-top: 7px; border: 3px solid var(--accent); border-radius: 50%; }
+    footer { padding: 0 0 48px; color: var(--muted); font-size: 0.88rem; }
+
+    @media (max-width: 640px) {
+      body { font-size: 16px; }
+      .shell { width: min(100% - 22px, 840px); }
+      .hero { padding-top: 40px; }
+      .event-grid { grid-template-columns: 1fr; }
+      section { margin: 14px 0; padding: 20px; border-radius: 14px; }
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #111714;
+        --surface: #19211d;
+        --surface-raised: #202a25;
+        --text: #eef4f0;
+        --muted: #b4c0ba;
+        --border: #3a4741;
+        --accent: #77bea3;
+        --accent-strong: #a7dbc6;
+        --accent-soft: #233a31;
+        --evidence: #83d2b1;
+        --reconstruction: #f0bd6c;
+        --recommendation: #f0a3c1;
+        --shadow: 0 18px 55px rgba(0, 0, 0, 0.2);
+      }
+      button { color: #10231b; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; animation: none !important; }
+    }
+
+    @media print {
+      :root { color-scheme: light; --bg: #ffffff; --surface: #ffffff; --surface-raised: #ffffff; --text: #000000; --muted: #333333; --border: #aaaaaa; }
+      body { background: #ffffff; font-size: 11pt; }
+      .shell { width: 100%; }
+      .hero { padding-top: 0; }
+      section { break-inside: avoid; box-shadow: none; }
+      button, .status, .no-script-note, .skip-link { display: none !important; }
+      details { display: block; }
+      details > *, details:not([open]) > :not(summary) { display: block !important; }
+      details::details-content { content-visibility: visible !important; height: auto !important; }
+      summary { list-style: none; }
+    }
+  </style>
+</head>
+<body data-report-key="2026-06-22-8-schema-gate-diff-eval">
+<a class="skip-link" href="#main-content">跳到主要内容</a>
+<header class="hero shell">
+  <p class="eyebrow">Learn From Session · 学习工作簿</p>
+  <h1>从 4.1.3 深度治理中学到评分/门禁分离设计</h1>
+  <p class="lede">健康检查系统架构——8 条确定性规则、Schema Gate 分离、快照 diff、多维索引、Eval 隔离</p>
+  <div class="meta" aria-label="报告信息">
+    <span class="chip">2026-06-22</span>
+    <span class="chip">约 3 分钟</span>
+    <span class="chip">接触过</span>
+  </div>
+</header>
+<main id="main-content" class="shell">
+  <section aria-labelledby="outcomes-title">
+    <p class="eyebrow">Session outcome</p>
+    <h2 id="outcomes-title">本轮完成了什么</h2>
+    <ul><li>实现 8 条确定性健康规则，每条规则具备 SHA256 指纹，确保同输入同输出</li><li>将健康评分与 Schema Gate 分离——评分表示整体健康程度，Gate 只检查是否存在 error 发现</li><li>实现快照持久化与指纹 diff，支持健���趋势追踪（new/continued/resolved）</li><li>创建多维知识库索引：按类型、按维度（business-line/topic）、待分类追踪、成熟度统计</li><li>建立 Golden Tasks + Evaluation Run 边界，Gate FAILED 时拒绝创建 Eval Run</li><li>新增 6 条 API 路由，36 个单元测试，前端 typecheck/lint/test/build 全部通过</li></ul>
+  </section>
+
+  <section class="quiet" aria-labelledby="events-title">
+    <p class="eyebrow">Episode map</p>
+    <h2 id="events-title">会话事件地图</h2>
+    <div class="event-grid"><article class="event-card" aria-current="false"><h3>规则契约设计——8 条确定性规则 + 稳定指纹</h3><p>方案设计</p></article><article class="event-card" aria-current="true"><h3>Schema Gate 与评分分离——error 阻塞 Eval，分数独立</h3><p>方案设计</p></article><article class="event-card" aria-current="false"><h3>快照持久化与指纹 diff——健康趋势追踪</h3><p>功能实现</p></article><article class="event-card" aria-current="false"><h3>多维索引——按类型/维度/待分类/成熟度四视图</h3><p>功能实现</p></article><article class="event-card" aria-current="false"><h3>Evaluation Run 隔离——输出目录分离，Gate 检查前置</h3><p>方案设计</p></article><article class="event-card" aria-current="false"><h3>Docker Desktop 代理配置修复镜像拉取与 git push</h3><p>调试</p></article></div>
+  </section>
+
+  <section aria-labelledby="focus-title">
+    <p class="eyebrow">Focus episode · 方案设计</p>
+    <h2 id="focus-title">为什么评分和门禁必须分离？如何设计不可绕过的 Gate？</h2>
+    <h3>回到当时：你已经知道什么</h3>
+    <ul class="fact-list"><li>健康系统需要给用户一个整体评分（质量感）</li><li>同时需要一个硬性门禁来阻止低质量提交进入下一步环节</li><li>8 条规则分三个严重度：error / warning / info</li><li>error 表示结构缺陷（非法状态、重复标题、来源丢失），warning 表示需要注意但可继续</li><li>Evaluation Run 是正式评测环节，不应在数据有严重问题时启动</li><li>评分的含义是&#x27;整体健康程度&#x27;，门禁的含义是&#x27;是否可以进入下一阶段&#x27;</li></ul>
+  </section>
+
+  <section class="rewind" aria-labelledby="rewind-title">
+    <p class="eyebrow">Pause and predict</p>
+    <h2 id="rewind-title">场景倒带</h2>
+    <p class="question">现在要设计这个健康系统。前端需要显示一个 0-100 的分数，后端需要一个布尔值来阻止 Eval Run 的创建。你会把这两个信号设为一个（分数低于某个阈值就阻塞），还是分开？如果是分开的，门禁的规则应该是什么？</p>
+    <ul class="prompt-list"><li>思考：如果一个页面只有 warning 和 info 级别的发现，评分可能是 70%，但应该被阻止吗？</li><li>思考：如果一个库有 100 个页面，只其中 1 个页面的状态非法（error），评分可能很高（99%），这个库可以进入 Eval Run 吗？</li><li>思考：未来如果需要新增规则类型，门禁逻辑需要改动吗？哪种设计更容易扩展？</li></ul>
+    <label for="rewind-answer">先写下你的判断</label>
+    <textarea id="rewind-answer" data-learning-answer spellcheck="true" placeholder="写下下一步、预期结果，以及不同结果会如何改变你的判断。"></textarea>
+    <noscript><p class="no-script-note">JavaScript 已关闭。你仍可作答并手动复制文本，下面的折叠内容也可以正常展开。</p></noscript>
+    <details>
+      <summary>完成作答后，展开专家路径</summary>
+      <div class="trace"><article class="trace-item"><span class="badge badge-evidence">会话证据</span><h3>定义评分公式：passed_applicable / total_applicable × 100</h3><p>每个规则对其适用的页面检查一次。评分计算所有规则×适用页面的通过率，与 severity 无关。一个 KB_INVALID_STATUS(error) 和一个 KB_SHORT_PAGE(warning) 对分数的贡献相同——都是&#x27;不通过&#x27;。</p><p class="outcome"><strong>这一步改变了什么：</strong> 分数反映的是&#x27;有多少检查通过了&#x27;，不区分严重度。这是合理的——分数是对现状的总体描述。</p></article><article class="trace-item"><span class="badge badge-evidence">会话证据</span><h3>定义门禁规则：存在任意 error 级别的发现 → Gate FAILED</h3><p>在 health_service.py 中，扫描完成后遍历所有发现。只要 findings 列表中出现 severity==&#x27;error&#x27; 的项，gateStatus 就设为 FAILED；否则 PASSED。分数为 null（无适用检查）时 Gate 仍可评估。</p><p class="outcome"><strong>这一步改变了什么：</strong> 门禁是一个简单、清晰的规则：error 出现 = 阻塞。不依赖分数阈值，不依赖总数，不依赖比例。这就是分离的关键价值。</p></article><article class="trace-item"><span class="badge badge-evidence">会话证据</span><h3>在 Evaluation Service 中前置 Gate 检查</h3><p>create_eval_run 方法第一步就检查传入的 gate 状态。如果 gate 不是 PASSED，直接抛出 ValueError，在 FastAPI 路由中被捕获为 HTTP 409（EVAL_RUN_REJECTED）。这意味着 Eval Run 的创建路径上有一个不可绕过的检查点。</p><p class="outcome"><strong>这一步改变了什么：</strong> 门禁不是隐式约定，而是代码路径上的硬断言。即使前端跳过检查直接调 API，后端也不允许创建。</p></article><article class="trace-item"><span class="badge badge-recommendation">改进建议</span><h3>如果重新设计，考虑将 gate 规则表显式化</h3><p>当前 gate 逻辑硬编码为 &#x27;存在 error = FAILED&#x27;。未来如果有更复杂的 Gate 规则（例如 3 个以上 warning 也算 FAILED），可以考虑将 Gate 的计算从 &#x27;遍历 findings 判断 severity&#x27; 抽离为一个独立的 gate_policy(): bool 函数，接受整个扫描结果，返回 PASSED/FAILED。</p><p class="outcome"><strong>这一步改变了什么：</strong> 使门禁策略独立于健康扫描和评分计算，三者各管各的，改变任何一个不影响其余。</p></article></div>
+      
+    </details>
+  </section>
+
+  <section aria-labelledby="principles-title">
+    <p class="eyebrow">Mental model</p>
+    <h2 id="principles-title">带走这个底层模型</h2>
+    <div class="principle-grid"><article class="principle"><h3>描述性指标 ≠ 决策性信号</h3><p>健康评分描述系统的整体状态（0-100 分），门禁回答一个二分问题（现在能推进吗？）。混淆二者会导致：阈值调整影响评分可读性，评分波动导致门禁不稳定，新增规则类型需要重新校准阈值。分离之后各自独立演化。</p></article><article class="principle"><h3>门禁规则应尽量简单，越复杂的门禁越难解释</h3><p>&#x27;存在 error = FAILED&#x27; 这条规则有两个优点：（1）任何人都能理解为什么被阻止；（2）增加新规则时，只需决定新规则的 severity 是什么，不需要修改门禁逻辑。severity 是规则的属性，门禁只看 severity，规则本身是什么不重要。</p></article><article class="principle"><h3>安全关键路径上的检查必须在服务端不可绕过</h3><p>Eval Run 的创建必须检查 Gate，这个检查在服务端方法体内执行，不是中间件、不是前端判断。即使 API 被直接 curl 调用，也无法绕过。&#x27;不可绕过&#x27;不等于&#x27;隐藏&#x27;——错误信息通过 HTTP 409 明确返回，告诉调用者需要修复什么。</p></article></div>
+  </section>
+
+  <section aria-labelledby="transfer-title">
+    <p class="eyebrow">Near transfer</p>
+    <h2 id="transfer-title">换一个场景，再做一次判断</h2>
+    <p>你正在为一个 CI 流水线设计质量门禁。流水线有 5 个步骤：lint、typecheck、unit test、e2e test、bundle size check。每个步骤的结果有 pass/warn/fail。你需要在流水线末尾加一个 &#x27;部署审批&#x27; 节点来决定是否允许部署。请设计这个审批节点的规则：你会用加权总分还是硬性条件？哪些步骤的 fail 应该阻塞部署？哪些 warn 累积到一定量也应该阻塞？</p>
+    <ul class="prompt-list"><li>哪些步骤失败应该无条件阻塞部署？为什么？</li><li>lint warning 和 typecheck fail 的严重度可能不同——你如何定义这个差异？</li><li>如果未来新增一个 &#x27;secret scan&#x27; 步骤，你的阻塞规则需要改动吗？如果不改动，原因是什么？</li></ul>
+    <label for="transfer-answer">你的迁移答案</label>
+    <textarea id="transfer-answer" data-learning-answer spellcheck="true" placeholder="不要复述原案例，说明你会如何验证和决策。"></textarea>
+    <details>
+      <summary>作答后展开参考思路</summary>
+      <p>推荐方案：每个步骤定义自己的严重度（fail = error 级，warn = warning 级）。部署审批的规则是：存在任意 error 级结果 → 阻塞。这个规则不关心步骤总数、不关心分数、不关心 warning 数量。原因：（1）添加新步骤时只需定义该步骤的 fail 含义，不修改审批逻辑；（2）warning 提供信息但不阻塞——lint warning 不应该阻止热修复部署；（3）如果需要 &#x27;3 个 warning = 阻塞&#x27; 的规则，把它写成一个独立的步骤（如 &#x27;聚合检查&#x27;），而不是嵌入每个步骤。</p>
+    </details>
+    <button type="button" id="copy-answers">复制我的回答</button>
+    <p id="copy-status" class="status" role="status" aria-live="polite"></p>
+  </section>
+
+  <section class="quiet" aria-labelledby="checklist-title">
+    <p class="eyebrow">Reusable checklist</p>
+    <h2 id="checklist-title">下次可以直接使用</h2>
+    <ul class="checklist"><li>设计质量门禁前，先区分：哪些是指标（descriptive），哪些是决策（prescriptive）</li><li>门禁规则用 severity 而非具体类型——新增规则时不需修改门禁</li><li>阻塞检查放在服务端代码路径上，不可仅依赖前端判断</li><li>阻塞时返回明确的 HTTP 状态码和解释信息，告诉用户需要修复什么</li><li>评分公式保持独立，只有描述性含义，与阻塞决策解耦</li></ul>
+  </section>
+
+  <section aria-labelledby="mastery-title">
+    <p class="eyebrow">Mastery evidence</p>
+    <h2 id="mastery-title">当前掌握证据</h2>
+    <div class="mastery">
+      <span class="mastery-mark" aria-hidden="true"></span>
+      <div><h3>接触过</h3><p>尚未验证掌握</p><p><strong>建议复习：</strong> 完成迁移练习后安排——在真实项目中应用评分/门禁分离模式</p></div>
+    </div>
+  </section>
+</main>
+<footer class="shell">由 Learn From Session 根据当前会话的可见证据生成。合理重建与改进建议不等同于原会话中的明确推理。</footer>
+<script>
+  (function () {
+    "use strict";
+    var fields = Array.prototype.slice.call(document.querySelectorAll("textarea[data-learning-answer]"));
+    var button = document.getElementById("copy-answers");
+    var status = document.getElementById("copy-status");
+    var storageKey = "learn-from-session:" + document.body.getAttribute("data-report-key");
+
+    try {
+      var saved = JSON.parse(window.localStorage.getItem(storageKey) || "{}");
+      fields.forEach(function (field) {
+        if (typeof saved[field.id] === "string") field.value = saved[field.id];
+        field.addEventListener("input", function () {
+          var next = {};
+          fields.forEach(function (item) { next[item.id] = item.value; });
+          try { window.localStorage.setItem(storageKey, JSON.stringify(next)); } catch (error) { /* optional only */ }
+        });
+      });
+    } catch (error) { /* local drafts are optional */ }
+
+    function setStatus(message) {
+      if (status) status.textContent = message;
+    }
+
+    function fallbackCopy(text) {
+      var helper = document.createElement("textarea");
+      helper.value = text;
+      helper.setAttribute("readonly", "");
+      helper.style.position = "fixed";
+      helper.style.opacity = "0";
+      document.body.appendChild(helper);
+      helper.select();
+      var copied = document.execCommand("copy");
+      document.body.removeChild(helper);
+      return copied;
+    }
+
+    if (button) {
+      button.addEventListener("click", function () {
+        var text = fields.map(function (field) {
+          var label = document.querySelector('label[for="' + field.id + '"]');
+          return (label ? label.textContent.trim() : field.id) + "\n" + (field.value.trim() || "（尚未作答）");
+        }).join("\n\n");
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(function () {
+            setStatus("回答已复制，可以粘贴回 Agent 获取反馈。");
+          }).catch(function () {
+            setStatus(fallbackCopy(text) ? "回答已复制。" : "复制失败，请手动选择文本。");
+          });
+        } else {
+          setStatus(fallbackCopy(text) ? "回答已复制。" : "复制失败，请手动选择文本。");
+        }
+      });
+    }
+  }());
+</script>
+</body>
+</html>

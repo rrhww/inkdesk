@@ -1,0 +1,8 @@
+interface:
+  display_name: Patch Wiki Page
+  short_description: 修改已有 wiki 页面——补充内容、更新过时信息、标记页面状态（stub/draft/stable/outdated）。当
+    ingest/propose/deposit/health-check 产出了针对特定页面的变更提案时触发。不应在没有目标页面或变更内容为空时触发。
+  default_prompt: Use $patch-wiki-page to 修改已有 wiki 页面——补充内容、更新过时信息、标记页面状态（stub/draft/stable/outdated）。当
+    ingest/propose/deposit/health-check 产出了针对特定页面的变更提案时触发。不应在没有目标页面或变更内容为空时触发。
+policy:
+  allow_implicit_invocation: false

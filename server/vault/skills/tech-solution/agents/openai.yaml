@@ -1,0 +1,8 @@
+interface:
+  display_name: Tech Solution
+  short_description: 从需求描述、KB 上下文和代码仓状态生成可评审技术方案。当用户提供了需求且 KB 已就绪时触发。不应在没有明确需求、或 KB
+    完全空白无法提供上下文的场景下触发。
+  default_prompt: Use $tech-solution to 从需求描述、KB 上下文和代码仓状态生成可评审技术方案。当用户提供了需求且 KB 已就绪时触发。不应在没有明确需求、或
+    KB 完全空白无法提供上下文的场景下触发。
+policy:
+  allow_implicit_invocation: false

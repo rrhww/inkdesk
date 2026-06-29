@@ -1,0 +1,78 @@
+{
+  "schemaVersion": "1.0",
+  "id": "ingest-source",
+  "version": "0.1.0",
+  "status": "draft",
+  "category": "knowledge",
+  "kind": "producer",
+  "summary": "[knowledge/producer] 摄入 raw 材料，提取 Insight 并生成 wiki 审阅提案",
+  "inputs": [
+    {
+      "name": "source_content",
+      "type": "string",
+      "required": true,
+      "constraints": "min_length:1"
+    }
+  ],
+  "contextRequirements": [
+    {
+      "name": "vault_status",
+      "description": "需要确认 vault 已初始化"
+    },
+    {
+      "name": "kb_meta",
+      "description": "需要 KB-META.md 获取路径和元信息"
+    }
+  ],
+  "outputs": [
+    {
+      "type": "wiki_proposal",
+      "location": "runs/<run_id>/proposal.md",
+      "needsReview": false
+    }
+  ],
+  "hardGates": [
+    {
+      "id": "g-source",
+      "kind": "required_input",
+      "params": {
+        "field": "source_content"
+      },
+      "on_failure": "raw 材料不得为空"
+    },
+    {
+      "id": "g-vault",
+      "kind": "vault_initialized",
+      "params": {},
+      "on_failure": "KB 未初始化时阻止 ingest"
+    },
+    {
+      "id": "g-schema",
+      "kind": "schema_gate_passed",
+      "params": {},
+      "on_failure": "schema 不合规时阻止 ingest"
+    }
+  ],
+  "capabilities": [
+    "read_vault"
+  ],
+  "writePolicy": {
+    "canonicalWiki": "proposal-only",
+    "runArtifacts": "allowed",
+    "codeRepository": "denied"
+  },
+  "verification": [
+    {
+      "kind": "lint",
+      "description": "contract structural/semantic/safety lint 全部通过"
+    }
+  ],
+  "nextSkills": [
+    {
+      "skillId": "patch-wiki-page"
+    }
+  ],
+  "supportedRuntimes": [
+    "inkdesk"
+  ]
+}

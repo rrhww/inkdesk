@@ -1,0 +1,8 @@
+interface:
+  display_name: Ingest Source
+  short_description: 摄入 raw 材料，提取 Insight 并生成 wiki 审阅提案。当用户上传文档、导入资料或要求摄入新知识源时触发。不应在
+    wiki 已有相同材料的纯查重场景下触发。
+  default_prompt: Use $ingest-source to 摄入 raw 材料，提取 Insight 并生成 wiki 审阅提案。当用户上传文档、导入资料或要求摄入新知识源时触发。不应在
+    wiki 已有相同材料的纯查重场景下触发。
+policy:
+  allow_implicit_invocation: false

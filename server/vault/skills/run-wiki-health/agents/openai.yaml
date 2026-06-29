@@ -1,0 +1,8 @@
+interface:
+  display_name: Run Wiki Health
+  short_description: 执行 wiki 健康检查——断链、孤页、缺 frontmatter、缺来源引用、短页、stale/outdated 标记。当用户询问知识库质量或需要健康报告时触发。不应在
+    wiki 尚未初始化的空库中触发。
+  default_prompt: Use $run-wiki-health to 执行 wiki 健康检查——断链、孤页、缺 frontmatter、缺来源引用、短页、stale/outdated
+    标记。当用户询问知识库质量或需要健康报告时触发。不应在 wiki 尚未初始化的空库中触发。
+policy:
+  allow_implicit_invocation: false

@@ -1,0 +1,72 @@
+{
+  "schemaVersion": "1.0",
+  "id": "tech-solution",
+  "version": "0.1.0",
+  "status": "draft",
+  "category": "engineering",
+  "kind": "producer",
+  "summary": "[engineering/producer] 从需求描述、KB 上下文和代码仓状态生成可评审技术方案",
+  "inputs": [
+    {
+      "name": "requirement",
+      "type": "string",
+      "required": true,
+      "constraints": "min_length:1"
+    }
+  ],
+  "contextRequirements": [
+    {
+      "name": "vault_status",
+      "description": "需要确认 vault 已初始化"
+    },
+    {
+      "name": "dev_run",
+      "description": "需要当前 Dev Run 状态和阶段信息"
+    }
+  ],
+  "outputs": [
+    {
+      "type": "solution_doc",
+      "location": "runs/<run_id>/tech-solution.md",
+      "needsReview": true
+    }
+  ],
+  "hardGates": [
+    {
+      "id": "g-req",
+      "kind": "required_input",
+      "params": {
+        "field": "requirement"
+      },
+      "on_failure": "需求描述不得为空"
+    },
+    {
+      "id": "g-vault",
+      "kind": "vault_initialized",
+      "params": {},
+      "on_failure": "KB 未初始化时返回 blocked"
+    }
+  ],
+  "capabilities": [
+    "read_vault"
+  ],
+  "writePolicy": {
+    "canonicalWiki": "denied",
+    "runArtifacts": "allowed",
+    "codeRepository": "delegated"
+  },
+  "verification": [
+    {
+      "kind": "lint",
+      "description": "contract structural/semantic/safety lint 全部通过"
+    }
+  ],
+  "nextSkills": [
+    {
+      "skillId": "tech-review"
+    }
+  ],
+  "supportedRuntimes": [
+    "inkdesk"
+  ]
+}

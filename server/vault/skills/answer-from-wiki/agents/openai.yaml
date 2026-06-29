@@ -1,0 +1,8 @@
+interface:
+  display_name: Answer From Wiki
+  short_description: 基于 wiki 知识库回答问题，带来源引用和置信度。当用户对已有知识库内容提问时触发。不应在需要创作新内容、执行代码或变更
+    wiki 的场景下触发。
+  default_prompt: Use $answer-from-wiki to 基于 wiki 知识库回答问题，带来源引用和置信度。当用户对已有知识库内容提问时触发。不应在需要创作新内容、执行代码或变更
+    wiki 的场景下触发。
+policy:
+  allow_implicit_invocation: false

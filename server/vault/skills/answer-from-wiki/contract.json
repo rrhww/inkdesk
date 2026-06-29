@@ -1,0 +1,72 @@
+{
+  "schemaVersion": "1.0",
+  "id": "answer-from-wiki",
+  "version": "0.1.0",
+  "status": "draft",
+  "category": "knowledge",
+  "kind": "producer",
+  "summary": "[knowledge/producer] 基于 wiki 知识库回答问题，带来源引用和置信度",
+  "inputs": [
+    {
+      "name": "question",
+      "type": "string",
+      "required": true,
+      "constraints": "min_length:1, max_length:2000"
+    }
+  ],
+  "contextRequirements": [
+    {
+      "name": "vault_status",
+      "description": "需要确认 vault 已初始化"
+    },
+    {
+      "name": "kb_meta",
+      "description": "需要 KB-META.md 获取路径和元信息"
+    }
+  ],
+  "outputs": [
+    {
+      "type": "answer",
+      "location": "runs/<run_id>/answer.md",
+      "needsReview": false
+    }
+  ],
+  "hardGates": [
+    {
+      "id": "g-question",
+      "kind": "required_input",
+      "params": {
+        "field": "question"
+      },
+      "on_failure": "问题不得为空"
+    },
+    {
+      "id": "g-vault",
+      "kind": "vault_initialized",
+      "params": {},
+      "on_failure": "KB 未初始化时返回 blocked"
+    }
+  ],
+  "capabilities": [
+    "read_vault"
+  ],
+  "writePolicy": {
+    "canonicalWiki": "proposal-only",
+    "runArtifacts": "allowed",
+    "codeRepository": "denied"
+  },
+  "verification": [
+    {
+      "kind": "lint",
+      "description": "contract structural/semantic/safety lint 全部通过"
+    }
+  ],
+  "nextSkills": [
+    {
+      "skillId": "deposit-answer"
+    }
+  ],
+  "supportedRuntimes": [
+    "inkdesk"
+  ]
+}
