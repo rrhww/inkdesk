@@ -1,0 +1,7 @@
+interface:
+  display_name: "Bad Circular Next"
+  short_description: "nextSkills 形成环"
+  default_prompt: "..."
+
+policy:
+  allow_implicit_invocation: false

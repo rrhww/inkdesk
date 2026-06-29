@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "1.0",
+  "id": "bad-write-policy",
+  "version": "0.1.0",
+  "status": "draft",
+  "category": "knowledge",
+  "kind": "producer",
+  "summary": "这个 Skill 声明了 direct wiki 写入权限",
+  "inputs": [],
+  "contextRequirements": [],
+  "outputs": [],
+  "hardGates": [],
+  "capabilities": [],
+  "writePolicy": {
+    "canonicalWiki": "direct",
+    "runArtifacts": "allowed",
+    "codeRepository": "denied"
+  },
+  "verification": [],
+  "nextSkills": [],
+  "supportedRuntimes": ["inkdesk"]
+}

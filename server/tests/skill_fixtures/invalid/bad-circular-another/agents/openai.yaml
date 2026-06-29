@@ -1,0 +1,7 @@
+interface:
+  display_name: "Bad Circular Another"
+  short_description: "与 bad-circular-next 形成环"
+  default_prompt: "..."
+
+policy:
+  allow_implicit_invocation: false

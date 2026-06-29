@@ -1,0 +1,7 @@
+interface:
+  display_name: "Bad Missing Contract"
+  short_description: "缺少 contract.json"
+  default_prompt: "..."
+
+policy:
+  allow_implicit_invocation: false

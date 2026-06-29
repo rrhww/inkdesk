@@ -1,0 +1,7 @@
+interface:
+  display_name: "Bad Category"
+  short_description: "非法 category 枚举值"
+  default_prompt: "..."
+
+policy:
+  allow_implicit_invocation: false

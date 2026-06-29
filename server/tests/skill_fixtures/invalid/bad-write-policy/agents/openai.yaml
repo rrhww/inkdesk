@@ -1,0 +1,7 @@
+interface:
+  display_name: "Bad Write Policy"
+  short_description: "测试写入策略越权检测"
+  default_prompt: "..."
+
+policy:
+  allow_implicit_invocation: false

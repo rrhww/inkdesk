@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "1.0",
+  "id": "bad-absolute-path",
+  "version": "0.1.0",
+  "status": "draft",
+  "category": "knowledge",
+  "kind": "producer",
+  "summary": "测试绝对路径检测",
+  "inputs": [],
+  "contextRequirements": [],
+  "outputs": [],
+  "hardGates": [],
+  "capabilities": [],
+  "writePolicy": {
+    "canonicalWiki": "proposal-only",
+    "runArtifacts": "allowed",
+    "codeRepository": "denied"
+  },
+  "verification": [],
+  "nextSkills": [],
+  "supportedRuntimes": ["inkdesk"]
+}

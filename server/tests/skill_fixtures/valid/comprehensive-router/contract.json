@@ -1,0 +1,66 @@
+{
+  "schemaVersion": "1.0",
+  "id": "comprehensive-router",
+  "version": "1.0.0",
+  "status": "draft",
+  "category": "routing",
+  "kind": "router",
+  "summary": "单一宽入口，根据用户意图路由到正确的领域 Skill。支持知识管理和研发自动化两条链路。",
+  "inputs": [
+    {
+      "name": "user_intent",
+      "type": "string",
+      "required": true,
+      "constraints": "min_length:1,max_length:2000"
+    }
+  ],
+  "contextRequirements": [
+    {
+      "name": "vault status",
+      "description": "需要确认 vault 已初始化"
+    },
+    {
+      "name": "current Dev Run",
+      "description": "如存在活跃 Dev Run，需获取当前阶段和状态"
+    }
+  ],
+  "outputs": [
+    {
+      "type": "routing_decision",
+      "location": "runs/<run_id>/routing.json",
+      "needsReview": false
+    }
+  ],
+  "hardGates": [
+    {
+      "id": "g-vault",
+      "kind": "vault_initialized",
+      "params": {},
+      "on_failure": "Vault 未初始化，请先完成知识库初始化后再使用研发技能"
+    },
+    {
+      "id": "g-intent",
+      "kind": "required_input",
+      "params": { "field": "user_intent" },
+      "on_failure": "请描述你的研发意图或任务目标"
+    }
+  ],
+  "capabilities": ["read_vault", "read_contracts", "read_dev_runs"],
+  "writePolicy": {
+    "canonicalWiki": "denied",
+    "runArtifacts": "allowed",
+    "codeRepository": "denied"
+  },
+  "verification": [
+    {
+      "kind": "lint",
+      "description": "contract structural/semantic/safety lint 全部通过"
+    },
+    {
+      "kind": "behavioral",
+      "description": "2 个触发、2 个非触发、1 个 gate 失败、1 个正常输出、1 个写入边界用例全部通过"
+    }
+  ],
+  "nextSkills": [],
+  "supportedRuntimes": ["inkdesk", "codex", "claude-code"]
+}

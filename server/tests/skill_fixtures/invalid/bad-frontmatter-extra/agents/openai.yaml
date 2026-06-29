@@ -1,0 +1,7 @@
+interface:
+  display_name: "Bad Frontmatter Extra"
+  short_description: "frontmatter 有额外字段"
+  default_prompt: "..."
+
+policy:
+  allow_implicit_invocation: false

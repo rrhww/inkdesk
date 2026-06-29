@@ -20,7 +20,8 @@ dependencies = [
   "pypdf>=5.0,<6.0",
   "passlib[bcrypt]>=1.7,<2.0",
   "langgraph>=0.2,<1.0",
-  "langchain-openai>=0.2,<1.0"
+  "langchain-openai>=0.2,<1.0",
+  "inkdesk-skill-sdk"
 ]
 
 [project.optional-dependencies]

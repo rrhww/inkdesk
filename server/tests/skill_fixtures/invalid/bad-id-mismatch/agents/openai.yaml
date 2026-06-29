@@ -1,0 +1,7 @@
+interface:
+  display_name: "Yet Another Name"
+  short_description: "名称与 contract 和 SKILL.md 都不一致"
+  default_prompt: "Use $yet-another-name..."
+
+policy:
+  allow_implicit_invocation: false

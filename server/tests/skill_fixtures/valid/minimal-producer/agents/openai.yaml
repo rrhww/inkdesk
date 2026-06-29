@@ -1,0 +1,7 @@
+interface:
+  display_name: "Minimal Producer"
+  short_description: "一个最小合法 producer Skill，用于验证校验器能正确识别合法 package"
+  default_prompt: "Use $minimal-producer to verify SDK validation."
+
+policy:
+  allow_implicit_invocation: false

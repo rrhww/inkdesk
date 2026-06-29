@@ -1,0 +1,24 @@
+{
+  "schemaVersion": "1.0",
+  "id": "bad-circular-next",
+  "version": "0.1.0",
+  "status": "draft",
+  "category": "engineering",
+  "kind": "producer",
+  "summary": "nextSkills 指向另一个 Skill，用来看 graph 是否检测环",
+  "inputs": [],
+  "contextRequirements": [],
+  "outputs": [],
+  "hardGates": [],
+  "capabilities": [],
+  "writePolicy": {
+    "canonicalWiki": "proposal-only",
+    "runArtifacts": "allowed",
+    "codeRepository": "denied"
+  },
+  "verification": [],
+  "nextSkills": [
+    { "skillId": "bad-circular-another" }
+  ],
+  "supportedRuntimes": ["inkdesk"]
+}

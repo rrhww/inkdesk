@@ -1,0 +1,7 @@
+interface:
+  display_name: "Bad SemVer"
+  short_description: "非法 SemVer 版本号检测"
+  default_prompt: "..."
+
+policy:
+  allow_implicit_invocation: false

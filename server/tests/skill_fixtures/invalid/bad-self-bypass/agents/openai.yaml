@@ -1,0 +1,7 @@
+interface:
+  display_name: "Bad Self Bypass"
+  short_description: "声称可以绕过 review"
+  default_prompt: "..."
+
+policy:
+  allow_implicit_invocation: false

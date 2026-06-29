@@ -1,0 +1,7 @@
+interface:
+  display_name: "Comprehensive Router"
+  short_description: "单一宽入口，根据用户意图路由到正确的领域 Skill"
+  default_prompt: "Use $comprehensive-router as the single entry point for routing user intents to domain skills in Inkdesk."
+
+policy:
+  allow_implicit_invocation: true

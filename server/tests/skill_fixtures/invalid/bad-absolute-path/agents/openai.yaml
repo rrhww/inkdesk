@@ -1,0 +1,7 @@
+interface:
+  display_name: "Bad Absolute Path"
+  short_description: "测试绝对路径检测"
+  default_prompt: "..."
+
+policy:
+  allow_implicit_invocation: false
