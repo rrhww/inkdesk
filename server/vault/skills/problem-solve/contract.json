@@ -39,6 +39,12 @@
         "field": "symptom_description"
       },
       "on_failure": "现象描述不得为空"
+    },
+    {
+      "id": "g-vault",
+      "kind": "vault_initialized",
+      "params": {},
+      "on_failure": "KB 未初始化时提示但允许继续（排查可能需要代码仓信息而非 wiki）"
     }
   ],
   "capabilities": [

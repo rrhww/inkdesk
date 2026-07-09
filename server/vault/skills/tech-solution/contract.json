@@ -45,6 +45,12 @@
       "kind": "vault_initialized",
       "params": {},
       "on_failure": "KB 未初始化时返回 blocked"
+    },
+    {
+      "id": "g-schema",
+      "kind": "schema_gate_passed",
+      "params": {},
+      "on_failure": "wiki schema 不合规时提示但允许继续（方案写作不直接写 wiki）"
     }
   ],
   "capabilities": [

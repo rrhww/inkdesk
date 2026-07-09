@@ -4,6 +4,22 @@
 
 ## 已理解（能给别人讲清楚）
 
+### Dev Run Console 阶段执行引擎
+
+- 6 阶段状态机：`context → solution → review → coding → testing → deposit`，通过 `/api/runs/{run_id}/advance` 推进
+- 每个阶段都有对应的 stage action API：
+  - `POST /api/runs/{run_id}/context-pack` → `context_pack_generated`
+  - `POST /api/runs/{run_id}/solution` → `solution_draft_generated`
+  - `POST /api/runs/{run_id}/review` → `review_checklist_generated`
+  - `POST /api/runs/{run_id}/coding/execute` → `coding_briefing_prepared` + `coding_result_submitted`
+  - `GET  /api/runs/{run_id}/coding/status` → 轮询执行状态
+  - `POST /api/runs/{run_id}/testing` → `testing_checklist_generated`
+  - `POST /api/runs/{run_id}/deposit` → `deposit_created`
+- `StageActionService` 统一封装所有阶段逻辑，LLM 阶段遵循 agents.py 模式：`agent_runtime == "deterministic"` 或无 API key 时走模板 fallback
+- coding 阶段通过 `asyncio.create_subprocess_exec("claude", "-p", briefing, "--output-format", "text", cwd=repoContext)` 调用 Claude Code CLI，超时 300s
+- 浏览器验收驱动出一个产品调整：coding 阶段必须支持「跳过，手动批准」，否则未安装/不想调用 CLI 的用户会卡死在该阶段；实现为 `CodingStagePanel` 写入 `stage_output`（`skipped: true`），让阶段进入 `awaiting_review`
+- 前端每个阶段对应一个 `*-stage-panel.tsx` 组件，详情页根据 `run.currentStage` 条件渲染
+
 ### inkdesk_skill_sdk 包结构
 
 - `contracts.py` 是 Skill 协议的单一真相源 — Pydantic 模型直接驱动 JSON Schema 生成和 CLI choices
@@ -34,9 +50,17 @@
 - 编写 Skill 的三原则：producer 原则驱动，reviewer 结构化清单 + evidence，diagnostic 从真实信号开始禁止猜测
 - SAFETY_BYPASS_CLAIM 的否定语境（「不做：直接写 wiki」）现在正确识别——`_NEGATION_PREFIX` 匹配 `**不做**：` 前缀，`_IMMEDIATE_NEGATION` 匹配紧邻的「不」字
 
+### 4.2.1 Dry-Run Review
+
+- P0 contract 不一致已修复：tech-solution 补 schema_gate_passed，problem-solve 补 vault_initialized
+- P1 资源文件已补齐：8 个 Skill 共 18 个空 references/templates 已填充实际内容（entity-extraction-rules、search-strategy、health-check-items、scoring-formula、routing-tree、domain-skills-summary、architecture-patterns、solution-template、review-checklist、coding-standards、architecture-constraints、test-plan-template、error-patterns、diagnostic-tree×2、confidence-rules、proposal-template、known-issues）
+- P2 待决策：gate severity 区分、human_confirmation 注册、router 最小上下文契约
+
 ## 模糊区
 
 - behavioral contract cases 的实际执行 — 格式已定，contents 待 Skill 实战后产生
+- gate severity（block vs warn）区分 — 当前 contract 的 hardGates 是 flat list，ingest-source 的 schema_gate_passed 是 block，run-wiki-health 的同名 gate 是 warn，contract 不区分；需改 SDK 建模
+- human_confirmation gate 未在 SDK 注册为认可的 gate-kind
 
 ## 黑盒区（完全不懂）
 
