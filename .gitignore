@@ -65,4 +65,5 @@ task_plan.md
 # Local vault data
 inkdesk-vault/
 server/inkdesk-vault/
+server/.dev-vault/
 server/*.db

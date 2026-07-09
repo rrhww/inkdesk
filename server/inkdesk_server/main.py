@@ -313,6 +313,76 @@ def create_app() -> FastAPI:
         workspace = _resolve_workspace(db)
         return RunService(db).advance_run(run_id, request.action, workspace.id)
 
+    @app.post("/api/runs/{run_id}/context-pack", response_model=DevRunResponse)
+    def run_context_pack(
+        run_id: str,
+        db: Annotated[Session, Depends(get_db)],
+        settings: Annotated[Settings, Depends(get_settings)],
+    ):
+        workspace = _resolve_workspace(db)
+        from inkdesk_server.stage_actions import StageActionService
+        return StageActionService(db, settings).generate_context_pack(run_id, workspace.id)
+
+    @app.post("/api/runs/{run_id}/solution", response_model=DevRunResponse)
+    def run_solution(
+        run_id: str,
+        db: Annotated[Session, Depends(get_db)],
+        settings: Annotated[Settings, Depends(get_settings)],
+    ):
+        workspace = _resolve_workspace(db)
+        from inkdesk_server.stage_actions import StageActionService
+        return StageActionService(db, settings).generate_solution(run_id, workspace.id)
+
+    @app.post("/api/runs/{run_id}/review", response_model=DevRunResponse)
+    def run_review(
+        run_id: str,
+        db: Annotated[Session, Depends(get_db)],
+        settings: Annotated[Settings, Depends(get_settings)],
+    ):
+        workspace = _resolve_workspace(db)
+        from inkdesk_server.stage_actions import StageActionService
+        return StageActionService(db, settings).generate_review_checklist(run_id, workspace.id)
+
+    @app.post("/api/runs/{run_id}/coding/execute", response_model=DevRunResponse)
+    async def run_coding_execute(
+        run_id: str,
+        db: Annotated[Session, Depends(get_db)],
+        settings: Annotated[Settings, Depends(get_settings)],
+    ):
+        workspace = _resolve_workspace(db)
+        from inkdesk_server.stage_actions import StageActionService
+        return await StageActionService(db, settings).execute_coding(run_id, workspace.id)
+
+    @app.get("/api/runs/{run_id}/coding/status")
+    def run_coding_status(
+        run_id: str,
+        db: Annotated[Session, Depends(get_db)],
+        settings: Annotated[Settings, Depends(get_settings)],
+    ):
+        workspace = _resolve_workspace(db)
+        from inkdesk_server.stage_actions import StageActionService
+        return StageActionService(db, settings).get_coding_status(run_id, workspace.id)
+
+    @app.post("/api/runs/{run_id}/deposit", response_model=DevRunResponse)
+    def run_deposit(
+        run_id: str,
+        db: Annotated[Session, Depends(get_db)],
+        settings: Annotated[Settings, Depends(get_settings)],
+    ):
+        workspace = _resolve_workspace(db)
+        from inkdesk_server.stage_actions import StageActionService
+        return StageActionService(db, settings).create_deposit(run_id, workspace.id)
+
+    @app.post("/api/runs/{run_id}/testing", response_model=DevRunResponse)
+    def run_testing(
+        run_id: str,
+        db: Annotated[Session, Depends(get_db)],
+        settings: Annotated[Settings, Depends(get_settings)],
+    ):
+        workspace = _resolve_workspace(db)
+        from inkdesk_server.stage_actions import StageActionService
+        return StageActionService(db, settings).generate_testing_checklist(run_id, workspace.id)
+
     @app.post("/api/deposits", response_model=DepositResponse)
     def deposit_create(
         request: DepositRequest,

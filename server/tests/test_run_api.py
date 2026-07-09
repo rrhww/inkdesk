@@ -367,3 +367,240 @@ def test_double_approve_rejected(temp_app_env: Path) -> None:
     r2 = client.post(f"/api/runs/{run_id}/advance", json={"action": "approve"})
     assert r2.status_code == 409
     assert r2.json()["code"] == "STAGE_NOT_AWAITING_REVIEW"
+
+
+def test_context_pack_creates_stage_event(temp_app_env: Path) -> None:
+    client = _make_client(temp_app_env)
+
+    run = client.post("/api/runs", json={
+        "type": "PRD",
+        "title": "测试上下文生成",
+        "goal": "验证 context 阶段能生成上下文包",
+    }).json()
+
+    resp = client.post(f"/api/runs/{run['id']}/context-pack")
+
+    assert resp.status_code == 200, f"got {resp.status_code}: {resp.text}"
+    data = resp.json()
+    assert data["currentStage"] == "context"
+    assert data["stageStatus"] == "awaiting_review"
+
+    events = data["events"]
+    assert any(e["eventType"] == "context_pack_generated" for e in events)
+    assert any(e["stage"] == "context" for e in events)
+
+    ctx_event = next(e for e in events if e["eventType"] == "context_pack_generated")
+    payload = ctx_event["payload"]
+    assert payload["wikiPageCount"] == 0, "wikiPageCount 当前始终为 0（wiki 上下文尚未实现）"
+    assert payload["askHistoryCount"] == 0, "创建的 run 没有关联 Ask 记录"
+    assert payload["wikiPageCount"] != payload.get("askHistoryCount", -1) or payload["askHistoryCount"] == 0
+
+
+def test_deposit_creates_review_proposal(temp_app_env: Path) -> None:
+    client = _make_client(temp_app_env)
+
+    run = client.post("/api/runs", json={
+        "type": "PRD",
+        "title": "测试沉淀",
+        "goal": "验证 deposit 阶段能创建提案",
+    }).json()
+    run_id = run["id"]
+
+    # 推进到 deposit 阶段：每阶段 add_event + advance
+    for stage in ["context", "solution", "review", "coding", "testing"]:
+        client.post(f"/api/runs/{run_id}/events", json={
+            "stage": stage,
+            "eventType": "stage_output",
+            "payload": {"summary": f"{stage} done"},
+        })
+        client.post(f"/api/runs/{run_id}/advance", json={"action": "approve"})
+
+    # 确认已到达 deposit 阶段
+    run_current = client.get(f"/api/runs/{run_id}").json()
+    assert run_current["currentStage"] == "deposit"
+
+    # 调用 deposit
+    resp = client.post(f"/api/runs/{run_id}/deposit")
+    assert resp.status_code == 200, f"got {resp.status_code}: {resp.text}"
+    data = resp.json()
+    assert data["currentStage"] == "deposit"
+    assert data["stageStatus"] == "awaiting_review"
+
+    # 验证事件
+    events = data["events"]
+    assert any(e["eventType"] == "deposit_created" for e in events)
+    assert any(e["stage"] == "deposit" for e in events)
+
+    # 验证 ingest 队列中有新提案
+    reviews = client.get("/api/ingest").json()
+    assert any(run["title"] in (r.get("title", "") or r.get("proposedTopicTitle", ""))
+               for r in reviews), f"expected review item with title containing '{run['title']}'"
+
+
+def test_solution_generates_draft(temp_app_env: Path) -> None:
+    client = _make_client(temp_app_env)
+
+    run = client.post("/api/runs", json={
+        "type": "PRD",
+        "title": "测试方案生成",
+        "goal": "验证 solution 阶段能生成方案草案",
+    }).json()
+    run_id = run["id"]
+
+    # 推进到 solution 阶段
+    client.post(f"/api/runs/{run_id}/events", json={
+        "stage": "context",
+        "eventType": "stage_output",
+        "payload": {"summary": "context done"},
+    })
+    client.post(f"/api/runs/{run_id}/advance", json={"action": "approve"})
+
+    # 确认到达 solution 阶段
+    run_current = client.get(f"/api/runs/{run_id}").json()
+    assert run_current["currentStage"] == "solution"
+
+    resp = client.post(f"/api/runs/{run_id}/solution")
+    assert resp.status_code == 200, f"got {resp.status_code}: {resp.text}"
+    data = resp.json()
+    assert data["currentStage"] == "solution"
+    assert data["stageStatus"] == "awaiting_review"
+
+    events = data["events"]
+    assert any(e["eventType"] == "solution_draft_generated" for e in events)
+    assert any(e["stage"] == "solution" for e in events)
+
+    # 验证 payload 包含草案文本
+    sol_event = next(e for e in events if e["eventType"] == "solution_draft_generated")
+    payload = sol_event["payload"]
+    assert "draft" in payload
+    assert isinstance(payload["draft"], str)
+    assert len(payload["draft"]) > 0
+
+
+def test_review_generates_checklist(temp_app_env: Path) -> None:
+    client = _make_client(temp_app_env)
+
+    run = client.post("/api/runs", json={
+        "type": "PRD",
+        "title": "测试审阅清单",
+        "goal": "验证 review 阶段能生成审阅清单",
+    }).json()
+    run_id = run["id"]
+
+    # 推进到 review 阶段
+    for stage in ["context", "solution"]:
+        client.post(f"/api/runs/{run_id}/events", json={
+            "stage": stage,
+            "eventType": "stage_output",
+            "payload": {"summary": f"{stage} done"},
+        })
+        client.post(f"/api/runs/{run_id}/advance", json={"action": "approve"})
+
+    run_current = client.get(f"/api/runs/{run_id}").json()
+    assert run_current["currentStage"] == "review"
+
+    resp = client.post(f"/api/runs/{run_id}/review")
+    assert resp.status_code == 200, f"got {resp.status_code}: {resp.text}"
+    data = resp.json()
+    assert data["currentStage"] == "review"
+    assert data["stageStatus"] == "awaiting_review"
+
+    events = data["events"]
+    assert any(e["eventType"] == "review_checklist_generated" for e in events)
+    assert any(e["stage"] == "review" for e in events)
+
+    rev_event = next(e for e in events if e["eventType"] == "review_checklist_generated")
+    payload = rev_event["payload"]
+    assert "checklist" in payload
+    assert isinstance(payload["checklist"], list)
+    assert len(payload["checklist"]) > 0
+
+
+def test_coding_execute_prepares_briefing(temp_app_env: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    # mock claude CLI 不可用，避免测试中真的调 claude
+    from inkdesk_server.stage_actions import StageActionService
+    monkeypatch.setattr(StageActionService, "_claude_available", staticmethod(lambda: False))
+
+    client = _make_client(temp_app_env)
+
+    run = client.post("/api/runs", json={
+        "type": "PRD",
+        "title": "测试 coding 执行",
+        "goal": "验证 coding 阶段能组装 Briefing",
+        "repoContext": ".",
+    }).json()
+    run_id = run["id"]
+
+    # 推进到 coding 阶段
+    for stage in ["context", "solution", "review"]:
+        client.post(f"/api/runs/{run_id}/events", json={
+            "stage": stage,
+            "eventType": "stage_output",
+            "payload": {"summary": f"{stage} done", "draft": f"## {stage} draft"},
+        })
+        client.post(f"/api/runs/{run_id}/advance", json={"action": "approve"})
+
+    run_current = client.get(f"/api/runs/{run_id}").json()
+    assert run_current["currentStage"] == "coding"
+
+    resp = client.post(f"/api/runs/{run_id}/coding/execute")
+    assert resp.status_code == 200, f"got {resp.status_code}: {resp.text}"
+    data = resp.json()
+
+    events = data["events"]
+    # 必须有 briefing_prepared 事件
+    assert any(e["eventType"] == "coding_briefing_prepared" for e in events)
+    assert any(e["stage"] == "coding" for e in events)
+
+    briefing_event = next(e for e in events if e["eventType"] == "coding_briefing_prepared")
+    payload = briefing_event["payload"]
+    assert "briefing" in payload
+    assert isinstance(payload["briefing"], str)
+    assert len(payload["briefing"]) > 0
+    # briefing 应包含任务标题
+    assert "测试 coding 执行" in payload["briefing"]
+
+    # 因为 claude 不可用，应有 result_submitted 事件标记失败
+    result_event = next(e for e in events if e["eventType"] == "coding_result_submitted")
+    assert result_event["payload"]["success"] is False
+
+
+def test_testing_generates_checklist(temp_app_env: Path) -> None:
+    client = _make_client(temp_app_env)
+
+    run = client.post("/api/runs", json={
+        "type": "PRD",
+        "title": "测试 testing 清单",
+        "goal": "验证 testing 阶段能生成测试清单",
+    }).json()
+    run_id = run["id"]
+
+    # 推进到 testing 阶段
+    for stage in ["context", "solution", "review", "coding"]:
+        client.post(f"/api/runs/{run_id}/events", json={
+            "stage": stage,
+            "eventType": "stage_output",
+            "payload": {"summary": f"{stage} done"},
+        })
+        client.post(f"/api/runs/{run_id}/advance", json={"action": "approve"})
+
+    run_current = client.get(f"/api/runs/{run_id}").json()
+    assert run_current["currentStage"] == "testing"
+
+    resp = client.post(f"/api/runs/{run_id}/testing")
+    assert resp.status_code == 200, f"got {resp.status_code}: {resp.text}"
+    data = resp.json()
+    assert data["currentStage"] == "testing"
+    assert data["stageStatus"] == "awaiting_review"
+
+    events = data["events"]
+    assert any(e["eventType"] == "testing_checklist_generated" for e in events)
+    assert any(e["stage"] == "testing" for e in events)
+
+    test_event = next(e for e in events if e["eventType"] == "testing_checklist_generated")
+    payload = test_event["payload"]
+    assert "checklist" in payload
+    assert isinstance(payload["checklist"], list)
+    assert len(payload["checklist"]) > 0
+    assert "summary" in payload
+
