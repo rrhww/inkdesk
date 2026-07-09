@@ -4,9 +4,15 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { getDevRun } from "@/lib/research";
 import { postInkdeskJson } from "@/lib/server-api";
-import type { DevRun } from "@/lib/types";
+import type { DevRun, DevRunStageStatus } from "@/lib/types";
 import { PanelCard } from "@/components/ui/panel-card";
 import { PageShell } from "@/components/workbench/page-shell";
+import { ContextStagePanel } from "@/components/workbench/stages/context-stage-panel";
+import { SolutionStagePanel } from "@/components/workbench/stages/solution-stage-panel";
+import { ReviewStagePanel } from "@/components/workbench/stages/review-stage-panel";
+import { CodingStagePanel } from "@/components/workbench/stages/coding-stage-panel";
+import { TestingStagePanel } from "@/components/workbench/stages/testing-stage-panel";
+import { DepositStagePanel } from "@/components/workbench/stages/deposit-stage-panel";
 
 const STAGE_LABELS: Record<string, string> = {
   context: "上下文",
@@ -155,6 +161,54 @@ export default function DevRunDetailPage() {
           })}
         </div>
       </PanelCard>
+
+      {/* Stage workspace */}
+      {run.status !== "completed" && run.status !== "cancelled" && (
+        <div className="mb-6">
+          {run.currentStage === "context" && (
+            <ContextStagePanel
+              run={run}
+              stageStatus={run.stageStatus as DevRunStageStatus}
+              onRunUpdate={setRun}
+            />
+          )}
+          {run.currentStage === "solution" && (
+            <SolutionStagePanel
+              run={run}
+              stageStatus={run.stageStatus as DevRunStageStatus}
+              onRunUpdate={setRun}
+            />
+          )}
+          {run.currentStage === "review" && (
+            <ReviewStagePanel
+              run={run}
+              stageStatus={run.stageStatus as DevRunStageStatus}
+              onRunUpdate={setRun}
+            />
+          )}
+          {run.currentStage === "coding" && (
+            <CodingStagePanel
+              run={run}
+              stageStatus={run.stageStatus as DevRunStageStatus}
+              onRunUpdate={setRun}
+            />
+          )}
+          {run.currentStage === "testing" && (
+            <TestingStagePanel
+              run={run}
+              stageStatus={run.stageStatus as DevRunStageStatus}
+              onRunUpdate={setRun}
+            />
+          )}
+          {run.currentStage === "deposit" && (
+            <DepositStagePanel
+              run={run}
+              stageStatus={run.stageStatus as DevRunStageStatus}
+              onRunUpdate={setRun}
+            />
+          )}
+        </div>
+      )}
 
       {/* Events */}
       <PanelCard className="p-6 mb-6">

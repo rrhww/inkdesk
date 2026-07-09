@@ -539,3 +539,14 @@ export type DepositResponse = {
   source: string;
   isNew: boolean;
 };
+
+// ── Stage Actions ──
+
+export type ContextPackSummary = {
+  wikiPageCount: number;
+  askHistoryCount: number;
+  pendingReviewCount: number;
+  title: string;
+  goal: string;
+  repoContext?: string | null;
+};
