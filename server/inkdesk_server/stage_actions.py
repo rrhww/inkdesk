@@ -25,6 +25,20 @@ except Exception:  # pragma: no cover
 logger = logging.getLogger(__name__)
 
 
+# Inkdesk 仓库的技术栈上下文，注入 LLM prompt 避免生成错误的技术方案
+INKDESK_TECH_STACK_CONTEXT = """## 仓库技术栈（Inkdesk）
+- 后端：Python 3.12 + FastAPI + SQLAlchemy + PostgreSQL+pgvector（不是 Node.js/Prisma）
+- 前端：Next.js 16 + React 19 + TypeScript（App Router，不是 Pages Router）
+- 后端 ORM：SQLAlchemy 2.x，模型在 server/inkdesk_server/models.py
+- 后端路由：server/inkdesk_server/main.py（FastAPI 路由）
+- 前端页面：web/app/app/ 下按 App Router 约定组织
+- 前端组件：web/components/
+- 前端 API 封装：web/lib/research.ts（封装 fetchInkdeskJson/postInkdeskJson 调用后端 /api/*）
+- 测试：后端 pytest（server/tests/），前端 vitest + playwright
+- 运行：后端 uvicorn（端口 8080），前端 next dev（端口 3000）
+"""
+
+
 class SolutionDraftOutput(BaseModel):
     draft: str = Field(description="技术方案草案文本（Markdown）")
     risks: list[str] = Field(default_factory=list, description="主要风险点")
@@ -89,6 +103,8 @@ class StageActionService:
             "Based on the task and context, generate a concise technical solution draft in Simplified Chinese.",
             "The draft should include: approach, key files to modify, and implementation steps.",
             "",
+            INKDESK_TECH_STACK_CONTEXT,
+            "",
             f"## 任务类型\n{run.type}",
             f"## 任务标题\n{run.title}",
             f"## 目标\n{run.goal}",
@@ -99,6 +115,7 @@ class StageActionService:
             lines.append(f"## 上下文摘要\n{context_summary}")
         lines.append("")
         lines.append("Respond in Simplified Chinese. Output a draft (Markdown) and a list of risks.")
+        lines.append("Return only valid JSON with keys: draft (string), risks (array of strings).")
         return "\n".join(lines)
 
     def _deterministic_solution(self, run: Any) -> dict[str, Any]:
@@ -175,6 +192,8 @@ class StageActionService:
             "Based on the task and solution draft, generate a review checklist in Simplified Chinese.",
             "Each item should be a specific, checkable concern (e.g. '是否处理了空值情况', '是否覆盖了边界条件').",
             "",
+            INKDESK_TECH_STACK_CONTEXT,
+            "",
             f"## 任务类型\n{run.type}",
             f"## 任务标题\n{run.title}",
             f"## 目标\n{run.goal}",
@@ -183,6 +202,7 @@ class StageActionService:
             lines.append(f"## 方案草案\n{solution_draft}")
         lines.append("")
         lines.append("Generate 3-6 checklist items. Also provide a brief summary of the review.")
+        lines.append("Return only valid JSON with keys: checklist (array of strings), summary (string).")
         return "\n".join(lines)
 
     def _deterministic_review(self, run: Any) -> dict[str, Any]:
@@ -427,6 +447,8 @@ class StageActionService:
             "Based on the task and the coding result, generate a testing checklist in Simplified Chinese.",
             "Each item should be a specific, checkable test concern (e.g. '单元测试是否覆盖了核心分支', '是否验证了错误路径').",
             "",
+            INKDESK_TECH_STACK_CONTEXT,
+            "",
             f"## 任务类型\n{run.type}",
             f"## 任务标题\n{run.title}",
             f"## 目标\n{run.goal}",
@@ -435,6 +457,7 @@ class StageActionService:
             lines.append(f"## 编码产出\n{coding_result}")
         lines.append("")
         lines.append("Generate 3-6 checklist items covering unit tests, integration tests, edge cases, and regression. Also provide a brief summary.")
+        lines.append("Return only valid JSON with keys: checklist (array of strings), summary (string).")
         return "\n".join(lines)
 
     def _deterministic_testing(self, run: Any) -> dict[str, Any]:
