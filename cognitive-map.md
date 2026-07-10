@@ -102,3 +102,13 @@
 - coding 失败阻塞推进已实现：approve 时返回 409 CODING_FAILED，用户可重新执行 coding/execute
 - wiki 检索逻辑缺陷已修复：从整句子串匹配改为分词匹配 + 命中计数排序，4 个 wiki 概念页（ai-rd-automation-llm-wiki/product-roadmap/system-architecture/tech-decisions）已创建
 - 第二个 Dev Run（run-58412e75e945）验证 wiki 检索生效：solution draft 中体现 SKILL.md 和 FastAPI/Next.js 技术栈上下文
+
+### Skill Workbench UI（2026-07-10）
+
+- 后端新增 `GET /api/skills` 和 `GET /api/skills/{name}` 端点，调用 `SkillRegistry.get_summary()` 和 `resolve()`，详情端点返回完整 SKILL.md + contract.json + references + templates + agents + validation findings
+- 前端列表页 `skills/page.tsx` 展示 registry 概览（total/valid/invalid/byStatus）+ Skill 卡片网格，点击进入详情
+- 前端详情页 `skills/[id]/page.tsx` 展示 contract 摘要（inputs/outputs/hardGates/writePolicy/capabilities/nextSkills）+ SKILL.md 全文 + contract.json 全文 + references/templates/agents 文件内容 + validation findings
+- 顶部导航新增"技能"tab（app-shell.ts PRIMARY_SECTIONS + getAppRouteChrome）
+- 浏览器 E2E 验收通过：13 个 Skill 全部渲染，列表页和详情页数据完整
+- 修复 `.env.local.example` 端口配置（8080 → 8000），`.env.local` 被 .gitignore 忽略不进仓库
+- 阶段三验收标准"skill 能在 UI 中看到"达成
