@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import asyncio
+import json
 from contextlib import asynccontextmanager
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, File, Query, Request, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -37,6 +39,7 @@ from inkdesk_server.schemas import (
     HealthResponse,
     HealthRunSummary,
     HealthTrendResponse,
+    PermissionRespondRequest,
     ResearchDashboardResponse,
     ReviewDecisionResponse,
     ReviewItemResponse,
@@ -362,6 +365,101 @@ def create_app() -> FastAPI:
         workspace = _resolve_workspace(db)
         from inkdesk_server.stage_actions import StageActionService
         return StageActionService(db, settings).get_coding_status(run_id, workspace.id)
+
+    @app.get("/api/runs/{run_id}/coding/stream")
+    async def run_coding_stream(
+        run_id: str,
+        db: Annotated[Session, Depends(get_db)],
+    ):
+        """SSE 端点：流式推送 coding session 的事件（对话、工具调用、权限请求、完成）。
+
+        EventSource 不支持自定义 header，鉴权走 cookie。事件格式：
+            event: <event_type>\ndata: <json>\n\n
+        终止条件：session 不存在 / task 完成 / 客户端断开。
+        """
+        # 校验 run 存在且属于默认 workspace
+        _resolve_workspace(db)
+        from inkdesk_server.coding_session import get_session_manager
+        manager = get_session_manager()
+        session = manager.get(run_id)
+        if session is None:
+            return JSONResponse(
+                status_code=404,
+                content={"code": "SESSION_NOT_FOUND", "message": "No active coding session."},
+            )
+
+        async def event_generator():
+            # 先发一个 connected 事件，让前端确认连接
+            yield f"event: connected\ndata: {json.dumps({'run_id': run_id})}\n\n"
+            while True:
+                # session 结束且队列空 → 退出
+                task_done = session.task is not None and session.task.done()
+                if task_done and session.event_queue.empty():
+                    yield f"event: stream_end\ndata: {json.dumps({'finished': True})}\n\n"
+                    break
+                try:
+                    event_type, data = await asyncio.wait_for(
+                        session.event_queue.get(), timeout=1.0
+                    )
+                except asyncio.TimeoutError:
+                    # 发心跳保持连接，防止代理超时断开
+                    yield ": heartbeat\n\n"
+                    continue
+                payload = json.dumps(data, ensure_ascii=False, default=str)
+                yield f"event: {event_type}\ndata: {payload}\n\n"
+
+        return StreamingResponse(
+            event_generator(),
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+                "X-Accel-Buffering": "no",  # 禁用 nginx 缓冲
+            },
+        )
+
+    @app.post("/api/runs/{run_id}/coding/permission/respond")
+    async def run_coding_permission_respond(
+        run_id: str,
+        request: PermissionRespondRequest,
+        db: Annotated[Session, Depends(get_db)],
+    ):
+        """前端回应权限请求：allow=true 放行，allow=false 拒绝。"""
+        _resolve_workspace(db)
+        from inkdesk_server.coding_session import PermissionResponse, get_session_manager
+        manager = get_session_manager()
+        response = PermissionResponse(
+            request_id=request.request_id,
+            allow=request.allow,
+            reason=request.reason,
+        )
+        ok = manager.respond_permission(run_id, response)
+        if not ok:
+            return JSONResponse(
+                status_code=409,
+                content={
+                    "code": "PERMISSION_NOT_PENDING",
+                    "message": "No pending permission request or request_id mismatch.",
+                },
+            )
+        return {"ok": True}
+
+    @app.post("/api/runs/{run_id}/coding/abort")
+    async def run_coding_abort(
+        run_id: str,
+        db: Annotated[Session, Depends(get_db)],
+    ):
+        """用户中断 coding session：设置 abort_event，取消 task。"""
+        _resolve_workspace(db)
+        from inkdesk_server.coding_session import get_session_manager
+        manager = get_session_manager()
+        ok = await manager.abort(run_id)
+        if not ok:
+            return JSONResponse(
+                status_code=404,
+                content={"code": "SESSION_NOT_FOUND", "message": "No active coding session."},
+            )
+        return {"ok": True}
 
     @app.post("/api/runs/{run_id}/deposit", response_model=DevRunResponse)
     def run_deposit(

@@ -360,6 +360,12 @@ class AdvanceRunRequest(BaseModel):
     action: str  # "approve" | "complete"
 
 
+class PermissionRespondRequest(BaseModel):
+    request_id: str
+    allow: bool
+    reason: str | None = None
+
+
 class DepositRequest(BaseModel):
     source: str
     runId: str | None = None

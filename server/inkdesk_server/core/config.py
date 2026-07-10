@@ -52,6 +52,32 @@ class Settings(BaseSettings):
     embedding_base_url: str | None = Field(default=None, alias="INKDESK_EMBEDDING_BASE_URL")
     agent_connect_timeout_seconds: float = Field(default=2.0, alias="INKDESK_AGENT_CONNECT_TIMEOUT_SECONDS")
     agent_read_timeout_seconds: float = Field(default=20.0, alias="INKDESK_AGENT_READ_TIMEOUT_SECONDS")
+    # Claude Code 子进程的工作目录（仓库根）。
+    # repoContext 只是 briefing 里的标签字符串，不能作为子进程 cwd。
+    repo_root: str | None = Field(default=None, alias="INKDESK_REPO_ROOT")
+    # Claude Agent SDK 可选配置：覆盖默认的 Anthropic API 端点和认证。
+    # 留空则让 SDK 读取 ~/.claude/settings.json 的用户级配置（推荐）。
+    claude_api_base_url: str | None = Field(default=None, alias="INKDESK_CLAUDE_API_BASE_URL")
+    claude_api_token: str | None = Field(default=None, alias="INKDESK_CLAUDE_API_TOKEN")
+    # 模型映射：ccswitch 把 Claude 模型名映射到 DeepSeek 等第三方模型。
+    # setting_sources=[] 禁用了 settings.json，必须显式传入这些映射，否则
+    # Claude Code 会用默认的 claude-sonnet-4-5 请求，第三方端点不识别 → 工具调用空转。
+    claude_model: str | None = Field(default=None, alias="INKDESK_CLAUDE_MODEL")
+    claude_default_sonnet_model: str | None = Field(default=None, alias="INKDESK_CLAUDE_DEFAULT_SONNET_MODEL")
+    claude_default_haiku_model: str | None = Field(default=None, alias="INKDESK_CLAUDE_DEFAULT_HAIKU_MODEL")
+    claude_default_opus_model: str | None = Field(default=None, alias="INKDESK_CLAUDE_DEFAULT_OPUS_MODEL")
+    # Claude Agent SDK 单次 query 的最大轮次和预算（USD），防止失控。
+    claude_max_turns: int = Field(default=20, alias="INKDESK_CLAUDE_MAX_TURNS")
+    claude_max_budget_usd: float = Field(default=1.0, alias="INKDESK_CLAUDE_MAX_BUDGET_USD")
+    # 交互式 coding：True=启用 can_use_tool 权限弹窗 + SSE 流式对话；
+    # False=保留 bypassPermissions 行为（快速执行，无前端交互）。
+    claude_interactive_mode: bool = Field(default=True, alias="INKDESK_CLAUDE_INTERACTIVE_MODE")
+    # can_use_tool 等待前端回应的超时秒数，超时视为拒绝。
+    claude_permission_timeout_seconds: int = Field(
+        default=120, alias="INKDESK_CLAUDE_PERMISSION_TIMEOUT_SECONDS"
+    )
+    # SSE 事件队列上限，满了优先丢弃 partial_message。
+    claude_sse_queue_maxsize: int = Field(default=100, alias="INKDESK_CLAUDE_SSE_QUEUE_MAXSIZE")
     enable_web_assist: bool = Field(default=True, alias="INKDESK_ENABLE_WEB_ASSIST")
     openai_api_key: str | None = Field(default=None, alias="OPENAI_API_KEY")
     openai_base_url: str | None = Field(default=None, alias="OPENAI_BASE_URL")
