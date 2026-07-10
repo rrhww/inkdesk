@@ -1069,3 +1069,61 @@ def test_hard_gate_passes_when_requirement_present(temp_app_env: Path) -> None:
     assert resp.status_code == 200, f"expected 200, got {resp.status_code}: {resp.text}"
 
 
+def test_coding_failed_blocks_advance(temp_app_env: Path) -> None:
+    """coding stage 执行失败（success=False）时，approve 应返回 409 CODING_FAILED。"""
+    client = _make_client(temp_app_env)
+
+    run = client.post("/api/runs", json={
+        "type": "PRD", "title": "coding 失败测试", "goal": "x", "repoContext": "inkdesk",
+    }).json()
+    run_id = run["id"]
+
+    # 推进到 coding 阶段
+    for stage in ("context", "solution", "review"):
+        client.post(f"/api/runs/{run_id}/events", json={
+            "stage": stage, "eventType": "stage_output", "payload": {"summary": f"{stage} done"},
+        })
+        client.post(f"/api/runs/{run_id}/advance", json={"action": "approve"})
+
+    # 模拟 coding 失败：直接写入 coding_result_submitted 事件（success=False）
+    client.post(f"/api/runs/{run_id}/events", json={
+        "stage": "coding",
+        "eventType": "coding_result_submitted",
+        "payload": {"result": "", "success": False, "error": "budget exceeded"},
+    })
+
+    # 尝试 approve — 应被拒绝
+    resp = client.post(f"/api/runs/{run_id}/advance", json={"action": "approve"})
+    assert resp.status_code == 409
+    assert resp.json()["code"] == "CODING_FAILED"
+
+
+def test_coding_success_allows_advance(temp_app_env: Path) -> None:
+    """coding stage 执行成功（success=True）时，approve 正常推进到 testing。"""
+    client = _make_client(temp_app_env)
+
+    run = client.post("/api/runs", json={
+        "type": "PRD", "title": "coding 成功测试", "goal": "x", "repoContext": "inkdesk",
+    }).json()
+    run_id = run["id"]
+
+    # 推进到 coding 阶段
+    for stage in ("context", "solution", "review"):
+        client.post(f"/api/runs/{run_id}/events", json={
+            "stage": stage, "eventType": "stage_output", "payload": {"summary": f"{stage} done"},
+        })
+        client.post(f"/api/runs/{run_id}/advance", json={"action": "approve"})
+
+    # 模拟 coding 成功
+    client.post(f"/api/runs/{run_id}/events", json={
+        "stage": "coding",
+        "eventType": "coding_result_submitted",
+        "payload": {"result": "coding done", "success": True},
+    })
+
+    # approve — 应正常推进
+    resp = client.post(f"/api/runs/{run_id}/advance", json={"action": "approve"})
+    assert resp.status_code == 200
+    assert resp.json()["currentStage"] == "testing"
+
+

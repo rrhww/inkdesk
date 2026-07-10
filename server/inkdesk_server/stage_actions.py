@@ -182,12 +182,17 @@ class StageActionService:
         """Query 操作：从 wiki/raw 检索相关页面，注入 prompt 作为预编译知识。
 
         文章思想：知识在 write-time 合成（wiki），query-time 直接读结论。
+        wiki/ 存放已审阅的合成知识，raw/ 存放待 ingest 的原始资料。
+        wiki 无命中时回退到 raw，保证未合成但有原始资料时也能提供上下文。
         """
         if not query or not query.strip():
             return ""
         vault = VaultService(self.settings)
         search_service = VaultSearchService(vault=vault)
         results = search_service.search(query, directories=("wiki",))[:limit]
+        if not results:
+            # wiki 无命中时回退到 raw 目录
+            results = search_service.search(query, directories=("raw",))[:limit]
         if not results:
             return ""
 

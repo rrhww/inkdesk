@@ -86,9 +86,17 @@
 - `StageActionService` 4 个 stage action（solution/review/coding/testing）执行前调 `_check_hard_gates()`，失败抛 `ApiError(409, "HARD_GATE_FAILED")`
 - 4 个 `_render_*_prompt`/`_assemble_briefing` 方法注入 SKILL.md + references + templates 内容（`_render_skill_context`）
 - 4 个 prompt 方法同时注入 wiki 检索结果（`_search_wiki_for_context`）— 这是文章的 Query 操作
-- `VaultSearchService.search()` 做 casefold 简单搜索，只搜 wiki/ 目录
+- `VaultSearchService.search()` 做 casefold 简单搜索，wiki 无命中时回退到 raw/ 目录
+- `advance_run` 在 coding stage approve 时检查 `coding_result_submitted.success`，失败抛 `ApiError(409, "CODING_FAILED")` 阻塞推进
 
 ### 模糊区
 
-- wiki 检索质量 — 当前是 casefold 简单匹配 + 200 字符 snippet，无相关性排序；文章要求"write-time 合成"的 wiki 页面质量尚未保证
+- wiki 检索质量 — 当前是 casefold 简单匹配 + 200 字符 snippet，无相关性排序；wiki 为空时回退 raw/，但 raw 也需要先 ingest 资料才有内容
 - artifact_exists gate 的文件路径推断 — 硬编码 solution_doc→tech-solution.md 等映射，如果 contract output location 变化需要同步
+
+### Dogfooding 发现（2026-07-10）
+
+- 第一个真实 Dev Run（run-9513f4ea7a35）全 6 阶段跑通，验证 Skill-driven 改造在真实场景生效
+- DeepSeek 模型工具调用能力不足：coding stage $2 预算耗尽未完成任务（已知问题，需 Claude API 才能解决）
+- wiki 为空时 Query 操作返回空是正确行为——文章的"预编译知识"需要先通过 ingest-source skill 导入资料
+- coding 失败阻塞推进已实现：approve 时返回 409 CODING_FAILED，用户可重新执行 coding/execute

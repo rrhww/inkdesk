@@ -164,6 +164,15 @@ class RunService:
         # action == "approve"
         if run.stage_status != "awaiting_review":
             raise ApiError(409, "STAGE_NOT_AWAITING_REVIEW", "Current stage must be in awaiting_review to approve.")
+        # coding stage 失败时阻塞推进，要求用户重试 execute_coding
+        if run.current_stage == "coding":
+            last_coding = self._last_event(run, "coding", "coding_result_submitted")
+            if last_coding and last_coding.get("payload", {}).get("success") is False:
+                raise ApiError(
+                    409,
+                    "CODING_FAILED",
+                    "Coding 执行失败，无法推进到 testing。请重新执行 coding/execute 或手动跳过。",
+                )
         cur_idx = STAGES.index(run.current_stage)
         run.stage_status = "completed"
 
@@ -200,6 +209,17 @@ class RunService:
         self.db.commit()
         self.db.refresh(run)
         return self._to_response(run)
+
+    def _last_event(self, run: DevRun, stage: str, event_type: str) -> dict | None:
+        """返回指定 stage 和 event_type 的最后一条事件（含 payload），无则 None。"""
+        for event in reversed(sorted(run.events, key=lambda e: ensure_utc_datetime(e.created_at))):
+            if event.stage == stage and event.event_type == event_type:
+                try:
+                    payload = json.loads(event.payload_json) if event.payload_json else {}
+                except json.JSONDecodeError:
+                    payload = {}
+                return {"payload": payload}
+        return None
 
     def _require_run(self, run_id: str, workspace_id: str) -> DevRun:
         run = self.db.get(DevRun, run_id)
