@@ -103,14 +103,29 @@ class VaultSearchService:
     vault: VaultService
 
     def search(self, query: str, directories: tuple[str, ...] = ("wiki", "raw")) -> list[dict]:
-        results = []
-        normalized_query = query.casefold()
+        """分词匹配 + 命中计数排序。
+
+        把 query 拆成关键词（按空格/标点分词，长度>=2），统计每页命中数，
+        按命中数降序排列。整句匹配不到任何页面时分词仍能命中。
+        """
+        # 分词：按非字母数字汉字字符分割，过滤长度 < 2 的碎片
+        import re
+        tokens = [t for t in re.split(r"[^\w\u4e00-\u9fff]+", query.casefold()) if len(t) >= 2]
+        if not tokens:
+            return []
+
+        scored: list[tuple[int, str, str]] = []  # (hit_count, path, content)
         for directory in directories:
             for relative_path in self.vault.list_markdown_files(directory):
                 try:
                     content = self.vault.read_vault_file(relative_path)
                 except (OSError, ValueError):
                     continue
-                if normalized_query in content.casefold():
-                    results.append({"path": relative_path, "snippet": content[:200]})
-        return results
+                folded = content.casefold()
+                hit_count = sum(1 for token in tokens if token in folded)
+                if hit_count > 0:
+                    scored.append((hit_count, relative_path, content))
+
+        # 按命中数降序
+        scored.sort(key=lambda x: x[0], reverse=True)
+        return [{"path": path, "snippet": content[:200]} for _, path, content in scored]
