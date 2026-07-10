@@ -1,9 +1,11 @@
 export class InkdeskApiError extends Error {
   status: number;
+  code?: string;
 
-  constructor(status: number, message: string) {
+  constructor(status: number, message: string, code?: string) {
     super(message);
     this.status = status;
+    this.code = code;
   }
 }
 
@@ -57,7 +59,23 @@ async function requestInkdesk(path: string, options?: RequestInkdeskOptions) {
   });
 
   if (!response.ok) {
-    throw new InkdeskApiError(response.status, `Inkdesk API request failed for ${path}`);
+    // 读取后端结构化错误响应 {"code": "...", "message": "..."}，传递给上层 UI
+    let code: string | undefined;
+    let message = `Inkdesk API request failed for ${path}`;
+    try {
+      const body = await response.json();
+      if (body && typeof body === "object") {
+        if (typeof body.message === "string" && body.message) {
+          message = body.message;
+        }
+        if (typeof body.code === "string" && body.code) {
+          code = body.code;
+        }
+      }
+    } catch {
+      // 响应体不是 JSON，保留通用文案
+    }
+    throw new InkdeskApiError(response.status, message, code);
   }
 
   return response;

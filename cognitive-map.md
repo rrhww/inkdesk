@@ -59,9 +59,36 @@
 ## 模糊区
 
 - behavioral contract cases 的实际执行 — 格式已定，contents 待 Skill 实战后产生
-- gate severity（block vs warn）区分 — 当前 contract 的 hardGates 是 flat list，ingest-source 的 schema_gate_passed 是 block，run-wiki-health 的同名 gate 是 warn，contract 不区分；需改 SDK 建模
-- human_confirmation gate 未在 SDK 注册为认可的 gate-kind
+- gate severity（block vs warn）区分 — HardGateChecker 当前用"返回 warn 字符串"表示不阻塞，用"返回失败原因"表示阻塞；schema_gate_passed 和 human_confirmation 是 warn，其余是 block；未改 SDK 建模
+- human_confirmation gate 已在 HardGateChecker 注册但当前返回 warn（前端未配合确认 UI），TODO: 前端实现后改为强制
 
 ## 黑盒区（完全不懂）
 
 - 外部 Agent 加载 Skill package 后的实际执行行为 — 当前只保证 package 可校验，执行语义未定义
+
+## Skill-Driven Stage Actions（2026-07-10 新增）
+
+### 已理解
+
+- `SkillLoader`（skill_loader.py）从 `vault/skills/<stage>/` 加载 SKILL.md + contract.json + references/ + templates/，带进程级缓存
+- stage → skill_id 映射：solution→tech-solution, review→tech-review, coding→coding, testing→test-prep；context/deposit 无 Skill
+- `HardGateChecker`（hard_gate_checker.py）实现 9 种 GateKind 校验，返回 `GateResult(passed, failures, warnings)`
+- 9 种 GateKind 实现状态：
+  - `required_input` — 检查 run.goal（requirement/change_scope）或上游事件 payload（solution_doc/tech_review_report）
+  - `vault_initialized` — VaultService.get_status().initialized
+  - `schema_gate_passed` — warn 不阻塞（wiki schema 健康检查未完整实现）
+  - `dev_run_exists` — run 已在 check() 开头加载，必然通过
+  - `run_stage_is` — run.currentStage 匹配 params.stage
+  - `review_approved` — currentStage > review 或有 stage_approved 事件
+  - `artifact_exists` — runs/<run_id>/<artifact>.md 文件存在
+  - `real_failure_signal` — warn 不阻塞（diagnostic skill 用，未实现）
+  - `human_confirmation` — warn 不阻塞（前端未配合）
+- `StageActionService` 4 个 stage action（solution/review/coding/testing）执行前调 `_check_hard_gates()`，失败抛 `ApiError(409, "HARD_GATE_FAILED")`
+- 4 个 `_render_*_prompt`/`_assemble_briefing` 方法注入 SKILL.md + references + templates 内容（`_render_skill_context`）
+- 4 个 prompt 方法同时注入 wiki 检索结果（`_search_wiki_for_context`）— 这是文章的 Query 操作
+- `VaultSearchService.search()` 做 casefold 简单搜索，只搜 wiki/ 目录
+
+### 模糊区
+
+- wiki 检索质量 — 当前是 casefold 简单匹配 + 200 字符 snippet，无相关性排序；文章要求"write-time 合成"的 wiki 页面质量尚未保证
+- artifact_exists gate 的文件路径推断 — 硬编码 solution_doc→tech-solution.md 等映射，如果 contract output location 变化需要同步
