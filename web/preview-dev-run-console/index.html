@@ -1,0 +1,394 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Inkdesk Dev Run Console 静态 UI 原型">
+    <title>Inkdesk · Dev Run Console</title>
+    <link rel="icon" href="assets/traework/icons/ai_stars.svg">
+    <link rel="stylesheet" href="assets/traework/colors_and_type.css">
+    <link rel="stylesheet" href="assets/traework/components.css">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">跳到主要内容</a>
+
+    <div class="app-shell">
+      <aside class="app-sidebar" id="mobile-drawer" aria-hidden="true" aria-label="主导航">
+        <div class="sidebar-head">
+          <a class="brand" href="#overview" data-route="overview" aria-label="Inkdesk 总览">
+            <span class="brand-mark" aria-hidden="true">I</span>
+            <span class="brand-copy">
+              <strong>Inkdesk</strong>
+              <span>R&amp;D Automation</span>
+            </span>
+          </a>
+          <button class="ds-btn ds-btn--icon sidebar-close" type="button" data-drawer-close aria-label="关闭导航">
+            <img src="assets/traework/icons/Close.svg" alt="" aria-hidden="true">
+          </button>
+        </div>
+
+        <button class="ds-btn ds-btn--brand new-run-button" type="button" data-dialog-open="new-run-dialog">
+          <img src="assets/traework/icons/add.svg" alt="" aria-hidden="true">
+          新建 Dev Run
+        </button>
+
+        <nav class="sidebar-nav" aria-label="Inkdesk 功能导航">
+          <section class="nav-group" data-nav-group="工作流">
+            <h2>工作流</h2>
+            <button class="nav-item is-active" type="button" data-route="overview" aria-current="page">
+              <img src="assets/traework/icons/task.svg" alt="" aria-hidden="true"><span>总览</span><span class="nav-count">2</span>
+            </button>
+            <button class="nav-item" type="button" data-route="run">
+              <img src="assets/traework/icons/Run.svg" alt="" aria-hidden="true"><span>Dev Runs</span><span class="nav-count">3</span>
+            </button>
+            <button class="nav-item" type="button" data-route="review">
+              <img src="assets/traework/icons/DocumentFeedback.svg" alt="" aria-hidden="true"><span>审阅队列</span><span class="nav-count">2</span>
+            </button>
+          </section>
+
+          <section class="nav-group" data-nav-group="上下文">
+            <h2>上下文</h2>
+            <button class="nav-item" type="button" data-route="ask">
+              <img src="assets/traework/icons/chat-ai.svg" alt="" aria-hidden="true"><span>Context Ask</span>
+            </button>
+            <button class="nav-item" type="button" data-route="sources">
+              <img src="assets/traework/icons/File.svg" alt="" aria-hidden="true"><span>Sources</span>
+            </button>
+            <button class="nav-item" type="button" data-route="wiki">
+              <img src="assets/traework/icons/document.svg" alt="" aria-hidden="true"><span>Wiki</span>
+            </button>
+          </section>
+
+          <section class="nav-group" data-nav-group="自动化">
+            <h2>自动化</h2>
+            <button class="nav-item" type="button" data-route="skills">
+              <img src="assets/traework/icons/ai_stars.svg" alt="" aria-hidden="true"><span>Skills</span>
+            </button>
+            <button class="nav-item" type="button" data-route="evaluation">
+              <img src="assets/traework/icons/code.svg" alt="" aria-hidden="true"><span>Evaluations</span><span class="ds-tag nav-tag">规划中</span>
+            </button>
+          </section>
+
+          <section class="nav-group" data-nav-group="系统">
+            <h2>系统</h2>
+            <button class="nav-item" type="button" data-notice="Health 在完整产品中汇总知识与运行健康。本原型在总览展示阻塞性摘要。">
+              <img src="assets/traework/icons/warning_simple.svg" alt="" aria-hidden="true"><span>Health</span>
+            </button>
+            <button class="nav-item" type="button" data-notice="Settings 保留为工作区、运行时、MCP 与通知配置入口。">
+              <img src="assets/traework/icons/settings.svg" alt="" aria-hidden="true"><span>Settings</span>
+            </button>
+          </section>
+        </nav>
+
+        <footer class="sidebar-foot">
+          <span class="workspace-avatar" aria-hidden="true">ID</span>
+          <span><strong>Inkdesk Lab</strong><small>本地工作区</small></span>
+          <button class="ds-btn ds-btn--icon" type="button" data-notice="工作区菜单为静态原型状态。" aria-label="打开工作区菜单">
+            <img src="assets/traework/icons/more-action.svg" alt="" aria-hidden="true">
+          </button>
+        </footer>
+      </aside>
+
+      <div class="drawer-scrim" data-drawer-close hidden></div>
+
+      <div class="workspace">
+        <header class="topbar">
+          <div class="topbar-primary">
+            <button class="ds-btn ds-btn--icon mobile-menu" type="button" data-drawer-open aria-label="打开导航">
+              <img src="assets/traework/icons/ViewLeft_line.svg" alt="" aria-hidden="true">
+            </button>
+            <div>
+              <p class="topbar-context">Inkdesk Lab / inkdesk</p>
+              <h1 data-page-title>总览</h1>
+            </div>
+          </div>
+          <div class="topbar-actions">
+            <button class="ds-btn ds-btn--secondary" type="button" data-route="ask">
+              <img src="assets/traework/icons/Search.svg" alt="" aria-hidden="true">查询上下文
+            </button>
+            <button class="ds-btn ds-btn--icon" type="button" data-notice="没有新的系统通知。" aria-label="查看通知">
+              <img src="assets/traework/icons/information_simple.svg" alt="" aria-hidden="true">
+            </button>
+          </div>
+        </header>
+
+        <main id="main-content" tabindex="-1">
+          <section class="app-view is-active" data-view="overview" aria-labelledby="overview-title">
+            <header class="page-header">
+              <div>
+                <p class="page-kicker">Friday, 10 July</p>
+                <h2 id="overview-title">需要你判断的工作，已经排在前面</h2>
+                <p>2 项待确认 · 3 条运行中 · 最近一次执行在 4 分钟前</p>
+              </div>
+            </header>
+
+            <section class="view-section" aria-labelledby="attention-title">
+              <div class="section-head">
+                <div><h3 id="attention-title">待你确认</h3><p>这些门禁正在阻塞 Dev Run 推进。</p></div>
+                <button class="ds-btn ds-btn--link" type="button" data-route="review">打开审阅队列</button>
+              </div>
+              <div class="decision-list">
+                <button class="decision-row" type="button" data-route="review" data-detail-target="review-solution">
+                  <span class="status-icon status-icon--warning"><img src="assets/traework/icons/warning_simple.svg" alt="" aria-hidden="true"></span>
+                  <span class="decision-main"><strong>确认 Context Pack 的权限边界</strong><small>Dev Run · Agent 观测数据脱敏与访问控制</small></span>
+                  <span class="ds-tag ds-tag--warning">高风险</span>
+                  <span class="decision-time">等待 18 分钟</span>
+                </button>
+                <button class="decision-row" type="button" data-route="review" data-detail-target="review-wiki">
+                  <span class="status-icon"><img src="assets/traework/icons/document.svg" alt="" aria-hidden="true"></span>
+                  <span class="decision-main"><strong>审阅 Evaluation Harness 的 Wiki patch</strong><small>Dev Run · 统一 Skill 晋级门禁</small></span>
+                  <span class="ds-tag">知识沉淀</span>
+                  <span class="decision-time">等待 7 分钟</span>
+                </button>
+              </div>
+            </section>
+
+            <section class="view-section" aria-labelledby="running-title">
+              <div class="section-head">
+                <div><h3 id="running-title">进行中的 Dev Runs</h3><p>从任务输入到交付的受控自动化记录。</p></div>
+                <button class="ds-btn ds-btn--secondary" type="button" data-route="run">查看全部</button>
+              </div>
+              <div class="run-list">
+                <button class="run-row" type="button" data-route="run">
+                  <span class="run-type">PRD</span>
+                  <span class="run-main"><strong>统一 Skill 晋级门禁</strong><small>当前阶段 · Coding</small></span>
+                  <span class="run-progress" aria-label="完成 4 个阶段，共 6 个"><span class="is-done"></span><span class="is-done"></span><span class="is-done"></span><span class="is-current"></span><span></span><span></span></span>
+                  <span class="ds-tag ds-tag--success">执行中</span>
+                  <span class="run-time">4 分钟前</span>
+                </button>
+                <button class="run-row" type="button" data-route="run">
+                  <span class="run-type">改造</span>
+                  <span class="run-main"><strong>Agent 观测数据脱敏与访问控制</strong><small>当前阶段 · Review</small></span>
+                  <span class="run-progress" aria-label="完成 2 个阶段，共 6 个"><span class="is-done"></span><span class="is-done"></span><span class="is-current"></span><span></span><span></span><span></span></span>
+                  <span class="ds-tag ds-tag--warning">待确认</span>
+                  <span class="run-time">18 分钟前</span>
+                </button>
+                <button class="run-row" type="button" data-route="run">
+                  <span class="run-type">Bug</span>
+                  <span class="run-main"><strong>修复 Source 解析失败后的重复入队</strong><small>当前阶段 · Test</small></span>
+                  <span class="run-progress" aria-label="完成 5 个阶段，共 6 个"><span class="is-done"></span><span class="is-done"></span><span class="is-done"></span><span class="is-done"></span><span class="is-current"></span><span></span></span>
+                  <span class="ds-tag">测试中</span>
+                  <span class="run-time">23 分钟前</span>
+                </button>
+              </div>
+            </section>
+
+            <section class="overview-bottom">
+              <div class="view-section compact-section">
+                <div class="section-head"><div><h3>最近完成</h3><p>可回看的交付物与沉淀结果。</p></div></div>
+                <ul class="simple-list">
+                  <li><span><strong>Skill SDK 契约校验器</strong><small>3 个 Artifact · 5 条 Wiki claim</small></span><span class="ds-tag ds-tag--success">已交付</span></li>
+                  <li><span><strong>Context Pack 引用排序</strong><small>2 个 Artifact · Evaluation 记录待补</small></span><span class="ds-tag">已沉淀</span></li>
+                </ul>
+              </div>
+              <aside class="ds-alert ds-alert--warning health-digest" aria-label="健康摘要">
+                <img src="assets/traework/icons/warning_simple.svg" alt="" aria-hidden="true">
+                <div><strong>1 项健康信号影响运行</strong><p>两份 Sources 超过 30 天未验证，Context Pack 已降低其证据权重。</p><button class="ds-btn ds-btn--link" type="button" data-route="sources">查看来源</button></div>
+              </aside>
+            </section>
+          </section>
+
+          <section class="app-view" data-view="run" aria-labelledby="run-title" hidden>
+            <header class="page-header run-header">
+              <div>
+                <div class="title-tags"><span class="ds-tag">PRD</span><span class="ds-tag ds-tag--success">执行中</span><span class="run-id">RUN-0248</span></div>
+                <h2 id="run-title">统一 Skill 晋级门禁</h2>
+                <p>让 draft → active 的晋级由结构校验、行为评测和人工门禁共同决定。</p>
+              </div>
+              <div class="header-actions"><button class="ds-btn ds-btn--secondary" type="button" data-notice="Run 已暂停在当前事件边界。">暂停 Run</button><button class="ds-btn ds-btn--primary" type="button" data-notice="已生成当前 Run 的交付摘要。">生成摘要</button></div>
+            </header>
+
+            <ol class="stage-track" aria-label="Dev Run 阶段">
+              <li><button type="button" class="stage-step is-complete" data-stage="context"><span>1</span><strong>Context</strong><small>已完成</small></button></li>
+              <li><button type="button" class="stage-step is-complete" data-stage="solution"><span>2</span><strong>Solution</strong><small>已完成</small></button></li>
+              <li><button type="button" class="stage-step is-complete" data-stage="review-stage"><span>3</span><strong>Review</strong><small>已通过</small></button></li>
+              <li><button type="button" class="stage-step is-current" data-stage="coding" aria-current="step"><span>4</span><strong>Coding</strong><small>执行中</small></button></li>
+              <li><button type="button" class="stage-step" data-stage="test"><span>5</span><strong>Test</strong><small>等待</small></button></li>
+              <li><button type="button" class="stage-step" data-stage="deposit"><span>6</span><strong>Deposit</strong><small>等待</small></button></li>
+            </ol>
+
+            <div class="run-workspace">
+              <section class="stage-work" aria-live="polite">
+                <div class="stage-panel" data-stage-panel="context" hidden><div class="section-head"><div><h3>Context Pack</h3><p>召回产品契约、Skill SDK 规范与晋级历史。</p></div><span class="ds-tag ds-tag--success">证据充分</span></div><ul class="artifact-list"><li><strong>产品愿景与路线图</strong><span>7 条引用</span></li><li><strong>Skill SDK 设计</strong><span>12 条引用</span></li><li><strong>历史评测失败</strong><span>3 条记录</span></li></ul></div>
+                <div class="stage-panel" data-stage-panel="solution" hidden><div class="section-head"><div><h3>技术方案</h3><p>以 contract、lint、fixture 与 promotion gate 组成双层校验。</p></div><span class="ds-tag ds-tag--success">已批准</span></div><div class="doc-outline"><h4>关键决策</h4><p>保持单一 router，晋级必须同时满足结构、安全、行为和人工审核四类门禁。</p><h4>影响范围</h4><p><code>inkdesk_skill_sdk</code>、Skill Workbench 和 Evaluation 数据模型。</p></div></div>
+                <div class="stage-panel" data-stage-panel="review-stage" hidden><div class="section-head"><div><h3>技术评审</h3><p>2 条建议已处理，风险边界已确认。</p></div><span class="ds-tag ds-tag--success">通过</span></div><ul class="review-notes"><li><strong>避免隐式放行</strong><p>任何评测缺失均阻止 active 晋级。</p></li><li><strong>保留审计证据</strong><p>门禁结果写入 Run Artifact，不直接污染 Wiki。</p></li></ul></div>
+                <div class="stage-panel is-active" data-stage-panel="coding">
+                  <div class="section-head"><div><h3>Coding 事件流</h3><p>外部 Agent 作为后端执行服务，事件按工程动作组织。</p></div><span class="live-indicator"><span></span>运行中 · 04:32</span></div>
+                  <div class="event-stream">
+                    <button class="event-row" type="button" data-event-toggle aria-expanded="false"><time>14:08:12</time><span class="event-kind">读取</span><span><strong>加载 Skill SDK 合同与测试 fixture</strong><small>18 files · 42.6 KB</small></span><span class="ds-tag ds-tag--success">完成</span><img src="assets/traework/icons/Down.svg" alt="展开事件" class="event-chevron"><span class="event-detail">读取范围限定在 <code>server/inkdesk_skill_sdk</code> 与相关测试目录。</span></button>
+                    <button class="event-row" type="button" data-event-toggle aria-expanded="false"><time>14:09:03</time><span class="event-kind">修改</span><span><strong>实现 promotion gate 聚合器</strong><small>contracts.py · validation.py</small></span><span class="ds-tag ds-tag--success">完成</span><img src="assets/traework/icons/Down.svg" alt="展开事件" class="event-chevron"><span class="event-detail">新增结构、行为、schema 和人工确认四类判定，不改变现有 CLI 接口。</span></button>
+                    <button class="event-row" type="button" data-event-toggle aria-expanded="true"><time>14:10:44</time><span class="event-kind">测试</span><span><strong>运行 promotion fixture 套件</strong><small>21 passed · 1 failed</small></span><span class="ds-tag ds-tag--warning">处理中</span><img src="assets/traework/icons/Down.svg" alt="收起事件" class="event-chevron"><span class="event-detail">失败原因：延期 Golden Task 的审核理由未进入 Artifact。Agent 正在补充结构化字段并重试。</span></button>
+                    <button class="event-row is-pending" type="button" disabled><time>--:--:--</time><span class="event-kind">门禁</span><span><strong>生成变更摘要与测试证据</strong><small>等待当前修复完成</small></span><span class="ds-tag">等待</span></button>
+                  </div>
+                </div>
+                <div class="stage-panel" data-stage-panel="test" hidden><div class="section-head"><div><h3>Test</h3><p>等待 Coding Artifact 完成后启动。</p></div><span class="ds-tag">未开始</span></div><div class="empty-block"><img src="assets/traework/icons/code.svg" alt="" aria-hidden="true"><p>计划运行 unit、fixture、CLI smoke 与 schema gate。</p></div></div>
+                <div class="stage-panel" data-stage-panel="deposit" hidden><div class="section-head"><div><h3>Deposit</h3><p>交付后生成 Artifact 与 Wiki Proposal。</p></div><span class="ds-tag">未开始</span></div><div class="empty-block"><img src="assets/traework/icons/document.svg" alt="" aria-hidden="true"><p>正式知识只会在 Review 通过后更新。</p></div></div>
+              </section>
+
+              <aside class="evidence-rail">
+                <section><h3>阶段证据</h3><dl class="meta-list"><div><dt>执行者</dt><dd>Codex Runtime</dd></div><div><dt>仓库</dt><dd>inkdesk / rrh/frontend</dd></div><div><dt>变更文件</dt><dd>4</dd></div><div><dt>测试状态</dt><dd>21 / 22</dd></div></dl></section>
+                <section><h3>关联 Artifact</h3><button class="evidence-link" type="button" data-notice="已定位到技术方案 Artifact。"><img src="assets/traework/icons/document.svg" alt="" aria-hidden="true"><span><strong>技术方案 v3</strong><small>已批准 · 14:02</small></span></button><button class="evidence-link" type="button" data-notice="测试证据将在阶段结束后生成。"><img src="assets/traework/icons/code.svg" alt="" aria-hidden="true"><span><strong>测试证据</strong><small>生成中</small></span></button></section>
+                <section class="gate-actions"><h3>阶段门禁</h3><p>Coding 完成后需要确认变更摘要和测试范围。</p><button class="ds-btn ds-btn--primary" type="button" disabled>批准进入 Test</button><button class="ds-btn ds-btn--secondary" type="button" data-notice="已记录修改要求草稿。">要求修改</button></section>
+              </aside>
+            </div>
+          </section>
+
+          <section class="app-view" data-view="review" aria-labelledby="review-title" hidden>
+            <header class="page-header"><div><p class="page-kicker">Human gates</p><h2 id="review-title">审阅队列</h2><p>只展示必须由你裁决、且会阻塞 Dev Run 的内容。</p></div><span class="summary-count">2 项待处理</span></header>
+            <div class="filter-bar" role="group" aria-label="审阅筛选">
+              <button class="filter-chip is-active" type="button" data-review-filter="all" aria-pressed="true">全部 <span>2</span></button>
+              <button class="filter-chip" type="button" data-review-filter="high" aria-pressed="false">高风险 <span>1</span></button>
+              <button class="filter-chip" type="button" data-review-filter="knowledge" aria-pressed="false">知识沉淀 <span>1</span></button>
+              <div class="filter-spacer"></div>
+              <button class="ds-btn ds-btn--secondary" type="button" data-notice="筛选菜单在本原型中使用上方快捷筛选。"><img src="assets/traework/icons/list-filter.svg" alt="" aria-hidden="true">更多筛选</button>
+            </div>
+            <div class="split-workspace">
+              <div class="master-list" aria-label="审阅项目">
+                <button class="master-item is-selected" type="button" data-review-item data-risk="high" data-detail-target="review-solution" aria-pressed="true"><span class="master-icon status-icon--warning"><img src="assets/traework/icons/warning_simple.svg" alt="" aria-hidden="true"></span><span><span class="master-meta">RUN-0251 · 技术方案</span><strong>确认 Context Pack 的权限边界</strong><small>访问控制方案会影响后续 Coding 范围。</small></span><span class="ds-tag ds-tag--warning">高风险</span><time>18m</time></button>
+                <button class="master-item" type="button" data-review-item data-risk="knowledge" data-detail-target="review-wiki" aria-pressed="false"><span class="master-icon"><img src="assets/traework/icons/document.svg" alt="" aria-hidden="true"></span><span><span class="master-meta">RUN-0248 · Wiki Proposal</span><strong>沉淀 Skill 晋级门禁的当前结论</strong><small>5 条 claim，1 条替换现有判断。</small></span><span class="ds-tag">知识沉淀</span><time>7m</time></button>
+              </div>
+              <section class="detail-pane" data-detail-panel="review-solution">
+                <header class="detail-head"><div><span class="ds-tag ds-tag--warning">高风险</span><h3>确认 Context Pack 的权限边界</h3><p>Agent 观测数据脱敏与访问控制 · Solution → Review</p></div><button class="ds-btn ds-btn--icon" type="button" data-notice="更多操作包括导出和复制链接。" aria-label="更多审阅操作"><img src="assets/traework/icons/more-action.svg" alt="" aria-hidden="true"></button></header>
+                <div class="decision-summary"><span>需要你的决定</span><strong>是否允许 Context Pack 包含脱敏后的执行事件摘要？</strong><p>允许后，技术方案可以进入 Coding；拒绝则需要把事件摘要改为仅保留类型和时间。</p></div>
+                <section class="detail-section"><h4>AI 建议</h4><p>建议允许，但仅暴露事件类型、目标模块和状态，不包含 prompt、原始文件内容或凭据。该策略与现有 MCP `context_pack` 的最小披露原则一致。</p><div class="confidence-row"><span>建议置信度</span><strong>0.82</strong><div class="confidence-track"><span></span></div></div></section>
+                <section class="detail-section"><h4>主要风险</h4><ul class="risk-list"><li><span class="risk-dot"></span><div><strong>路径可能包含用户标识</strong><p>生成摘要前需执行 workspace-relative 归一化。</p></div></li><li><span class="risk-dot"></span><div><strong>错误消息可能回显秘密</strong><p>只允许白名单字段进入 Context Pack。</p></div></li></ul></section>
+                <section class="detail-section"><h4>证据</h4><button class="reference-row" type="button" data-notice="已打开 MCP 最小披露原则引用。"><img src="assets/traework/icons/Link.svg" alt="" aria-hidden="true"><span><strong>产品定位与形态 · 外部 Agent 底座</strong><small>docs/product/产品定位与形态.md</small></span></button><button class="reference-row" type="button" data-notice="已打开安全治理路线图引用。"><img src="assets/traework/icons/Link.svg" alt="" aria-hidden="true"><span><strong>安全治理路线图 · 数据最小化</strong><small>docs/product/产品路线图.md</small></span></button></section>
+                <footer class="decision-actions"><button class="ds-btn ds-btn--secondary" type="button" data-notice="修改要求已保存为草稿。">要求修改</button><button class="ds-btn ds-btn--primary" type="button" data-notice="方案已批准，Run 可以进入 Coding。">批准并继续</button></footer>
+              </section>
+              <section class="detail-pane" data-detail-panel="review-wiki" hidden>
+                <header class="detail-head"><div><span class="ds-tag">Wiki Proposal</span><h3>沉淀 Skill 晋级门禁的当前结论</h3><p>统一 Skill 晋级门禁 · Deposit Proposal</p></div></header>
+                <div class="decision-summary"><span>需要你的决定</span><strong>用新 claim 替换“lint 通过即可 active”的旧判断</strong><p>新方案要求结构、安全、行为评测和人工审核全部通过。</p></div>
+                <section class="detail-section claim-diff"><h4>Claim 变更</h4><div class="diff-row is-removed"><span>旧</span><p>Skill 通过 structural lint 后可以晋级 active。</p></div><div class="diff-row is-added"><span>新</span><p>Skill 仅在 lint、behavioral evaluation、schema gate 和人工审核全部通过后晋级 active。</p></div></section>
+                <section class="detail-section"><h4>影响</h4><p>1 条旧 claim 将标记为 superseded，4 条新增 claim 进入 `Skill lifecycle` 主题；来源为本次技术方案和测试证据。</p></section>
+                <footer class="decision-actions"><button class="ds-btn ds-btn--secondary" type="button" data-notice="Proposal 已保留，未更新正式 Wiki。">暂不沉淀</button><button class="ds-btn ds-btn--primary" type="button" data-notice="Wiki Proposal 已批准并进入后台 patch 流程。">批准 Proposal</button></footer>
+              </section>
+            </div>
+          </section>
+
+          <section class="app-view" data-view="ask" aria-labelledby="ask-title" hidden>
+            <header class="page-header"><div><p class="page-kicker">Evidence-first query</p><h2 id="ask-title">Context Ask</h2><p>围绕当前 Dev Run 查询长期上下文、历史判断和未解问题。</p></div></header>
+            <section class="ask-composer" aria-labelledby="ask-composer-title">
+              <div class="ask-scope"><label for="ask-scope">查询范围</label><div class="ds-select-wrap"><select class="ds-select" id="ask-scope"><option>RUN-0248 · 统一 Skill 晋级门禁</option><option>当前工作区全部知识</option></select><img class="ds-select__icon" src="assets/traework/icons/Down.svg" alt="" aria-hidden="true"></div></div>
+              <label id="ask-composer-title" for="ask-question">问题</label>
+              <textarea class="ds-textarea" id="ask-question" rows="3">为什么 Skill 不能只通过 lint 就晋级 active？历史上出现过哪些误判？</textarea>
+              <div class="composer-foot"><span>将检索 Wiki、Sources、历史 Run 和 open questions</span><button class="ds-btn ds-btn--primary" type="button" data-ask-submit><img src="assets/traework/icons/Search.svg" alt="" aria-hidden="true">生成回答</button></div>
+            </section>
+            <div class="ask-layout">
+              <article class="answer-panel">
+                <header><div><span class="ds-tag ds-tag--success">证据充分</span><span class="answer-time">基于 6 条引用 · 刚刚</span></div><button class="ds-btn ds-btn--icon" type="button" data-notice="回答链接已复制。" aria-label="复制回答链接"><img src="assets/traework/icons/Link.svg" alt="" aria-hidden="true"></button></header>
+                <h3>Lint 只能证明包结构可解析，不能证明 Skill 在真实任务中可靠</h3>
+                <p>历史记录显示，两个 Skill 曾通过 structural 和 safety lint，却在真实任务中产生了错误路由与不完整交付。因此 active 晋级需要同时覆盖“能加载”“不越权”“能完成任务”和“人工确认边界”四类证据。</p>
+                <ol class="answer-points"><li><strong>结构正确不等于行为正确。</strong> `tech-solution` 的早期版本遗漏了测试范围，但 contract 仍然合法。</li><li><strong>路由描述需要真实反例验证。</strong> `skill-router` 曾把普通语法问题错误路由到宽入口。</li><li><strong>写权限必须单独审查。</strong> 行为可用的 Skill 仍可能声明过宽的 Wiki 或代码写入范围。</li></ol>
+                <button class="citation-block" type="button" data-citation-toggle aria-expanded="false"><span><strong>[1] Skill SDK 设计 · Promotion 门禁</strong><small>docs/superpowers/specs/2026-06-29-skill-sdk-design.md</small></span><img src="assets/traework/icons/Down.svg" alt="展开引用" aria-hidden="true"><blockquote>draft → active 须满足 structural、semantic、safety lint，behavioral contract cases、人工审核与 schema gate。</blockquote></button>
+                <button class="citation-block" type="button" data-citation-toggle aria-expanded="false"><span><strong>[2] RUN-0187 · skill-router 误路由复盘</strong><small>历史 Run Artifact · 2026-06-18</small></span><img src="assets/traework/icons/Down.svg" alt="展开引用" aria-hidden="true"><blockquote>仅依赖 description 静态检查无法发现普通语法问题被宽入口接管。</blockquote></button>
+                <section class="knowledge-gap"><img src="assets/traework/icons/warning_simple.svg" alt="" aria-hidden="true"><div><strong>仍有一个知识缺口</strong><p>目前没有覆盖“延期 Golden Task”审批理由的长期统计，无法判断该例外是否被滥用。</p></div></section>
+                <footer><div><strong>这条回答值得沉淀</strong><span>可生成 3 条候选 claim，不会直接写入 Wiki。</span></div><button class="ds-btn ds-btn--secondary" type="button" data-deposit-proposal>生成 Deposit Proposal</button></footer>
+              </article>
+              <aside class="context-panel"><h3>本次上下文</h3><dl class="meta-list"><div><dt>Wiki</dt><dd>3 pages</dd></div><div><dt>Sources</dt><dd>2 files</dd></div><div><dt>历史 Runs</dt><dd>1 artifact</dd></div><div><dt>冲突</dt><dd>0</dd></div></dl><h3>相关问题</h3><button class="related-question" type="button" data-fill-question="Promotion gate 失败后，Run 应该如何重试？">Promotion gate 失败后如何重试？</button><button class="related-question" type="button" data-fill-question="哪些 Skill 可以延期 Golden Task？">哪些 Skill 可以延期 Golden Task？</button></aside>
+            </div>
+          </section>
+
+          <section class="app-view" data-view="sources" aria-labelledby="sources-title" hidden>
+            <header class="page-header"><div><p class="page-kicker">Evidence layer</p><h2 id="sources-title">Sources</h2><p>管理进入知识层的原始证据，以及它们被哪些 Run 和 claim 使用。</p></div><button class="ds-btn ds-btn--secondary" type="button" data-notice="导入入口已打开，静态原型不上传文件。"><img src="assets/traework/icons/add.svg" alt="" aria-hidden="true">导入来源</button></header>
+            <div class="toolbar"><label class="ds-input search-field"><img class="ds-input__icon" src="assets/traework/icons/Search.svg" alt="" aria-hidden="true"><input type="search" placeholder="搜索来源" aria-label="搜索来源" data-list-search="sources"></label><div class="ds-select-wrap compact-select"><select class="ds-select" aria-label="来源状态"><option>全部状态</option><option>可用</option><option>需验证</option><option>失败</option></select><img class="ds-select__icon" src="assets/traework/icons/Down.svg" alt="" aria-hidden="true"></div></div>
+            <div class="split-workspace resource-workspace">
+              <div class="master-list" data-search-list="sources">
+                <button class="master-item is-selected" type="button" data-search-text="Skill SDK 设计 promotion gate" data-detail-target="source-sdk" aria-pressed="true"><span class="master-icon"><img src="assets/traework/icons/document.svg" alt="" aria-hidden="true"></span><span><span class="master-meta">Markdown · docs/superpowers/specs</span><strong>Skill SDK 设计</strong><small>12 条 claim · 被 4 条 Run 使用</small></span><span class="ds-tag ds-tag--success">可用</span><time>今天</time></button>
+                <button class="master-item" type="button" data-search-text="AI 研发自动化 Wiki 技能包 产品" data-detail-target="source-article" aria-pressed="false"><span class="master-icon"><img src="assets/traework/icons/File.svg" alt="" aria-hidden="true"></span><span><span class="master-meta">Article · 产品参考</span><strong>AI 研发自动化：Wiki 知识库 + 技能包</strong><small>8 条 claim · 被 7 条 Run 使用</small></span><span class="ds-tag ds-tag--warning">需验证</span><time>34 天</time></button>
+                <button class="master-item" type="button" data-search-text="skill router 误路由 复盘" data-detail-target="source-run" aria-pressed="false"><span class="master-icon"><img src="assets/traework/icons/Run.svg" alt="" aria-hidden="true"></span><span><span class="master-meta">Run Artifact · RUN-0187</span><strong>skill-router 误路由复盘</strong><small>5 条 claim · 被 2 条 Ask 使用</small></span><span class="ds-tag ds-tag--success">可用</span><time>22 天</time></button>
+              </div>
+              <section class="detail-pane" data-detail-panel="source-sdk">
+                <header class="detail-head"><div><span class="ds-tag ds-tag--success">可用</span><h3>Skill SDK 设计</h3><p>Markdown · 15.4 KB · 今天 22:50 验证</p></div></header><section class="detail-section"><h4>可追溯信息</h4><dl class="meta-grid"><div><dt>原始位置</dt><dd>docs/superpowers/specs/2026-06-29-skill-sdk-design.md</dd></div><div><dt>关联 Run</dt><dd>RUN-0248 等 4 条</dd></div><div><dt>抽取结果</dt><dd>12 claims · 0 conflicts</dd></div><div><dt>最近引用</dt><dd>Context Ask · 刚刚</dd></div></dl></section><section class="detail-section"><h4>主要 claim</h4><ul class="claim-list"><li><span class="claim-state"></span><p><strong>Skill 是可检查、可版本化的研发动作协议。</strong><small>被 6 次 Ask 调用 · 置信度 high</small></p></li><li><span class="claim-state"></span><p><strong>draft → active 必须通过多类 promotion gate。</strong><small>被 4 条 Run 使用 · 置信度 high</small></p></li></ul></section>
+              </section>
+              <section class="detail-pane" data-detail-panel="source-article" hidden><header class="detail-head"><div><span class="ds-tag ds-tag--warning">需验证</span><h3>AI 研发自动化：Wiki 知识库 + 技能包</h3><p>外部文章 · 34 天未验证</p></div></header><div class="ds-alert ds-alert--warning"><img src="assets/traework/icons/warning_simple.svg" alt="" aria-hidden="true"><div><strong>证据权重已降低</strong><p>来源超过健康阈值，新的 Context Pack 不会把它作为唯一依据。</p></div></div><section class="detail-section"><h4>使用情况</h4><p>关联 8 条 claim、7 条 Run 和 11 次 Ask。建议重新抓取原文并确认作者是否更新关键结论。</p></section></section>
+              <section class="detail-pane" data-detail-panel="source-run" hidden><header class="detail-head"><div><span class="ds-tag ds-tag--success">可用</span><h3>skill-router 误路由复盘</h3><p>Run Artifact · RUN-0187</p></div></header><section class="detail-section"><h4>复盘摘要</h4><p>宽入口 description 缺少非触发边界，导致普通语法问题被路由到完整工程流程。修复后加入负向 fixture。</p></section></section>
+            </div>
+          </section>
+
+          <section class="app-view" data-view="wiki" aria-labelledby="wiki-title" hidden>
+            <header class="page-header"><div><p class="page-kicker">Current understanding</p><h2 id="wiki-title">Wiki</h2><p>阅读当前已确认理解，并追溯每条 claim 的证据、使用和健康状态。</p></div></header>
+            <div class="toolbar"><label class="ds-input search-field"><img class="ds-input__icon" src="assets/traework/icons/Search.svg" alt="" aria-hidden="true"><input type="search" placeholder="搜索主题或 claim" aria-label="搜索 Wiki" data-list-search="wiki"></label><div class="ds-tabs compact-tabs" role="tablist" aria-label="Wiki 状态"><button class="ds-tab is-active" type="button" role="tab" aria-selected="true">全部</button><button class="ds-tab" type="button" role="tab" aria-selected="false">需重审</button></div></div>
+            <div class="split-workspace resource-workspace">
+              <div class="master-list" data-search-list="wiki">
+                <button class="master-item is-selected" type="button" data-search-text="Skill 生命周期 promotion gate" data-detail-target="wiki-lifecycle" aria-pressed="true"><span class="master-icon"><img src="assets/traework/icons/document.svg" alt="" aria-hidden="true"></span><span><span class="master-meta">Engineering / Skills</span><strong>Skill lifecycle</strong><small>9 claims · 今天验证</small></span><span class="ds-tag ds-tag--success">健康</span></button>
+                <button class="master-item" type="button" data-search-text="Agent 上下文 最小披露 安全" data-detail-target="wiki-context" aria-pressed="false"><span class="master-icon"><img src="assets/traework/icons/document.svg" alt="" aria-hidden="true"></span><span><span class="master-meta">Security / Context</span><strong>Agent context disclosure</strong><small>6 claims · 1 个 open question</small></span><span class="ds-tag ds-tag--warning">需重审</span></button>
+                <button class="master-item" type="button" data-search-text="Dev Run 阶段 Artifact" data-detail-target="wiki-run" aria-pressed="false"><span class="master-icon"><img src="assets/traework/icons/document.svg" alt="" aria-hidden="true"></span><span><span class="master-meta">Product / Runtime</span><strong>Dev Run stage model</strong><small>11 claims · 昨天验证</small></span><span class="ds-tag ds-tag--success">健康</span></button>
+              </div>
+              <article class="detail-pane wiki-page" data-detail-panel="wiki-lifecycle">
+                <header class="detail-head"><div><span class="topic-path">Engineering / Skills</span><h3>Skill lifecycle</h3><p>Skill 从 draft 到 active 的版本、验证和晋级规则。</p></div><button class="ds-btn ds-btn--secondary" type="button" data-notice="AI 变更必须先生成 Proposal。">提出变更</button></header>
+                <section class="wiki-summary"><div><span>9</span><small>有效 claims</small></div><div><span>4</span><small>关联 Sources</small></div><div><span>7</span><small>近 30 天使用</small></div><div><span>0</span><small>冲突</small></div></section>
+                <section class="detail-section"><h4>当前我们相信什么</h4><ol class="numbered-claims"><li><div><strong>Skill 是一等产品对象，不是 Web 功能模块。</strong><p>它必须可检查、可版本化、可导出，并能被外部 Agent 消费。</p><small>来源 2 · 最近验证 今天 · 使用 6 次</small></div><span class="ds-tag ds-tag--success">已确认</span></li><li><div><strong>active 晋级不能只依赖 lint。</strong><p>必须同时通过结构、安全、behavioral evaluation、schema gate 和人工审核。</p><small>来源 3 · 最近验证 今天 · 使用 4 次</small></div><span class="ds-tag ds-tag--success">已确认</span></li><li><div><strong>任何 Skill 都不能直接写正式 Wiki。</strong><p>认知变更必须进入 proposal-first 审阅链路。</p><small>来源 2 · 最近验证 昨天 · 使用 9 次</small></div><span class="ds-tag ds-tag--success">已确认</span></li></ol></section>
+                <section class="detail-section"><h4>Open questions</h4><div class="open-question"><img src="assets/traework/icons/information_simple.svg" alt="" aria-hidden="true"><div><strong>Golden Task 延期应允许多长时间？</strong><p>当前规则要求人工理由，但还没有自动到期策略。</p></div></div></section>
+              </article>
+              <article class="detail-pane wiki-page" data-detail-panel="wiki-context" hidden><header class="detail-head"><div><span class="topic-path">Security / Context</span><h3>Agent context disclosure</h3><p>外部 Agent 获取研发上下文时的最小披露原则。</p></div></header><div class="ds-alert ds-alert--warning"><img src="assets/traework/icons/warning_simple.svg" alt="" aria-hidden="true"><div><strong>1 条 claim 需要重审</strong><p>执行事件摘要是否允许包含 workspace-relative 路径尚未形成正式结论。</p></div></div></article>
+              <article class="detail-pane wiki-page" data-detail-panel="wiki-run" hidden><header class="detail-head"><div><span class="topic-path">Product / Runtime</span><h3>Dev Run stage model</h3><p>Context、Solution、Review、Coding、Test、Deposit 六阶段模型。</p></div></header><section class="detail-section"><h4>核心定义</h4><p>每个阶段都有输入、输出、状态、证据和下一步动作；只有关键门禁需要用户裁决。</p></section></article>
+            </div>
+          </section>
+
+          <section class="app-view" data-view="skills" aria-labelledby="skills-title" hidden>
+            <header class="page-header"><div><p class="page-kicker">Reusable protocols</p><h2 id="skills-title">Skills</h2><p>检查可复用研发动作协议的版本、适用阶段、输入输出与验证证据。</p></div><button class="ds-btn ds-btn--secondary" type="button" data-notice="新建 Skill 将先生成 draft package。"><img src="assets/traework/icons/add.svg" alt="" aria-hidden="true">新建 Skill</button></header>
+            <div class="toolbar"><label class="ds-input search-field"><img class="ds-input__icon" src="assets/traework/icons/Search.svg" alt="" aria-hidden="true"><input type="search" placeholder="搜索 Skill" aria-label="搜索 Skill" data-list-search="skills"></label><div class="ds-tabs compact-tabs" role="tablist" aria-label="Skill 类型"><button class="ds-tab is-active" type="button" role="tab" aria-selected="true">全部 <span class="ds-tag num">13</span></button><button class="ds-tab" type="button" role="tab" aria-selected="false">Engineering</button><button class="ds-tab" type="button" role="tab" aria-selected="false">Knowledge</button></div></div>
+            <div class="skills-layout" data-search-list="skills">
+              <div class="skill-list">
+                <button class="skill-row is-selected" type="button" data-search-text="tech solution 技术方案 engineering" data-detail-target="skill-solution" aria-pressed="true"><span class="skill-icon"><img src="assets/traework/icons/ai_stars.svg" alt="" aria-hidden="true"></span><span><strong>tech-solution</strong><small>从需求和上下文生成可评审技术方案</small></span><span class="stage-label">Solution</span><span class="ds-tag ds-tag--success">active</span><span class="version">v0.4.1</span></button>
+                <button class="skill-row" type="button" data-search-text="tech review 技术评审 engineering" data-detail-target="skill-review" aria-pressed="false"><span class="skill-icon"><img src="assets/traework/icons/DocumentFeedback.svg" alt="" aria-hidden="true"></span><span><strong>tech-review</strong><small>检查方案边界、风险、依赖和测试范围</small></span><span class="stage-label">Review</span><span class="ds-tag ds-tag--success">active</span><span class="version">v0.3.2</span></button>
+                <button class="skill-row" type="button" data-search-text="deposit knowledge wiki" data-detail-target="skill-deposit" aria-pressed="false"><span class="skill-icon"><img src="assets/traework/icons/document.svg" alt="" aria-hidden="true"></span><span><strong>deposit</strong><small>把高价值判断转为可审阅 Wiki Proposal</small></span><span class="stage-label">Deposit</span><span class="ds-tag">draft</span><span class="version">v0.2.0</span></button>
+                <button class="skill-row" type="button" data-search-text="security review 安全治理" data-detail-target="skill-security" aria-pressed="false"><span class="skill-icon"><img src="assets/traework/icons/warning_simple.svg" alt="" aria-hidden="true"></span><span><strong>security-review</strong><small>检查 Agent 权限、秘密与数据暴露风险</small></span><span class="stage-label">Review</span><span class="ds-tag ds-tag--warning">实验性</span><span class="version">v0.1.0</span></button>
+              </div>
+              <aside class="skill-detail" data-detail-panel="skill-solution">
+                <header><div><span class="ds-tag ds-tag--success">active</span><h3>tech-solution</h3><p>Engineering · producer · v0.4.1</p></div><button class="ds-btn ds-btn--secondary" type="button" data-route="evaluation">查看 Evaluation</button></header>
+                <section><h4>适用阶段</h4><div class="stage-badges"><span>Context</span><strong>Solution</strong><span>Review</span></div></section>
+                <section><h4>输入与输出</h4><dl class="contract-list"><div><dt>输入</dt><dd>task brief、context pack、project constraints</dd></div><div><dt>输出</dt><dd>solution artifact、risk list、test scope</dd></div><div><dt>写入策略</dt><dd>Run Artifact allowed · Wiki proposal-only</dd></div></dl></section>
+                <section><h4>验证状态</h4><div class="validation-grid"><div><span>12 / 12</span><small>contract cases</small></div><div><span>8 / 8</span><small>golden tasks</small></div><div><span>0</span><small>safety findings</small></div></div></section>
+                <section><h4>最近使用</h4><button class="reference-row" type="button" data-route="run"><img src="assets/traework/icons/Run.svg" alt="" aria-hidden="true"><span><strong>RUN-0248 · 统一 Skill 晋级门禁</strong><small>Solution 通过 · 今天 14:02</small></span></button></section>
+              </aside>
+              <aside class="skill-detail" data-detail-panel="skill-review" hidden><header><div><span class="ds-tag ds-tag--success">active</span><h3>tech-review</h3><p>Engineering · reviewer · v0.3.2</p></div></header><section><h4>职责</h4><p>检查技术方案的边界、风险、依赖、可回滚性和测试范围，输出可审阅问题清单。</p></section></aside>
+              <aside class="skill-detail" data-detail-panel="skill-deposit" hidden><header><div><span class="ds-tag">draft</span><h3>deposit</h3><p>Knowledge · producer · v0.2.0</p></div></header><section><h4>晋级阻塞</h4><p>仍缺少冲突 claim 合并场景的 Golden Task。</p></section></aside>
+              <aside class="skill-detail" data-detail-panel="skill-security" hidden><header><div><span class="ds-tag ds-tag--warning">实验性</span><h3>security-review</h3><p>Discipline · reviewer · v0.1.0</p></div></header><section><h4>路线图状态</h4><p>当前只覆盖秘密检测与写权限声明，数据流威胁模型仍在规划中。</p></section></aside>
+            </div>
+          </section>
+
+          <section class="app-view" data-view="evaluation" aria-labelledby="evaluation-title" hidden>
+            <header class="page-header"><div><div class="title-tags"><span class="ds-tag ds-tag--warning">规划中</span><span class="ds-tag">示例数据</span></div><h2 id="evaluation-title">Evaluation</h2><p>定义 Golden Task、rubric、失败样例和 Skill 晋级门禁的理想工作区。</p></div><button class="ds-btn ds-btn--secondary" type="button" data-notice="Evaluation 创建流程尚在路线图中。" disabled>新建 Evaluation</button></header>
+            <div class="evaluation-notice ds-alert"><img src="assets/traework/icons/information_simple.svg" alt="" aria-hidden="true"><div><strong>这是路线图预览，不代表评测系统已经上线</strong><p>所有结果均为一致性示例，用于验证信息结构和与 Skill、Run 的关系。</p></div></div>
+            <div class="eval-layout">
+              <section class="eval-list" aria-labelledby="eval-list-title"><div class="section-head"><div><h3 id="eval-list-title">Evaluation suites</h3><p>按评测对象组织 Golden Task 和 rubric。</p></div></div>
+                <button class="eval-row is-selected" type="button" data-detail-target="eval-solution" aria-pressed="true"><span class="eval-icon"><img src="assets/traework/icons/code.svg" alt="" aria-hidden="true"></span><span><strong>tech-solution / promotion</strong><small>8 Golden Tasks · 4 rubric dimensions</small></span><span class="ds-tag ds-tag--warning">1 失败</span><span class="version">v0.4.1</span></button>
+                <button class="eval-row" type="button" data-detail-target="eval-router" aria-pressed="false"><span class="eval-icon"><img src="assets/traework/icons/ai_stars.svg" alt="" aria-hidden="true"></span><span><strong>skill-router / routing</strong><small>12 Golden Tasks · negative boundaries</small></span><span class="ds-tag ds-tag--success">通过</span><span class="version">v0.5.0</span></button>
+                <button class="eval-row" type="button" data-detail-target="eval-deposit" aria-pressed="false"><span class="eval-icon"><img src="assets/traework/icons/document.svg" alt="" aria-hidden="true"></span><span><strong>deposit / claim quality</strong><small>6 Golden Tasks · conflict handling</small></span><span class="ds-tag">未运行</span><span class="version">v0.2.0</span></button>
+              </section>
+              <article class="eval-detail" data-detail-panel="eval-solution">
+                <header><div><span class="ds-tag ds-tag--warning">未满足晋级门禁</span><h3>tech-solution / promotion</h3><p>示例运行 EVAL-0091 · 关联 Skill v0.4.1</p></div><button class="ds-btn ds-btn--secondary" type="button" data-route="skills">查看 Skill</button></header>
+                <section><h4>Rubric 结果</h4><div class="rubric-list"><div><span><strong>需求覆盖</strong><small>关键约束全部映射到方案</small></span><span class="rubric-score">4 / 4</span></div><div><span><strong>边界清晰</strong><small>模块职责与非目标明确</small></span><span class="rubric-score">4 / 4</span></div><div><span><strong>测试范围</strong><small>延期 Golden Task 的验证缺失</small></span><span class="rubric-score is-fail">2 / 4</span></div><div><span><strong>安全与写策略</strong><small>proposal-only 边界正确</small></span><span class="rubric-score">4 / 4</span></div></div></section>
+                <section><h4>失败样例</h4><div class="failure-case"><header><span class="ds-tag ds-tag--danger">失败</span><strong>延期 Golden Task 的 Skill 晋级方案</strong></header><p>方案允许填写延期理由，但没有定义理由到期后的自动阻断与重新评测路径。</p><dl><div><dt>期望</dt><dd>明确到期时间、责任人和重跑条件。</dd></div><div><dt>实际</dt><dd>仅记录自由文本理由。</dd></div></dl></div></section>
+                <section><h4>Promotion gate</h4><div class="gate-grid"><span class="is-pass"><img src="assets/traework/icons/success_simple.svg" alt="" aria-hidden="true">Structural lint</span><span class="is-pass"><img src="assets/traework/icons/success_simple.svg" alt="" aria-hidden="true">Safety lint</span><span class="is-fail"><img src="assets/traework/icons/warning_simple.svg" alt="" aria-hidden="true">Behavioral eval</span><span><img src="assets/traework/icons/information_simple.svg" alt="" aria-hidden="true">Human review</span></div></section>
+              </article>
+              <article class="eval-detail" data-detail-panel="eval-router" hidden><header><div><span class="ds-tag ds-tag--success">通过</span><h3>skill-router / routing</h3><p>示例运行 EVAL-0088</p></div></header><section><h4>结果</h4><p>12 个正向与负向路由任务全部满足预期，包括普通语法问题不得触发宽入口。</p></section></article>
+              <article class="eval-detail" data-detail-panel="eval-deposit" hidden><header><div><span class="ds-tag">未运行</span><h3>deposit / claim quality</h3><p>等待冲突处理 Golden Task 完成</p></div></header><section><h4>阻塞原因</h4><p>需要补充“保留旧判断 / 覆盖旧判断 / 合并表达”三类用户裁决样例。</p></section></article>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <div class="dialog-layer" id="new-run-dialog" role="dialog" aria-modal="true" aria-labelledby="new-run-title" hidden>
+      <div class="ds-backdrop" data-dialog-close="new-run-dialog"></div>
+      <section class="ds-dialog ds-dialog--form">
+        <header class="ds-dialog__head"><div><p class="dialog-kicker">New workflow</p><h2 class="ds-dialog__title" id="new-run-title">新建 Dev Run</h2></div><button class="ds-dialog__close" type="button" data-dialog-close="new-run-dialog" aria-label="关闭新建 Dev Run 对话框"><img src="assets/traework/icons/Close.svg" alt="" aria-hidden="true"></button></header>
+        <form id="new-run-form" novalidate>
+          <div class="ds-dialog__body dialog-form">
+            <div class="dialog-field"><label class="dialog-field__label" for="run-name">任务名称 <span aria-hidden="true">*</span></label><div class="ds-input"><input id="run-name" name="name" type="text" autocomplete="off" placeholder="例如：统一 Skill 晋级门禁" required aria-describedby="run-name-error"></div><p class="field-error" id="run-name-error" role="alert"></p></div>
+            <div class="dialog-grid"><div class="dialog-field"><label class="dialog-field__label" for="run-type">任务类型</label><div class="ds-select-wrap"><select class="ds-select" id="run-type" name="type"><option>PRD</option><option>Bug</option><option>改造</option><option>研究</option></select><img class="ds-select__icon" src="assets/traework/icons/Down.svg" alt="" aria-hidden="true"></div></div><div class="dialog-field"><label class="dialog-field__label" for="run-repo">目标仓库</label><div class="ds-select-wrap"><select class="ds-select" id="run-repo" name="repo"><option>inkdesk</option><option>当前工作区</option></select><img class="ds-select__icon" src="assets/traework/icons/Down.svg" alt="" aria-hidden="true"></div></div></div>
+            <div class="dialog-field"><label class="dialog-field__label" for="run-goal">目标与验收标准 <span aria-hidden="true">*</span></label><textarea class="ds-textarea" id="run-goal" name="goal" rows="5" placeholder="说明要解决的问题、约束和可观察的完成标准" required aria-describedby="run-goal-error"></textarea><p class="field-error" id="run-goal-error" role="alert"></p></div>
+            <label class="ds-check"><input type="checkbox" name="autoContext" checked><span class="ds-check__box"><img src="assets/traework/icons/success_simple.svg" alt="" aria-hidden="true"></span><span>创建后自动生成 Context Pack</span></label>
+          </div>
+          <footer class="ds-dialog__foot"><button class="ds-btn ds-btn--secondary" type="button" data-dialog-close="new-run-dialog">取消</button><button class="ds-btn ds-btn--primary" type="submit">创建并开始 Context</button></footer>
+        </form>
+      </section>
+    </div>
+
+    <div class="toast" id="live-region" aria-live="polite" aria-atomic="true" hidden></div>
+    <script src="app.js"></script>
+  </body>
+</html>
