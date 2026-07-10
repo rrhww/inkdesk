@@ -550,3 +550,105 @@ export type ContextPackSummary = {
   goal: string;
   repoContext?: string | null;
 };
+
+// ── Skill Workbench ──
+
+export type SkillStatus = "draft" | "active" | "deprecated";
+
+export type SkillCategory = "knowledge" | "engineering" | "routing" | "discipline";
+
+export type SkillKind = "producer" | "reviewer" | "router" | "diagnostic";
+
+export type SkillSummaryEntry = {
+  name: string;
+  contractId: string;
+  version: string;
+  status: SkillStatus;
+  category: SkillCategory;
+  kind: SkillKind;
+  summary: string;
+  valid: boolean;
+};
+
+export type SkillRegistrySummary = {
+  total: number;
+  valid: number;
+  invalid: number;
+  byStatus: {
+    draft: number;
+    active: number;
+    deprecated: number;
+  };
+  skills: SkillSummaryEntry[];
+};
+
+export type SkillValidationFinding = {
+  code: string;
+  path: string;
+  message: string;
+  severity: "error" | "warning";
+};
+
+export type SkillContract = {
+  schemaVersion: string;
+  id: string;
+  version: string;
+  status: SkillStatus;
+  category: SkillCategory;
+  kind: SkillKind;
+  summary: string;
+  inputs: Array<{
+    name: string;
+    type: string;
+    required: boolean;
+    constraints: string;
+  }>;
+  contextRequirements: Array<{
+    name: string;
+    description: string;
+  }>;
+  outputs: Array<{
+    type: string;
+    location: string;
+    needsReview: boolean;
+  }>;
+  hardGates: Array<{
+    id: string;
+    kind: string;
+    params: Record<string, string>;
+    on_failure: string;
+  }>;
+  capabilities: string[];
+  writePolicy: {
+    canonicalWiki: string;
+    runArtifacts: string;
+    codeRepository: string;
+  };
+  verification: Array<{
+    kind: string;
+    description: string;
+  }>;
+  nextSkills: Array<{
+    skillId: string;
+    entryCondition: string;
+  }>;
+  supportedRuntimes: string[];
+};
+
+export type SkillDetail = {
+  name: string;
+  contractId: string;
+  version: string;
+  status: SkillStatus;
+  category: SkillCategory;
+  kind: SkillKind;
+  summary: string;
+  valid: boolean;
+  skillMd: string;
+  contract: SkillContract;
+  references: Record<string, string>;
+  templates: Record<string, string>;
+  agents: Record<string, string>;
+  validationFindings: SkillValidationFinding[];
+  path: string;
+};

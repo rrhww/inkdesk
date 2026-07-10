@@ -6,6 +6,7 @@ export const PRIMARY_SECTIONS = [
   { href: "/app/raw", label: "资料", matchers: ["/app/raw"] },
   { href: "/app/ingest", label: "审阅", matchers: ["/app/ingest"] },
   { href: "/app/wiki", label: "知识库", matchers: ["/app/wiki"] },
+  { href: "/app/skills", label: "技能", matchers: ["/app/skills"] },
   { href: "/app/health", label: "健康", matchers: ["/app/health"] },
   { href: "/app/compile", label: "编译", matchers: ["/app/compile"] },
 ] as const;
@@ -61,6 +62,13 @@ export function getAppRouteChrome(pathname: string, _snapshot: ResearchDashboard
   if (pathname === "/app/wiki" || pathname.startsWith("/app/wiki/")) {
     return {
       title: "知识库",
+      subtitle: "",
+    };
+  }
+
+  if (pathname === "/app/skills" || pathname.startsWith("/app/skills/")) {
+    return {
+      title: "技能工作台",
       subtitle: "",
     };
   }

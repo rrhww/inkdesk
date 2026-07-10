@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import json
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, File, Query, Request, Response, UploadFile
@@ -58,6 +59,34 @@ def _resolve_workspace(db: Session) -> Workspace:
     if workspace is None:
         raise ResourceNotFoundError(f"Workspace not found: {DEFAULT_WORKSPACE_SLUG}")
     return workspace
+
+
+def _read_skill_file(path: Path) -> str:
+    try:
+        return path.read_text(encoding="utf-8")
+    except OSError:
+        return ""
+
+
+def _read_skill_json(path: Path) -> dict:
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+
+
+def _read_skill_dir(dir_path: Path) -> dict[str, str]:
+    """读取目录下所有文件，返回 {filename: content}。"""
+    result: dict[str, str] = {}
+    if not dir_path.is_dir():
+        return result
+    for path in sorted(dir_path.iterdir()):
+        if path.is_file():
+            try:
+                result[path.name] = path.read_text(encoding="utf-8")
+            except OSError:
+                continue
+    return result
 
 
 def create_app() -> FastAPI:
@@ -480,6 +509,60 @@ def create_app() -> FastAPI:
         workspace = _resolve_workspace(db)
         from inkdesk_server.stage_actions import StageActionService
         return StageActionService(db, settings).generate_testing_checklist(run_id, workspace.id)
+
+    # ── Skill Workbench ──
+
+    @app.get("/api/skills")
+    def skills_list(
+        settings: Annotated[Settings, Depends(get_settings)],
+    ):
+        from inkdesk_skill_sdk.registry import SkillRegistry
+        skills_root = Path(settings.vault_root) / "skills"
+        registry = SkillRegistry([skills_root])
+        return registry.get_summary()
+
+    @app.get("/api/skills/{skill_name}")
+    def skill_detail(
+        skill_name: str,
+        settings: Annotated[Settings, Depends(get_settings)],
+    ):
+        from inkdesk_skill_sdk.registry import SkillRegistry
+        skills_root = Path(settings.vault_root) / "skills"
+        registry = SkillRegistry([skills_root])
+        for pkg_path in registry.discover():
+            if pkg_path.name == skill_name:
+                meta = registry.resolve(pkg_path)
+                if meta is None:
+                    raise ResourceNotFoundError(f"Skill package not parseable: {skill_name}")
+                validation_findings = []
+                if meta.validation_result:
+                    validation_findings = [
+                        {
+                            "code": f.code,
+                            "path": f.path,
+                            "message": f.message,
+                            "severity": f.severity.value,
+                        }
+                        for f in meta.validation_result.findings
+                    ]
+                return {
+                    "name": meta.name,
+                    "contractId": meta.contract_id,
+                    "version": meta.version,
+                    "status": meta.status.value,
+                    "category": meta.category,
+                    "kind": meta.kind,
+                    "summary": meta.summary,
+                    "valid": meta.validation_result.passed if meta.validation_result else False,
+                    "skillMd": _read_skill_file(pkg_path / "SKILL.md"),
+                    "contract": _read_skill_json(pkg_path / "contract.json"),
+                    "references": _read_skill_dir(pkg_path / "references"),
+                    "templates": _read_skill_dir(pkg_path / "templates"),
+                    "agents": _read_skill_dir(pkg_path / "agents"),
+                    "validationFindings": validation_findings,
+                    "path": str(pkg_path),
+                }
+        raise ResourceNotFoundError(f"Skill not found: {skill_name}")
 
     @app.post("/api/deposits", response_model=DepositResponse)
     def deposit_create(

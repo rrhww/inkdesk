@@ -37,6 +37,8 @@ import type {
   ResearchTopicDetail,
   ResearchTopicSummary,
   ResearchWebImportRequest,
+  SkillDetail,
+  SkillRegistrySummary,
   VaultInitializeRequest,
   VaultStatus,
 } from "@/lib/types";
@@ -451,4 +453,17 @@ export function extractTestingChecklist(run: DevRun): TestingChecklist | null {
     checklist: (payload.checklist as string[]) ?? [],
     summary: (payload.summary as string) ?? "",
   };
+}
+
+// ── Skill Workbench ──
+
+export async function getSkills(): Promise<SkillRegistrySummary> {
+  return withResearchFallback(
+    () => fetchInkdeskJson<SkillRegistrySummary>("/skills"),
+    () => ({ total: 0, valid: 0, invalid: 0, byStatus: { draft: 0, active: 0, deprecated: 0 }, skills: [] })
+  );
+}
+
+export async function getSkillDetail(skillName: string): Promise<SkillDetail> {
+  return fetchInkdeskJson<SkillDetail>(`/skills/${skillName}`);
 }
