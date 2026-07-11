@@ -20,6 +20,10 @@ function normalizeApiBaseUrl(baseUrl: string) {
 }
 
 export function resolveApiBaseUrl() {
+  if (typeof window !== "undefined" && process.env.NEXT_PUBLIC_API_BASE_URL) {
+    return "/api";
+  }
+
   return normalizeApiBaseUrl(process.env.INKDESK_API_BASE_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "");
 }
 

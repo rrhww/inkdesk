@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Inkdesk F01 local baseline manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "runId",
+    "startedAt",
+    "completedAt",
+    "overallStatus",
+    "git",
+    "environment",
+    "configuration",
+    "contracts",
+    "tests",
+    "backup",
+    "sourceFingerprint",
+    "restore",
+    "knownIssueIds",
+    "interruptionReason"
+  ],
+  "properties": {
+    "schemaVersion": {"type": "string"},
+    "runId": {"type": "string", "minLength": 1},
+    "startedAt": {"type": "string", "format": "date-time"},
+    "completedAt": {"type": "string", "format": "date-time"},
+    "overallStatus": {"enum": ["PASS", "PASS_WITH_KNOWN_ISSUES", "FAIL"]},
+    "git": {
+      "type": "object",
+      "required": ["commit", "branch", "dirty"],
+      "properties": {
+        "commit": {"type": "string"},
+        "branch": {"type": "string"},
+        "dirty": {"type": "boolean"}
+      }
+    },
+    "environment": {
+      "type": "object",
+      "required": ["os", "python", "node", "npm", "docker", "compose", "postgres"]
+    },
+    "configuration": {
+      "type": "object",
+      "required": ["mode", "composeFile", "services", "database", "vaultSource"]
+    },
+    "contracts": {"type": "array"},
+    "tests": {"type": "array"},
+    "backup": {
+      "type": "object",
+      "required": ["database", "vault"]
+    },
+    "sourceFingerprint": {
+      "type": "object",
+      "required": ["path", "sha256"]
+    },
+    "restore": {
+      "type": "object",
+      "required": ["targetDatabase", "targetVault", "status", "cleanupStatus", "reportPath"]
+    },
+    "knownIssueIds": {
+      "type": "array",
+      "items": {"type": "string"},
+      "uniqueItems": true
+    },
+    "knownIssues": {
+      "type": "array",
+      "items": {"type": "object"}
+    },
+    "interruptionReason": {
+      "type": ["string", "null"]
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"overallStatus": {"const": "FAIL"}}},
+      "then": {"properties": {"interruptionReason": {"type": "string", "minLength": 1}}},
+      "else": {
+        "properties": {
+          "contracts": {"minItems": 1},
+          "tests": {"minItems": 1}
+        }
+      }
+    }
+  ]
+}

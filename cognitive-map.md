@@ -56,11 +56,19 @@
 - P1 资源文件已补齐：8 个 Skill 共 18 个空 references/templates 已填充实际内容（entity-extraction-rules、search-strategy、health-check-items、scoring-formula、routing-tree、domain-skills-summary、architecture-patterns、solution-template、review-checklist、coding-standards、architecture-constraints、test-plan-template、error-patterns、diagnostic-tree×2、confidence-rules、proposal-template、known-issues）
 - P2 待决策：gate severity 区分、human_confirmation 注册、router 最小上下文契约
 
+### F01 当前行为契约与恢复基线
+
+- F01 不改产品行为；它在结构性迁移前固定当前 HTTP、关键状态机、浏览器流、PostgreSQL catalog 与合成代表性记录形状。
+- `scripts/f01/capture-baseline.ps1 -Mode all` 是唯一可认证的入口。它先比较契约并执行测试，再停 `local-server` / `local-web` 形成 PostgreSQL + Vault 安静窗口，最后在 `inkdesk_f01_restore_*` 数据库和 `.local` 内隔离 Vault 执行恢复验证。
+- manifest 将测试结果、契约/备份 SHA-256、数据库与 Vault 的组合源指纹、恢复报告和实际匹配的已知问题写到 `.local/f01-baseline/<runId>/`。部分模式只能诊断，不能报告通过。
+- `verify_restored_read_paths.py` 使用隔离设置，关闭 seed、编译 worker 和 web assist，只验证恢复后读路径，不会向恢复库写入产品数据。
+
 ## 模糊区
 
 - behavioral contract cases 的实际执行 — 格式已定，contents 待 Skill 实战后产生
 - gate severity（block vs warn）区分 — HardGateChecker 当前用"返回 warn 字符串"表示不阻塞，用"返回失败原因"表示阻塞；schema_gate_passed 和 human_confirmation 是 warn，其余是 block；未改 SDK 建模
 - human_confirmation gate 已在 HardGateChecker 注册但当前返回 warn（前端未配合确认 UI），TODO: 前端实现后改为强制
+- F01 默认 Docker 恢复证据已在本机 run `20260711T113950Z` 认证为 `PASS`：10 个必需 suite、PostgreSQL + Vault 隔离恢复、恢复后 7 个只读路径和临时目标清理均通过。后续契约或运行时行为变更必须重新运行 `-Mode all`。
 
 ## 黑盒区（完全不懂）
 

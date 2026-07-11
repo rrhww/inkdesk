@@ -62,6 +62,7 @@ describe("DevRunConsole", () => {
     fireEvent.click(screen.getByRole("button", { name: /^创建$/ }));
 
     await waitFor(() => expect(createDevRun).toHaveBeenCalledOnce());
+    expect(await screen.findByRole("heading", { name: createdRun.title })).toBeInTheDocument();
     initialRuns.resolve([]);
 
     expect(await screen.findByRole("heading", { name: createdRun.title })).toBeInTheDocument();

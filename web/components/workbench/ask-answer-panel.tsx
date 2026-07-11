@@ -1,5 +1,3 @@
-"use client";
-
 import type { ResearchAskMode, ResearchAskResponse } from "@/lib/types";
 import { AskAnswerCard } from "@/components/workbench/ask-answer-card";
 import { PanelCard } from "@/components/ui/panel-card";

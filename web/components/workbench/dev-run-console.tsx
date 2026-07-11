@@ -239,7 +239,7 @@ export function DevRunConsole() {
         </form>
       )}
 
-      {loading ? (
+      {loading && runs.length === 0 ? (
         <div className="text-sm text-ink-muted py-12 text-center">加载中…</div>
       ) : runs.length === 0 ? (
         <div className="paper-card p-12 text-center">

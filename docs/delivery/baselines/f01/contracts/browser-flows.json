@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "1.0",
+  "flows": [
+    {
+      "id": "app.public_operations_home",
+      "preconditions": ["Full-stack environment is healthy"],
+      "steps": ["Open /app without authentication"],
+      "assertions": ["Dev Run Console is readable", "No login redirect occurs"],
+      "cleanup": "none"
+    },
+    {
+      "id": "runs.create_stale_list_protection",
+      "preconditions": ["Delay the initial Dev Run list response"],
+      "steps": ["Create a Dev Run", "Release the stale list response"],
+      "assertions": ["The created Dev Run remains visible"],
+      "cleanup": "created Dev Run remains as normal test evidence"
+    },
+    {
+      "id": "runs.stage_state_machine",
+      "preconditions": ["Create a Dev Run through the API"],
+      "steps": ["Open the Run detail", "Exercise valid and invalid transitions"],
+      "assertions": ["Six-stage track is visible", "Invalid transition reports HTTP 409"],
+      "cleanup": "none"
+    },
+    {
+      "id": "knowledge.source_review_topic_ask_deposit",
+      "preconditions": ["Create synthetic data through public API"],
+      "steps": ["Source", "Review", "Topic", "Ask", "Deposit proposal"],
+      "assertions": ["Corresponding pages present data or an explicit empty state"],
+      "cleanup": "synthetic records remain isolated to the local test environment"
+    },
+    {
+      "id": "app.section_accessibility",
+      "preconditions": ["Full-stack environment is healthy"],
+      "steps": ["Open Raw, Ingest, Wiki, Ask, Compile, Health, and Skills"],
+      "assertions": ["Each route remains accessible without a login redirect"],
+      "cleanup": "none"
+    },
+    {
+      "id": "app.not_found_without_legacy_login",
+      "preconditions": ["Full-stack environment is healthy"],
+      "steps": ["Open an unknown wiki resource"],
+      "assertions": ["Not-found state is shown", "No legacy login redirect occurs"],
+      "cleanup": "none"
+    }
+  ]
+}
