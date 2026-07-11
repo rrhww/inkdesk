@@ -1,16 +1,9 @@
-FROM postgres:17
+FROM node:24-bookworm-slim
 
 WORKDIR /app
 
 ARG NEXT_PUBLIC_API_BASE_URL=http://localhost:8080
 ENV NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL}
-
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates curl xz-utils \
-    && rm -rf /var/lib/apt/lists/*
-
-RUN curl -fsSL https://nodejs.org/dist/v24.15.0/node-v24.15.0-linux-x64.tar.xz \
-    | tar -xJf - -C /usr/local --strip-components=1
 
 COPY package.json package-lock.json ./
 RUN npm config set registry https://registry.npmmirror.com/ \
@@ -30,6 +23,6 @@ RUN npm run build
 
 EXPOSE 3000
 
-HEALTHCHECK --interval=15s --timeout=5s --retries=10 CMD curl -fsS http://localhost:3000/app > /dev/null || exit 1
+HEALTHCHECK --interval=15s --timeout=5s --retries=10 CMD node -e "fetch('http://localhost:3000/app').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"
 
 CMD ["npm", "run", "start", "--", "--hostname", "0.0.0.0", "--port", "3000"]

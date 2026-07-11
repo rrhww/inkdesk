@@ -8,6 +8,15 @@ test.describe("local full-stack loop (no auth)", () => {
     "请通过 `npm run e2e:fullstack` 运行，并先启动 Docker 基础设施、Python 主后端与 Next.js 所需配置。"
   );
 
+  test.beforeEach(async ({ request }) => {
+    const status = await request.get("/api/vault/status");
+    expect(status.ok()).toBeTruthy();
+    if (!(await status.json()).vaultType) {
+      const initialized = await request.post("/api/vault/initialize", { data: { vaultType: "general" } });
+      expect(initialized.ok()).toBeTruthy();
+    }
+  });
+
   test("home page is Dev Run Console (no login required)", async ({ page }) => {
     test.setTimeout(30_000);
 
@@ -21,11 +30,11 @@ test.describe("local full-stack loop (no auth)", () => {
 
     await page.goto("/app/compile");
     await expect(page).toHaveURL("/app/compile");
-    await expect(page.getByRole("heading", { name: "编译流水线" })).toBeVisible();
+    await expect(page.locator("main").getByRole("heading", { name: "编译流水线" })).toBeVisible();
 
     await page.goto("/app/health");
     await expect(page).toHaveURL("/app/health");
-    await expect(page.getByRole("heading", { name: "知识库健康" })).toBeVisible();
+    await expect(page.locator("main").getByRole("heading", { name: "知识库健康" })).toBeVisible();
   });
 
   test("resource not found shows 404 without redirect", async ({ page }) => {
@@ -81,8 +90,8 @@ test.describe("local full-stack loop (no auth)", () => {
 
     // 4. 前端打开任务详情页并检查阶段轨道
     await page.goto(`/app/runs/${runId}`);
-    await expect(page.getByText("E2E 全链路测试")).toBeVisible();
-    await expect(page.getByText("阶段轨道")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "E2E 全链路测试" })).toBeVisible();
+    await expect(page.getByText("阶段轨道", { exact: true })).toBeVisible();
 
     // 5. 通过 API 推进所有阶段 → 完成
     const stages = ["context", "solution", "review", "coding", "testing", "deposit"];
@@ -130,7 +139,9 @@ test.describe("local full-stack loop (no auth)", () => {
     expect(missing.status()).toBe(404);
 
     // 非空 runId 不能访问跨资源
-    const cross = await request.get(`/api/runs/nonexistent-run-id/events`);
+    const cross = await request.post(`/api/runs/nonexistent-run-id/events`, {
+      data: { stage: "context", eventType: "stage_output", payload: {} },
+    });
     expect(cross.status()).toBe(404);
   });
 });

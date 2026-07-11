@@ -36,6 +36,7 @@ web-dev-*.err
 .playwright-mcp/
 .workbuddy/
 .worktrees/
+.local/
 publish-flow-cookies.txt
 .playwright-mcp/
 

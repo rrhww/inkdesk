@@ -14,7 +14,8 @@ describe("fullstack e2e runner", () => {
     expect(command.args).toEqual([
       path.join("E:/dev/projects/inkdesk/web", "node_modules", "playwright", "cli.js"),
       "test",
-      "tests/e2e/local-fullstack.spec.ts"
+      "tests/e2e/local-fullstack.spec.ts",
+      "tests/e2e/f01-critical-flows.spec.ts"
     ]);
   });
 });

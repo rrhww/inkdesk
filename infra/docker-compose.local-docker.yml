@@ -1,8 +1,6 @@
 services:
   local-postgres:
-    build:
-      context: .
-      dockerfile: docker/postgres-pgvector.Dockerfile
+    image: pgvector/pgvector:pg16
     container_name: inkdesk-local-postgres
     restart: unless-stopped
     environment:

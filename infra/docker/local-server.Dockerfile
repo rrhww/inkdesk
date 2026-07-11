@@ -1,18 +1,12 @@
-FROM postgres:17
-
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends python3 python3-venv \
-    && rm -rf /var/lib/apt/lists/*
+FROM python:3.12-slim
 
 WORKDIR /app
 
-RUN python3 -m venv /opt/venv
-ENV PATH="/opt/venv/bin:${PATH}"
-
 COPY pyproject.toml ./
+COPY inkdesk_skill_sdk ./inkdesk_skill_sdk
 COPY inkdesk_server ./inkdesk_server
 
-RUN pip install --no-cache-dir --upgrade pip setuptools wheel \
+RUN pip install --no-cache-dir ./inkdesk_skill_sdk \
     && pip install --no-cache-dir .
 
 EXPOSE 8080

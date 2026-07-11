@@ -11,7 +11,8 @@ export function buildPlaywrightCommand({
     args: [
       path.join(cwd, "node_modules", "playwright", "cli.js"),
       "test",
-      "tests/e2e/local-fullstack.spec.ts"
+      "tests/e2e/local-fullstack.spec.ts",
+      "tests/e2e/f01-critical-flows.spec.ts"
     ]
   };
 }

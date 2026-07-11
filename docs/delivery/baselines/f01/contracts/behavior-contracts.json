@@ -1,0 +1,35 @@
+{
+  "schemaVersion": "1.0",
+  "invariants": [
+    {
+      "id": "knowledge.review_first_write",
+      "description": "Ask writeback and Deposit create a pending Review proposal; they do not directly mutate Canonical Wiki.",
+      "scope": "POST /api/deposits, POST /api/ask/{askTurnId}/writeback"
+    },
+    {
+      "id": "runs.illegal_transition",
+      "description": "An invalid Dev Run state transition returns HTTP 409 with a machine-readable code and a non-empty reason.",
+      "scope": "POST /api/runs/{runId}/advance"
+    },
+    {
+      "id": "runs.deposit_idempotency",
+      "description": "Repeating the same Deposit payload reuses the existing Review proposal and does not create another side effect.",
+      "scope": "POST /api/deposits"
+    },
+    {
+      "id": "vault.relative_path_only",
+      "description": "Vault file paths must be relative to the active Vault root; absolute and escaping paths are rejected.",
+      "scope": "VaultService"
+    },
+    {
+      "id": "agent.deterministic_fallback",
+      "description": "Without an external model configuration, the deterministic Agent Runtime returns repeatable bounded output.",
+      "scope": "AgentRuntime.answer"
+    },
+    {
+      "id": "mcp.public_tool_contract",
+      "description": "The context_pack, search, deposit, and health_check MCP tools retain their names and structured validation or domain-error boundaries.",
+      "scope": "MCP tools/list and tools/call"
+    }
+  ]
+}
