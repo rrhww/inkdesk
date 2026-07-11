@@ -1,7 +1,7 @@
 # Inkdesk 团队 AI 研发能力平台总开发路线图
 
 > 日期：2026-07-11
-> 状态：待书面审阅
+> 状态：已确认；F01 已展开，待实施
 > 上位设计：[`2026-07-11-inkdesk-team-rd-capability-platform-design.md`](../specs/2026-07-11-inkdesk-team-rd-capability-platform-design.md)
 > 计划性质：Plan of Plans；定义全局顺序、能力边界和阶段门禁，不在一个计划中实施整个系统
 > 执行模式：Codex 负责计划、编码、调试、测试、浏览器验收、文档与交付；用户负责目标确认、关键产品决策和结果验收
@@ -252,7 +252,7 @@ flowchart TD
 
 | ID | 单一能力 | 依赖 | 主要边界 | 可观察验收 |
 | --- | --- | --- | --- | --- |
-| F01 | 当前行为契约与恢复基线 | 无 | `server/tests/**`、`web/tests/**`、`docs/delivery/**` | 用户保存后端、前端、OpenAPI、Vault 备份与数据库恢复证据；已知失败单独登记 |
+| [F01](./2026-07-11-f01-current-contract-recovery-baseline-implementation.md) | 当前行为契约与恢复基线 | 无 | `server/tests/**`、`web/tests/**`、`docs/delivery/**` | Codex 生成并保存后端、前端、OpenAPI、Vault 备份与数据库恢复证据；已知失败单独登记 |
 | F02 | Python 数据库迁移权威 | F01 | `server/pyproject.toml`、`server/alembic*`、`db.py` | 空库与现有库升级到同一 schema；后续不再向运行时升级数组新增 DDL |
 | F03 | 模块化应用组合壳 | F01 | `main.py`、新 `api/app.py` 与 `api/routers/` | 先迁移 health / vault 路由；OpenAPI、状态码和响应体保持兼容 |
 | F04 | 默认 Organization 与 Capability Space | F02、F03 | 新 `modules/spaces/`、身份与空间表、兼容 Workspace Adapter | 现有 Workspace 数据幂等回填到默认组织、个人空间和项目空间；暂不增加登录或团队 UI |
@@ -260,7 +260,7 @@ flowchart TD
 
 ### P0-A 门禁
 
-- 用户在本机执行现有后端和前端基线，结果有日期、版本和失败说明。
+- Codex 在本机执行现有后端和前端基线，结果有日期、版本和失败说明。
 - 数据库与 Vault 至少完成一次备份和恢复演练。
 - 新模块模式经过一个无行为变化的路由迁移验证。
 - 所有现有数据仍能通过原 API 和 UI 读取。
@@ -451,9 +451,9 @@ npm run e2e:fullstack
 
 数据库迁移、Worker 恢复、Sandbox、Replay 和安全计划必须增加该能力自己的故障注入或恢复命令，不能用普通单元测试替代。
 
-## 23. 第一个待激活计划
+## 23. 当前激活计划
 
-路线图书面确认后，只展开 `F01 当前行为契约与恢复基线`。F01 的详细计划必须先回答：
+路线图已经确认，当前只激活 [`F01 当前行为契约与恢复基线`](./2026-07-11-f01-current-contract-recovery-baseline-implementation.md)。F01 的详细计划已经回答：
 
 - 当前哪些 API 和浏览器流程属于必须保留的行为。
 - 当前哪些测试能够稳定通过，哪些失败属于已知基线。
