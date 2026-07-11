@@ -1,7 +1,7 @@
 # Inkdesk 团队 AI 研发能力平台总开发路线图
 
 > 日期：2026-07-11
-> 状态：已确认；F01 已展开，待实施
+> 状态：已确认；F01 工具与测试已合并，基线捕获和恢复演练待完成
 > 上位设计：[`2026-07-11-inkdesk-team-rd-capability-platform-design.md`](../specs/2026-07-11-inkdesk-team-rd-capability-platform-design.md)
 > 计划性质：Plan of Plans；定义全局顺序、能力边界和阶段门禁，不在一个计划中实施整个系统
 > 协作约束：Codex 维护计划、解释设计并审阅；用户负责编码、失败测试、调试、测试执行和浏览器验收
@@ -252,7 +252,7 @@ flowchart TD
 
 | ID | 单一能力 | 依赖 | 主要边界 | 可观察验收 |
 | --- | --- | --- | --- | --- |
-| [F01](./2026-07-11-f01-current-contract-recovery-baseline-implementation.md) | 当前行为契约与恢复基线 | 无 | `server/tests/**`、`web/tests/**`、`docs/delivery/**` | Codex 生成并保存后端、前端、OpenAPI、Vault 备份与数据库恢复证据；已知失败单独登记 |
+| [F01](./2026-07-11-f01-current-contract-recovery-baseline-implementation.md) | 当前行为契约与恢复基线 | 无 | `server/tests/**`、`web/tests/**`、`docs/delivery/**` | 用户执行并保存后端、前端、OpenAPI、Vault 备份与数据库恢复证据；Codex 审阅，已知失败单独登记 |
 | F02 | Python 数据库迁移权威 | F01 | `server/pyproject.toml`、`server/alembic*`、`db.py` | 空库与现有库升级到同一 schema；后续不再向运行时升级数组新增 DDL |
 | F03 | 模块化应用组合壳 | F01 | `main.py`、新 `api/app.py` 与 `api/routers/` | 先迁移 health / vault 路由；OpenAPI、状态码和响应体保持兼容 |
 | F04 | 默认 Organization 与 Capability Space | F02、F03 | 新 `modules/spaces/`、身份与空间表、兼容 Workspace Adapter | 现有 Workspace 数据幂等回填到默认组织、个人空间和项目空间；暂不增加登录或团队 UI |
@@ -260,7 +260,7 @@ flowchart TD
 
 ### P0-A 门禁
 
-- Codex 在本机执行现有后端和前端基线，结果有日期、版本和失败说明。
+- 用户在本机执行现有后端和前端基线，结果有日期、版本和失败说明；Codex 审阅命令、输出和失败分类。
 - 数据库与 Vault 至少完成一次备份和恢复演练。
 - 新模块模式经过一个无行为变化的路由迁移验证。
 - 所有现有数据仍能通过原 API 和 UI 读取。
@@ -420,7 +420,7 @@ flowchart TD
 4. 用户实现最小生产变更，分享 diff 和验证输出。
 5. Codex 审阅正确性、领域设计、安全、测试质量和学习要点。
 6. 用户修订并重新运行验证。
-7. `web/**` 变更由用户和 Codex共同在真实浏览器检查后签收。
+7. `web/**` 变更由用户和 Codex 共同在真实浏览器检查后签收。
 8. 更新认知地图和计划状态，再激活下一个计划。
 
 同一时间只允许一个小计划处于 `in_progress`。计划之间不得用未提交文件、手工数据库状态或聊天上下文作为隐式依赖。
@@ -453,7 +453,7 @@ npm run e2e:fullstack
 
 ## 23. 当前激活计划
 
-路线图已经确认，当前只激活 [`F01 当前行为契约与恢复基线`](./2026-07-11-f01-current-contract-recovery-baseline-implementation.md)。F01 的详细计划已经回答：
+路线图已经确认，当前只激活 [`F01 当前行为契约与恢复基线`](./2026-07-11-f01-current-contract-recovery-baseline-implementation.md)。F01 工具与测试已通过 PR #4 合并，详细计划已经回答：
 
 - 当前哪些 API 和浏览器流程属于必须保留的行为。
 - 用户当前能稳定运行哪些测试，哪些失败是已知基线。
@@ -462,6 +462,8 @@ npm run e2e:fullstack
 - 哪些旧实现明确只是兼容层，不应被测试永久固化。
 
 F01 不修改产品行为，不创建新领域表，也不开始 UI 重构。
+
+F01 尚未完成：只有用户执行一次完整 `capture-baseline.ps1 -Mode all`，保存真实测试、备份、隔离恢复和校验证据，并经 Codex 审阅通过后，才能解锁 F02/F03。
 
 ## 24. 最终完成语义
 

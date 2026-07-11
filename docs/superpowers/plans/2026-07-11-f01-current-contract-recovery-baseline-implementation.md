@@ -1,11 +1,12 @@
 # F01 当前行为契约与恢复基线实施计划
 
 > 日期：2026-07-11
-> 状态：已确认，待实施
+> 状态：实施中；工具与测试已通过 PR #4 合并，真实基线捕获和恢复演练待完成
 > 路线图：[`2026-07-11-inkdesk-capability-platform-master-roadmap.md`](./2026-07-11-inkdesk-capability-platform-master-roadmap.md)
 > 上位设计：[`2026-07-11-inkdesk-team-rd-capability-platform-design.md`](../specs/2026-07-11-inkdesk-team-rd-capability-platform-design.md)
 > 前置依赖：无
 > 后续解锁：F02 Python 数据库迁移权威、F03 模块化应用组合壳
+> 协作归属：用户负责编码、失败测试、调试、测试执行和恢复演练；Codex 负责解释、拆解、计划维护、diff 与证据审阅
 
 ## 1. 单一交付目标
 
@@ -17,6 +18,16 @@ F01 不是“让当前所有实现永远不变”，也不是普通的全量测�
 2. **真实恢复基线**：回答当前 PostgreSQL 数据与 Vault 文件是否真的能够备份、恢复、校验和再次读取。
 
 SQLite 测试只能证明大部分应用行为，不得作为 PostgreSQL schema、pgvector 或恢复能力的替代证据。
+
+### 1.1 当前执行起点
+
+F01 的脚本、契约快照和自动化测试已经通过 [PR #4](https://github.com/rrhww/inkdesk/pull/4) 合并到 `main`，因此后续不重新实现增量 A-C。当前工作只剩：
+
+1. 用户对照本计划理解已合并实现，发现偏差时先写失败测试再修正。
+2. 用户执行后端、前端、PostgreSQL integration 和真实浏览器基线，把原始输出交给 Codex 审阅。
+3. 用户执行一次完整 `capture-baseline.ps1 -Mode all`，完成成对备份、隔离恢复和一致性校验。
+4. Codex 按第 7 节门禁审阅 manifest、known issues、hash、恢复报告和工作树状态。
+5. 全部门禁通过后，双方签收 F01 并更新路线图；否则保持 F01 激活，不启动 F02/F03。
 
 ## 2. 已敲定的实现决策
 
