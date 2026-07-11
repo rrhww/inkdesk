@@ -1,7 +1,7 @@
 # F01 当前行为契约与恢复基线实施计划
 
 > 日期：2026-07-11
-> 状态：实施中；工具与测试已通过 PR #4 合并，真实基线捕获和恢复演练待完成
+> 状态：已完成；默认 Docker Compose 基线 run `20260711T113950Z` 验收通过
 > 路线图：[`2026-07-11-inkdesk-capability-platform-master-roadmap.md`](./2026-07-11-inkdesk-capability-platform-master-roadmap.md)
 > 上位设计：[`2026-07-11-inkdesk-team-rd-capability-platform-design.md`](../specs/2026-07-11-inkdesk-team-rd-capability-platform-design.md)
 > 前置依赖：无
@@ -19,15 +19,17 @@ F01 不是“让当前所有实现永远不变”，也不是普通的全量测�
 
 SQLite 测试只能证明大部分应用行为，不得作为 PostgreSQL schema、pgvector 或恢复能力的替代证据。
 
-### 1.1 当前执行起点
+### 1.1 验收结果
 
-F01 的脚本、契约快照和自动化测试已经通过 [PR #4](https://github.com/rrhww/inkdesk/pull/4) 合并到 `main`，因此后续不重新实现增量 A-C。当前工作只剩：
+F01 的脚本、契约快照和自动化测试已通过 [PR #4](https://github.com/rrhww/inkdesk/pull/4) 合并到 `main`。默认 Docker Compose run `20260711T113950Z` 已完成验收：
 
-1. 用户对照本计划理解已合并实现，发现偏差时先写失败测试再修正。
-2. 用户执行后端、前端、PostgreSQL integration 和真实浏览器基线，把原始输出交给 Codex 审阅。
-3. 用户执行一次完整 `capture-baseline.ps1 -Mode all`，完成成对备份、隔离恢复和一致性校验。
-4. Codex 按第 7 节门禁审阅 manifest、known issues、hash、恢复报告和工作树状态。
-5. 全部门禁通过后，双方签收 F01 并更新路线图；否则保持 F01 激活，不启动 F02/F03。
+1. 完整 `-Mode all` manifest 为 `PASS`，10 个必需 suite 全部通过，known issue 为 0。
+2. PostgreSQL dump、Vault ZIP 和 source fingerprint 的实际 SHA-256 与 manifest 相等。
+3. 源库/恢复库、源 Vault/恢复 Vault、演练前/后的源指纹逐项相等。
+4. 恢复后的 `/actuator/health`、Vault、Raw、Ingest、Wiki、Runs 和 Compile Queue 读路径全部返回 200。
+5. 隔离恢复数据库与 Vault 已清理，真实证据保留在 `.local/f01-baseline/20260711T113950Z/`。
+
+F01 已解锁 F02/F03。后续 schema 或关键行为发生变化时，必须重新运行完整基线，不能把本次证据永久复用。
 
 ## 2. 已敲定的实现决策
 
