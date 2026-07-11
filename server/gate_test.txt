@@ -1,0 +1,14 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.10, pytest-8.4.2, pluggy-1.6.0 -- C:\Users\whq\AppData\Local\Programs\Python\Python312\python.exe
+cachedir: .pytest_cache
+hypothesis profile 'ci' -> database=None, deadline=None, print_blob=True, derandomize=True, suppress_health_check=(HealthCheck.too_slow,)
+rootdir: E:\dev\projects\inkdesk\server
+configfile: pyproject.toml
+plugins: anyio-4.13.0, hypothesis-6.155.2, langsmith-0.8.0, asyncio-0.26.0
+asyncio: mode=Mode.STRICT, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 2 items
+
+tests/test_run_api.py::test_hard_gate_blocks_solution_when_requirement_empty PASSED [ 50%]
+tests/test_run_api.py::test_hard_gate_passes_when_requirement_present PASSED [100%]
+
+============================== 2 passed in 6.74s ==============================

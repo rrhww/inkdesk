@@ -1,0 +1,157 @@
+{
+  "data": [
+    {
+      "id": "page-dashboard",
+      "title": "Dev Run Console",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1752196800000,
+      "canvasData": {
+        "x": 0,
+        "y": 0,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/dashboard.html",
+        "interactions": [
+          {
+            "domId": "nav-wiki",
+            "targetPageId": "page-wiki-detail",
+            "hideEdge": true,
+            "transitionLabel": "查看 Wiki"
+          },
+          {
+            "domId": "nav-raw",
+            "targetPageId": "page-raw-import",
+            "hideEdge": true,
+            "transitionLabel": "导入原始资料"
+          },
+          {
+            "domId": "nav-ask",
+            "targetPageId": "page-ask-workspace",
+            "hideEdge": true,
+            "transitionLabel": "提问"
+          }
+        ]
+      }
+    },
+    {
+      "id": "page-wiki-detail",
+      "title": "Wiki 详情",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1752196801000,
+      "canvasData": {
+        "x": 620,
+        "y": 0,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/wiki-detail.html",
+        "interactions": [
+          {
+            "domId": "nav-dashboard",
+            "targetPageId": "page-dashboard",
+            "hideEdge": true,
+            "transitionLabel": "返回控制台"
+          },
+          {
+            "domId": "nav-raw",
+            "targetPageId": "page-raw-import",
+            "hideEdge": true,
+            "transitionLabel": "导入原始资料"
+          },
+          {
+            "domId": "nav-ask",
+            "targetPageId": "page-ask-workspace",
+            "hideEdge": true,
+            "transitionLabel": "提问"
+          }
+        ]
+      }
+    },
+    {
+      "id": "page-raw-import",
+      "title": "Raw 导入",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1752196802000,
+      "canvasData": {
+        "x": 1240,
+        "y": 0,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/raw-import.html",
+        "interactions": [
+          {
+            "domId": "nav-dashboard",
+            "targetPageId": "page-dashboard",
+            "hideEdge": true,
+            "transitionLabel": "返回控制台"
+          },
+          {
+            "domId": "nav-wiki",
+            "targetPageId": "page-wiki-detail",
+            "hideEdge": true,
+            "transitionLabel": "查看 Wiki"
+          },
+          {
+            "domId": "nav-ask",
+            "targetPageId": "page-ask-workspace",
+            "hideEdge": true,
+            "transitionLabel": "提问"
+          }
+        ]
+      }
+    },
+    {
+      "id": "page-ask-workspace",
+      "title": "提问工作台",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1752196803000,
+      "canvasData": {
+        "x": 1860,
+        "y": 0,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/ask-workspace.html",
+        "interactions": [
+          {
+            "domId": "nav-dashboard",
+            "targetPageId": "page-dashboard",
+            "hideEdge": true,
+            "transitionLabel": "返回控制台"
+          },
+          {
+            "domId": "nav-wiki",
+            "targetPageId": "page-wiki-detail",
+            "hideEdge": true,
+            "transitionLabel": "查看 Wiki"
+          },
+          {
+            "domId": "nav-raw",
+            "targetPageId": "page-raw-import",
+            "hideEdge": true,
+            "transitionLabel": "导入原始资料"
+          }
+        ]
+      }
+    }
+  ],
+  "config": {
+    "autoLayout": true,
+    "deviceType": "desktop",
+    "projectName": "Inkdesk 重构设计图",
+    "designLibrary": {
+      "name": "TRAE Work",
+      "id": "dl_builtin_trae_work",
+      "version": null,
+      "scope": "built-in-global",
+      "path": "c:\\Users\\whq\\.trae-cn\\design_libraries\\dl_builtin_trae_work",
+      "versionSource": null
+    }
+  }
+}

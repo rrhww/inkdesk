@@ -1,0 +1,1863 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inkdesk UI 重构预览 / TRAE Work Design System</title>
+<style>
+/* ============================================================
+   TRAE Work Design Tokens — Inkdesk Customisation
+   ============================================================ */
+:root {
+  /* TRAE Work Light tokens */
+  --bg-base-default: #FFFFFF;
+  --bg-base-secondary: #F5F5F5;
+  --bg-base-tertiary: #E5E5E5;
+  --bg-overlay-l1: rgba(115, 115, 115, 0.08);
+  --bg-overlay-l2: rgba(115, 115, 115, 0.12);
+  --bg-overlay-l3: rgba(115, 115, 115, 0.16);
+  --bg-overlay-l4: rgba(115, 115, 115, 0.20);
+  --bg-menu: #FFFFFF;
+  --bg-tooltip: #FFFFFF;
+  --bg-invert: #262626;
+  --bg-invert-hover: #404040;
+
+  /* Inkdesk custom brand (Slate Indigo) */
+  --ink-brand: #334155;
+  --ink-brand-hover: #1e293b;
+  --ink-brand-active: #0f172a;
+  --ink-brand-disabled: rgba(51, 65, 85, 0.22);
+  --ink-brand-onbrand: #ffffff;
+  --ink-brand-popup: #f1f5f9;
+  --ink-brand-border: #334155;
+
+  /* Text */
+  --text-default: #171717;
+  --text-secondary: #404040;
+  --text-tertiary: #737373;
+  --text-disabled: #A1A1A1;
+  --text-white: #FFFFFF;
+
+  /* Border */
+  --border-neutral-l1: rgba(115, 115, 115, 0.12);
+  --border-neutral-l2: rgba(115, 115, 115, 0.18);
+  --border-neutral-l3: rgba(115, 115, 115, 0.36);
+  --border-contrast: #000000;
+
+  /* Status */
+  --status-primary-default: #2F74FF;
+  --status-primary-surface-l1: rgba(47, 116, 255, 0.12);
+  --status-success-default: #15A877;
+  --status-success-surface-l1: rgba(64, 176, 139, 0.12);
+  --status-warning-default: #E27900;
+  --status-warning-surface-l1: rgba(226, 121, 0, 0.12);
+  --status-alert-default: #FEA900;
+  --status-alert-surface-l1: rgba(254, 169, 0, 0.14);
+  --status-error-default: #E8463A;
+  --status-error-surface-l1: rgba(232, 70, 58, 0.12);
+  --status-error-surface-l2: rgba(232, 70, 58, 0.16);
+
+  /* Radius */
+  --radius-0: 0px;
+  --radius-4: 4px;
+  --radius-6: 6px;
+  --radius-8: 8px;
+  --radius-12: 12px;
+  --radius-full: 999px;
+
+  /* Font */
+  --font-family-default: "SF Pro Text", "PingFang SC", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-family-heading: "SF Pro", "PingFang SC", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-family-metric: "Inter", "SF Pro Text", "PingFang SC", system-ui, sans-serif;
+  --font-family-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  /* Spacers */
+  --spacer-4: 4px;
+  --spacer-6: 6px;
+  --spacer-8: 8px;
+  --spacer-12: 12px;
+  --spacer-16: 16px;
+  --spacer-20: 20px;
+  --spacer-24: 24px;
+  --spacer-32: 32px;
+  --spacer-40: 40px;
+  --spacer-48: 48px;
+}
+
+/* ============================================================
+   Reset & Base
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { font-size: 14px; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+
+body {
+  font-family: var(--font-family-default);
+  color: var(--text-default);
+  background: var(--bg-base-default);
+  line-height: 1.5;
+}
+
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; cursor: pointer; border: none; background: none; }
+input, textarea, select { font-family: inherit; }
+
+/* ============================================================
+   Sticky Preview Nav
+   ============================================================ */
+.preview-nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--bg-invert);
+  color: var(--text-white);
+  padding: 10px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  height: 44px;
+}
+.preview-nav .brand {
+  font-family: var(--font-family-heading);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: -0.02em;
+}
+.preview-nav .note {
+  font-size: 11px;
+  color: var(--text-disabled);
+}
+
+/* ============================================================
+   Section Layout
+   ============================================================ */
+.preview-section {
+  padding: 48px 40px;
+  border-bottom: 1px solid var(--border-neutral-l1);
+}
+.preview-section:last-child { border-bottom: none; }
+
+.section-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--text-tertiary);
+  margin-bottom: 8px;
+}
+.section-title {
+  font-family: var(--font-family-heading);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-default);
+  margin-bottom: 6px;
+}
+.section-desc {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  line-height: 1.6;
+  margin-bottom: 32px;
+  max-width: 720px;
+}
+
+/* ============================================================
+   Token Swatch Grid
+   ============================================================ */
+.swatch-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+}
+.swatch-grid.comparison {
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+.swatch-group-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-neutral-l1);
+}
+.swatch {
+  border-radius: var(--radius-8);
+  overflow: hidden;
+  border: 1px solid var(--border-neutral-l1);
+}
+.swatch-color {
+  height: 48px;
+}
+.swatch-info {
+  padding: 8px 10px;
+  background: var(--bg-base-secondary);
+  font-size: 11px;
+}
+.swatch-info .token-name {
+  font-family: var(--font-family-mono);
+  color: var(--text-secondary);
+  word-break: break-all;
+}
+.swatch-info .token-value {
+  color: var(--text-tertiary);
+  margin-top: 2px;
+}
+
+/* ============================================================
+   Typography Scale
+   ============================================================ */
+.type-scale {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 720px;
+}
+.type-row {
+  display: flex;
+  align-items: baseline;
+  gap: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-neutral-l1);
+}
+.type-row:last-child { border-bottom: none; }
+.type-label {
+  width: 200px;
+  flex-shrink: 0;
+}
+.type-label .name {
+  font-family: var(--font-family-mono);
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+.type-label .meta {
+  font-size: 11px;
+  color: var(--text-disabled);
+  margin-top: 2px;
+}
+.type-sample {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ============================================================
+   Buttons
+   ============================================================ */
+.ds-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-weight: 600;
+  border-radius: var(--radius-full);
+  border: 1px solid transparent;
+  transition: background 0.15s, box-shadow 0.15s, opacity 0.15s;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.ds-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+/* Sizes */
+.ds-btn.sm { font-size: 11px; padding: 4px 12px; height: 28px; }
+.ds-btn.md { font-size: 12px; padding: 6px 16px; height: 34px; }
+.ds-btn.lg { font-size: 14px; padding: 8px 20px; height: 40px; }
+
+/* Primary — uses Inkdesk brand, NOT bg-invert */
+.ds-btn.primary {
+  background: var(--ink-brand);
+  color: var(--ink-brand-onbrand);
+}
+.ds-btn.primary:hover { background: var(--ink-brand-hover); }
+
+/* Secondary */
+.ds-btn.secondary {
+  background: transparent;
+  color: var(--ink-brand);
+  border-color: var(--ink-brand);
+}
+.ds-btn.secondary:hover { background: var(--ink-brand-popup); }
+
+/* Tertiary / Ghost */
+.ds-btn.tertiary {
+  background: transparent;
+  color: var(--text-secondary);
+}
+.ds-btn.tertiary:hover { background: var(--bg-overlay-l1); }
+
+/* Danger */
+.ds-btn.danger {
+  background: var(--status-error-default);
+  color: #fff;
+}
+.ds-btn.danger:hover { background: #d63a2f; }
+
+/* Disabled */
+.ds-btn:disabled, .ds-btn.disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.btn-showcase {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+.btn-showcase .row-label {
+  width: 100%;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--text-tertiary);
+  margin-bottom: 4px;
+}
+
+/* ============================================================
+   Form Inputs
+   ============================================================ */
+.ds-input,
+.ds-textarea,
+.ds-select {
+  display: block;
+  width: 100%;
+  font-size: 13px;
+  color: var(--text-default);
+  background: var(--bg-base-default);
+  border: 1px solid var(--border-neutral-l2);
+  border-radius: var(--radius-6);
+  padding: 8px 12px;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.ds-input::placeholder,
+.ds-textarea::placeholder {
+  color: var(--text-disabled);
+}
+.ds-input:hover,
+.ds-textarea:hover,
+.ds-select:hover {
+  border-color: var(--border-neutral-l3);
+}
+.ds-input:focus,
+.ds-textarea:focus,
+.ds-select:focus {
+  border-color: var(--ink-brand);
+  box-shadow: 0 0 0 3px rgba(51, 65, 85, 0.12);
+}
+.ds-input:disabled,
+.ds-textarea:disabled,
+.ds-select:disabled {
+  background: var(--bg-base-secondary);
+  color: var(--text-disabled);
+  cursor: not-allowed;
+}
+.ds-textarea {
+  resize: vertical;
+  min-height: 72px;
+  line-height: 1.6;
+}
+.ds-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='12' height='12' viewBox='0 0 12 12' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M3 4.5L6 7.5L9 4.5' stroke='%23737373' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 32px;
+}
+.form-showcase {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 24px;
+}
+.form-field { display: flex; flex-direction: column; gap: 6px; }
+.form-field label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--text-tertiary);
+}
+.form-field .state-label {
+  font-size: 10px;
+  color: var(--text-disabled);
+}
+
+/* ============================================================
+   Cards
+   ============================================================ */
+.ds-card {
+  background: var(--bg-base-secondary);
+  border: 1px solid var(--border-neutral-l1);
+  border-radius: var(--radius-12);
+  padding: 20px;
+  transition: border-color 0.15s;
+}
+.ds-card:hover { border-color: var(--border-neutral-l2); }
+.ds-card h4 {
+  font-family: var(--font-family-heading);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-default);
+  margin-bottom: 6px;
+}
+.ds-card p {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  line-height: 1.6;
+}
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+/* ============================================================
+   Tags / Pills
+   ============================================================ */
+.ds-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: var(--radius-4);
+  white-space: nowrap;
+}
+.ds-tag svg { width: 12px; height: 12px; }
+.ds-tag.neutral { background: var(--bg-overlay-l2); color: var(--text-secondary); }
+.ds-tag.brand { background: var(--ink-brand-popup); color: var(--ink-brand); }
+.ds-tag.success { background: var(--status-success-surface-l1); color: var(--status-success-default); }
+.ds-tag.warning { background: var(--status-warning-surface-l1); color: var(--status-warning-default); }
+.ds-tag.danger { background: var(--status-error-surface-l1); color: var(--status-error-default); }
+.ds-tag.info { background: var(--status-primary-surface-l1); color: var(--status-primary-default); }
+.ds-tag.alert { background: var(--status-alert-surface-l1); color: var(--status-alert-default); }
+
+.ds-pill {
+  border-radius: var(--radius-full);
+}
+.tag-showcase {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+/* ============================================================
+   Tabs
+   ============================================================ */
+.ds-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border-neutral-l2);
+}
+.ds-tab {
+  position: relative;
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  transition: color 0.15s;
+  background: none;
+  border: none;
+}
+.ds-tab:hover { color: var(--text-secondary); }
+.ds-tab.active {
+  color: var(--ink-brand);
+  font-weight: 600;
+}
+.ds-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 20px;
+  right: 20px;
+  height: 2px;
+  background: var(--ink-brand);
+  border-radius: 1px 1px 0 0;
+}
+
+/* ============================================================
+   Empty State
+   ============================================================ */
+.ds-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 32px;
+  text-align: center;
+}
+.ds-empty .empty-icon {
+  width: 48px;
+  height: 48px;
+  color: var(--text-disabled);
+  margin-bottom: 16px;
+}
+.ds-empty h3 {
+  font-family: var(--font-family-heading);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-default);
+  margin-bottom: 8px;
+}
+.ds-empty p {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  max-width: 360px;
+  line-height: 1.6;
+}
+
+/* ============================================================
+   Notification / Alert
+   ============================================================ */
+.ds-notif,
+.ds-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: var(--radius-8);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.ds-notif svg,
+.ds-alert svg { width: 16px; height: 16px; flex-shrink: 0; margin-top: 1px; }
+
+/* Notification — minimal, no background */
+.ds-notif { padding: 8px 0; }
+.ds-notif.info { color: var(--status-primary-default); }
+.ds-notif.success { color: var(--status-success-default); }
+.ds-notif.warning { color: var(--status-warning-default); }
+.ds-notif.error { color: var(--status-error-default); }
+
+/* Alert — surface background */
+.ds-alert { border: 1px solid; }
+.ds-alert.info { background: var(--status-primary-surface-l1); border-color: rgba(47, 116, 255, 0.18); color: var(--status-primary-default); }
+.ds-alert.success { background: var(--status-success-surface-l1); border-color: rgba(64, 176, 139, 0.18); color: var(--status-success-default); }
+.ds-alert.warning { background: var(--status-warning-surface-l1); border-color: rgba(226, 121, 0, 0.18); color: var(--status-warning-default); }
+.ds-alert.error { background: var(--status-error-surface-l1); border-color: rgba(232, 70, 58, 0.18); color: var(--status-error-default); }
+
+.alert-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 520px;
+}
+
+/* ============================================================
+   Full Page Layouts
+   ============================================================ */
+.page-frame {
+  border: 1px solid var(--border-neutral-l2);
+  border-radius: var(--radius-12);
+  overflow: hidden;
+  background: var(--bg-base-default);
+  min-height: 580px;
+}
+.page-layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  min-height: 580px;
+}
+
+/* Header */
+.page-header {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  height: 48px;
+  border-bottom: 1px solid var(--border-neutral-l1);
+  background: var(--bg-base-default);
+}
+.page-header .header-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-family-heading);
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--ink-brand);
+}
+.page-header .header-brand svg { width: 20px; height: 20px; }
+.page-header nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.page-header .nav-tab {
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  border-radius: var(--radius-full);
+  transition: background 0.15s, color 0.15s;
+  cursor: pointer;
+}
+.page-header .nav-tab:hover { background: var(--bg-overlay-l1); color: var(--text-secondary); }
+.page-header .nav-tab.active {
+  background: var(--ink-brand);
+  color: var(--ink-brand-onbrand);
+  font-weight: 600;
+}
+.page-header .header-user {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--bg-overlay-l2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.page-header .header-user svg { width: 16px; height: 16px; color: var(--text-tertiary); }
+
+/* Sidebar */
+.page-sidebar {
+  background: var(--bg-base-secondary);
+  border-right: 1px solid var(--border-neutral-l1);
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 4px 16px;
+  border-bottom: 1px solid var(--border-neutral-l1);
+  margin-bottom: 16px;
+}
+.sidebar-logo .logo-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-6);
+  background: var(--ink-brand);
+  color: var(--ink-brand-onbrand);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.sidebar-logo .logo-icon svg { width: 16px; height: 16px; }
+.sidebar-logo .logo-text {
+  font-family: var(--font-family-heading);
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--ink-brand);
+  letter-spacing: -0.02em;
+}
+.sidebar-logo .logo-sub {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  color: var(--text-tertiary);
+}
+.sidebar-new-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 8px 16px;
+  border-radius: var(--radius-full);
+  background: var(--ink-brand);
+  color: var(--ink-brand-onbrand);
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  transition: background 0.15s;
+}
+.sidebar-new-btn:hover { background: var(--ink-brand-hover); }
+.sidebar-new-btn svg { width: 14px; height: 14px; }
+
+.sidebar-history-title {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--text-disabled);
+  padding: 0 8px;
+  margin-bottom: 8px;
+}
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border-radius: var(--radius-6);
+  font-size: 12px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.15s;
+  border-left: 2px solid transparent;
+}
+.sidebar-item:hover { background: var(--bg-overlay-l1); }
+.sidebar-item.active {
+  background: var(--ink-brand-popup);
+  border-left-color: var(--ink-brand);
+  color: var(--ink-brand);
+  font-weight: 600;
+}
+.sidebar-item svg { width: 14px; height: 14px; flex-shrink: 0; opacity: 0.5; }
+.sidebar-item.active svg { opacity: 1; }
+.sidebar-item .item-time {
+  margin-left: auto;
+  font-size: 10px;
+  color: var(--text-disabled);
+}
+
+/* Main Content */
+.page-main {
+  padding: 24px 32px;
+  overflow-y: auto;
+}
+.main-eyebrow {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--text-tertiary);
+  margin-bottom: 6px;
+}
+.main-heading {
+  font-family: var(--font-family-heading);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-default);
+  letter-spacing: -0.02em;
+  margin-bottom: 20px;
+}
+
+/* Task Metrics Strip */
+.task-metrics {
+  display: flex;
+  gap: 24px;
+  padding: 12px 0;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--border-neutral-l1);
+}
+.task-metric {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.task-metric .metric-value {
+  font-family: var(--font-family-metric);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-default);
+  line-height: 1;
+}
+.task-metric .metric-label {
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+.task-metric.active .metric-value { color: var(--status-primary-default); }
+.task-metric.completed .metric-value { color: var(--status-success-default); }
+.task-metric.blocked .metric-value { color: var(--status-error-default); }
+
+/* Task List */
+.task-list { margin-bottom: 24px; }
+.task-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 8px;
+  border-bottom: 1px solid var(--border-neutral-l1);
+  transition: background 0.12s;
+  cursor: pointer;
+}
+.task-row:last-child { border-bottom: none; }
+.task-row:hover { background: var(--bg-overlay-l1); }
+.task-row .task-title {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-default);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.task-row .task-time {
+  font-size: 11px;
+  color: var(--text-disabled);
+  flex-shrink: 0;
+  font-family: var(--font-family-metric);
+}
+
+/* Collapsed form panel */
+.form-panel {
+  background: var(--bg-overlay-l1);
+  border: 1px solid var(--border-neutral-l1);
+  border-radius: var(--radius-12);
+  padding: 20px;
+}
+.form-panel .form-panel-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-default);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.form-panel .form-panel-title svg { width: 16px; height: 16px; color: var(--text-tertiary); }
+.type-selector {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.type-option {
+  padding: 6px 16px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-neutral-l2);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+  background: var(--bg-base-default);
+}
+.type-option:hover { border-color: var(--border-neutral-l3); }
+.type-option.selected {
+  border-color: var(--ink-brand);
+  background: var(--ink-brand-popup);
+  color: var(--ink-brand);
+  font-weight: 600;
+}
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.form-row .full { grid-column: 1 / -1; }
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+/* Wiki Page */
+.wiki-content { max-width: 640px; }
+.wiki-title {
+  font-family: var(--font-family-heading);
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-default);
+  letter-spacing: -0.02em;
+  margin-bottom: 12px;
+}
+.wiki-summary {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  margin-bottom: 16px;
+}
+.wiki-vault-path {
+  font-size: 12px;
+  color: var(--ink-brand);
+  font-family: var(--font-family-mono);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.wiki-vault-path svg { width: 14px; height: 14px; }
+.wiki-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 24px;
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+.wiki-claims-title {
+  font-family: var(--font-family-heading);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-default);
+  margin-bottom: 12px;
+}
+.claim-card {
+  background: var(--bg-overlay-l1);
+  border-radius: var(--radius-8);
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  border-left: 3px solid var(--status-primary-default);
+}
+.claim-card .claim-text {
+  font-size: 13px;
+  color: var(--text-default);
+  line-height: 1.6;
+  margin-bottom: 6px;
+}
+.claim-card .claim-meta {
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+/* ============================================================
+   Radius / Spacing Comparison
+   ============================================================ */
+.comparison-strip {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+}
+.comparison-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+.comparison-item .label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--text-tertiary);
+  text-align: center;
+}
+.old-card {
+  width: 280px;
+  padding: 24px;
+  background: #ffffff;
+  border-radius: 28px;
+  box-shadow: 0 18px 40px rgba(25, 28, 29, 0.06);
+}
+.old-card h4 {
+  font-family: var(--font-family-heading);
+  font-size: 15px;
+  font-weight: 700;
+  color: #191c1d;
+  margin-bottom: 6px;
+}
+.old-card p {
+  font-size: 13px;
+  color: #687573;
+  line-height: 1.6;
+}
+.new-card {
+  width: 280px;
+  padding: 24px;
+  background: var(--bg-base-secondary);
+  border: 1px solid var(--border-neutral-l1);
+  border-radius: var(--radius-12);
+}
+.new-card h4 {
+  font-family: var(--font-family-heading);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-default);
+  margin-bottom: 6px;
+}
+.new-card p {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  line-height: 1.6;
+}
+.spacing-demo {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  align-items: stretch;
+}
+.spacing-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 0;
+}
+.spacing-row .spacer-box {
+  height: 20px;
+  background: var(--ink-brand-popup);
+  border: 1px dashed var(--ink-brand);
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  color: var(--ink-brand);
+  font-family: var(--font-family-mono);
+}
+.spacing-row .spacer-label {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  font-family: var(--font-family-mono);
+  width: 80px;
+  flex-shrink: 0;
+}
+
+/* ============================================================
+   Utility
+   ============================================================ */
+.flex-gap-8 { display: flex; gap: 8px; align-items: center; }
+.flex-gap-12 { display: flex; gap: 12px; align-items: center; }
+.flex-gap-16 { display: flex; gap: 16px; align-items: center; }
+.flex-wrap { flex-wrap: wrap; }
+.mt-8 { margin-top: 8px; }
+.mt-12 { margin-top: 12px; }
+.mt-16 { margin-top: 16px; }
+.mt-24 { margin-top: 24px; }
+.mb-8 { margin-bottom: 8px; }
+.mb-16 { margin-bottom: 16px; }
+.mb-24 { margin-bottom: 24px; }
+.w-full { width: 100%; }
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     Sticky Preview Nav
+     ============================================================ -->
+<div class="preview-nav">
+  <div class="brand">Inkdesk UI 重构预览</div>
+  <div class="note">Static preview / TRAE Work Design System / NOT a .design canvas deliverable</div>
+</div>
+
+<!-- ============================================================
+     Section 1: Token Swatch Grid
+     ============================================================ -->
+<div class="preview-section" id="tokens">
+  <div class="section-label">Section 1</div>
+  <div class="section-title">Token Swatch Grid / 色彩令牌对比</div>
+  <div class="section-desc">对比旧 Inkdesk 自定义色值与新的 TRAE Work 设计系统令牌。左侧为旧值，右侧为新值。</div>
+
+  <div class="swatch-grid comparison">
+    <!-- Brand -->
+    <div>
+      <div class="swatch-group-title">Brand (旧 ink-primary / 新 ink-brand)</div>
+      <div class="swatch-grid">
+        <div class="swatch">
+          <div class="swatch-color" style="background:#00685f;"></div>
+          <div class="swatch-info"><div class="token-name">ink-primary (old)</div><div class="token-value">#00685f</div></div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background:#334155;"></div>
+          <div class="swatch-info"><div class="token-name">--ink-brand (new)</div><div class="token-value">#334155</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Surface -->
+    <div>
+      <div class="swatch-group-title">Surface (旧 ink-* / 新 bg-*)</div>
+      <div class="swatch-grid">
+        <div class="swatch">
+          <div class="swatch-color" style="background:#f8f9fa;"></div>
+          <div class="swatch-info"><div class="token-name">ink-bg (old)</div><div class="token-value">#f8f9fa</div></div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background:#FFFFFF;"></div>
+          <div class="swatch-info"><div class="token-name">--bg-base-default</div><div class="token-value">#FFFFFF</div></div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background:#f3f4f5;"></div>
+          <div class="swatch-info"><div class="token-name">ink-low (old)</div><div class="token-value">#f3f4f5</div></div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background:#F5F5F5;"></div>
+          <div class="swatch-info"><div class="token-name">--bg-base-secondary</div><div class="token-value">#F5F5F5</div></div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background:rgba(115,115,115,0.08);"></div>
+          <div class="swatch-info"><div class="token-name">--bg-overlay-l1</div><div class="token-value">rgba(115,115,115,0.08)</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Text -->
+    <div>
+      <div class="swatch-group-title">Text (旧 ink-text / 新 text-*)</div>
+      <div class="swatch-grid">
+        <div class="swatch">
+          <div class="swatch-color" style="background:#191c1d;"></div>
+          <div class="swatch-info"><div class="token-name">ink-text (old)</div><div class="token-value">#191c1d</div></div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background:#171717;"></div>
+          <div class="swatch-info"><div class="token-name">--text-default</div><div class="token-value">#171717</div></div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background:#687573;"></div>
+          <div class="swatch-info"><div class="token-name">ink-muted (old)</div><div class="token-value">#687573</div></div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background:#737373;"></div>
+          <div class="swatch-info"><div class="token-name">--text-tertiary</div><div class="token-value">#737373</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Border -->
+    <div>
+      <div class="swatch-group-title">Border (旧 / 新)</div>
+      <div class="swatch-grid">
+        <div class="swatch">
+          <div class="swatch-color" style="background:#bcc9c6;"></div>
+          <div class="swatch-info"><div class="token-name">ink-line (old)</div><div class="token-value">#bcc9c6</div></div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background:rgba(115,115,115,0.12); border: 1px solid rgba(0,0,0,0.08);"></div>
+          <div class="swatch-info"><div class="token-name">--border-neutral-l1</div><div class="token-value">rgba(115,115,115,0.12)</div></div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background:rgba(115,115,115,0.18); border: 1px solid rgba(0,0,0,0.08);"></div>
+          <div class="swatch-info"><div class="token-name">--border-neutral-l2</div><div class="token-value">rgba(115,115,115,0.18)</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Status -->
+    <div>
+      <div class="swatch-group-title">Status (旧 ink-error* / 新 status-*)</div>
+      <div class="swatch-grid">
+        <div class="swatch">
+          <div class="swatch-color" style="background:#93000a;"></div>
+          <div class="swatch-info"><div class="token-name">ink-errorText (old)</div><div class="token-value">#93000a</div></div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background:#E8463A;"></div>
+          <div class="swatch-info"><div class="token-name">--status-error-default</div><div class="token-value">#E8463A</div></div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background:#2F74FF;"></div>
+          <div class="swatch-info"><div class="token-name">--status-primary-default</div><div class="token-value">#2F74FF</div></div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background:#15A877;"></div>
+          <div class="swatch-info"><div class="token-name">--status-success-default</div><div class="token-value">#15A877</div></div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background:#E27900;"></div>
+          <div class="swatch-info"><div class="token-name">--status-warning-default</div><div class="token-value">#E27900</div></div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background:#FEA900;"></div>
+          <div class="swatch-info"><div class="token-name">--status-alert-default</div><div class="token-value">#FEA900</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     Section 2: Typography Scale
+     ============================================================ -->
+<div class="preview-section" id="typography">
+  <div class="section-label">Section 2</div>
+  <div class="section-title">Typography Scale / 字体层级</div>
+  <div class="section-desc">展示所有标题、正文和等宽字体层级，附带令牌名称和像素值。</div>
+
+  <div class="type-scale">
+    <!-- heading-3xs -->
+    <div class="type-row">
+      <div class="type-label">
+        <div class="name">heading-3xs</div>
+        <div class="meta">11px / 600 / default</div>
+      </div>
+      <div class="type-sample" style="font-family:var(--font-family-heading); font-size:11px; font-weight:600; letter-spacing:0.04em; text-transform:uppercase;">UPPERCASE LABEL 文本标注</div>
+    </div>
+    <!-- heading-xs -->
+    <div class="type-row">
+      <div class="type-label">
+        <div class="name">heading-xs</div>
+        <div class="meta">13px / 600 / heading</div>
+      </div>
+      <div class="type-sample" style="font-family:var(--font-family-heading); font-size:13px; font-weight:600;">小标题 Section Subtitle</div>
+    </div>
+    <!-- heading-sm -->
+    <div class="type-row">
+      <div class="type-label">
+        <div class="name">heading-sm</div>
+        <div class="meta">16px / 700 / heading</div>
+      </div>
+      <div class="type-sample" style="font-family:var(--font-family-heading); font-size:16px; font-weight:700; letter-spacing:-0.01em;">卡片标题 Card Title</div>
+    </div>
+    <!-- heading-md -->
+    <div class="type-row">
+      <div class="type-label">
+        <div class="name">heading-md</div>
+        <div class="meta">20px / 700 / heading</div>
+      </div>
+      <div class="type-sample" style="font-family:var(--font-family-heading); font-size:20px; font-weight:700; letter-spacing:-0.02em;">中型标题 Medium Heading</div>
+    </div>
+    <!-- heading-lg -->
+    <div class="type-row">
+      <div class="type-label">
+        <div class="name">heading-lg</div>
+        <div class="meta">22px / 700 / heading</div>
+      </div>
+      <div class="type-sample" style="font-family:var(--font-family-heading); font-size:22px; font-weight:700; letter-spacing:-0.02em;">页面标题 Page Title</div>
+    </div>
+    <!-- heading-xl -->
+    <div class="type-row">
+      <div class="type-label">
+        <div class="name">heading-xl</div>
+        <div class="meta">24px / 700 / heading</div>
+      </div>
+      <div class="type-sample" style="font-family:var(--font-family-heading); font-size:24px; font-weight:700; letter-spacing:-0.02em;">大标题 Large Title</div>
+    </div>
+    <!-- heading-2xl -->
+    <div class="type-row">
+      <div class="type-label">
+        <div class="name">heading-2xl</div>
+        <div class="meta">28px / 700 / heading</div>
+      </div>
+      <div class="type-sample" style="font-family:var(--font-family-heading); font-size:28px; font-weight:700; letter-spacing:-0.02em;">超大标题 Hero Title</div>
+    </div>
+    <!-- body-sm -->
+    <div class="type-row">
+      <div class="type-label">
+        <div class="name">body-sm</div>
+        <div class="meta">11px / 400 / default</div>
+      </div>
+      <div class="type-sample" style="font-size:11px; color:var(--text-tertiary);">辅助文本 Secondary caption text</div>
+    </div>
+    <!-- body-md -->
+    <div class="type-row">
+      <div class="type-label">
+        <div class="name">body-md</div>
+        <div class="meta">12px / 400 / default</div>
+      </div>
+      <div class="type-sample" style="font-size:12px;">标准正文 Standard body text at 12px</div>
+    </div>
+    <!-- body-base -->
+    <div class="type-row">
+      <div class="type-label">
+        <div class="name">body-base</div>
+        <div class="meta">14px / 400 / default</div>
+      </div>
+      <div class="type-sample" style="font-size:14px; line-height:1.7;">这是基础的正文文本。在 Inkdesk 中用于主要阅读内容，例如任务描述和摘要。This is the base body text used for primary reading content.</div>
+    </div>
+    <!-- body-lg -->
+    <div class="type-row">
+      <div class="type-label">
+        <div class="name">body-lg</div>
+        <div class="meta">18px / 400 / default</div>
+      </div>
+      <div class="type-sample" style="font-size:18px; line-height:1.6;">大号正文用于需要突出显示的描述性段落。</div>
+    </div>
+    <!-- mono -->
+    <div class="type-row">
+      <div class="type-label">
+        <div class="name">mono / code</div>
+        <div class="meta">12px / 400 / mono</div>
+      </div>
+      <div class="type-sample" style="font-family:var(--font-family-mono); font-size:12px; color:var(--text-secondary); background:var(--bg-base-secondary); padding:4px 8px; border-radius:var(--radius-4); display:inline-block;">const run = await createDevRun({ type: "PRD" });</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     Section 3: Component Showcase
+     ============================================================ -->
+<div class="preview-section" id="components">
+  <div class="section-label">Section 3</div>
+  <div class="section-title">Component Showcase / 组件展示</div>
+  <div class="section-desc">所有核心组件均使用 TRAE Work 令牌重新样式化。Primary 按钮使用 --ink-brand，而非 --bg-invert。</div>
+
+  <!-- 3a: Buttons -->
+  <div style="margin-bottom:40px;">
+    <div style="font-size:13px; font-weight:600; color:var(--text-default); margin-bottom:16px;">a) Buttons / 按钮</div>
+
+    <div class="btn-showcase">
+      <div class="row-label">Variants</div>
+      <button class="ds-btn md primary">
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1v14M1 8h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+        Primary
+      </button>
+      <button class="ds-btn md secondary">Secondary</button>
+      <button class="ds-btn md tertiary">Tertiary</button>
+      <button class="ds-btn md danger">Danger</button>
+      <button class="ds-btn md primary disabled">Disabled</button>
+    </div>
+
+    <div class="btn-showcase mt-16">
+      <div class="row-label">Sizes (Primary)</div>
+      <button class="ds-btn sm primary">Small / sm</button>
+      <button class="ds-btn md primary">Medium / md</button>
+      <button class="ds-btn lg primary">Large / lg</button>
+    </div>
+
+    <div class="btn-showcase mt-16">
+      <div class="row-label">Sizes (Secondary)</div>
+      <button class="ds-btn sm secondary">Small</button>
+      <button class="ds-btn md secondary">Medium</button>
+      <button class="ds-btn lg secondary">Large</button>
+    </div>
+  </div>
+
+  <!-- 3b: Form Inputs -->
+  <div style="margin-bottom:40px;">
+    <div style="font-size:13px; font-weight:600; color:var(--text-default); margin-bottom:16px;">b) Form Inputs / 表单输入</div>
+    <div class="form-showcase">
+      <div class="form-field">
+        <label>Text Input <span class="state-label">/ default</span></label>
+        <input class="ds-input" placeholder="输入内容..." />
+      </div>
+      <div class="form-field">
+        <label>Text Input <span class="state-label">/ focus</span></label>
+        <input class="ds-input" value="聚焦状态示例" style="border-color:var(--ink-brand); box-shadow:0 0 0 3px rgba(51,65,85,0.12);" />
+      </div>
+      <div class="form-field">
+        <label>Text Input <span class="state-label">/ disabled</span></label>
+        <input class="ds-input" value="不可编辑" disabled />
+      </div>
+      <div class="form-field">
+        <label>Textarea <span class="state-label">/ default</span></label>
+        <textarea class="ds-textarea" placeholder="输入多行文本..." rows="3"></textarea>
+      </div>
+      <div class="form-field">
+        <label>Select <span class="state-label">/ default</span></label>
+        <select class="ds-select">
+          <option>选择类型...</option>
+          <option>PRD</option>
+          <option>Bug</option>
+          <option>Refactor</option>
+        </select>
+      </div>
+      <div class="form-field">
+        <label>Select <span class="state-label">/ disabled</span></label>
+        <select class="ds-select" disabled>
+          <option>已禁用</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3c: Cards -->
+  <div style="margin-bottom:40px;">
+    <div style="font-size:13px; font-weight:600; color:var(--text-default); margin-bottom:16px;">c) Cards / 卡片</div>
+    <div class="card-grid">
+      <div class="ds-card">
+        <h4>知识库任务</h4>
+        <p>基于现有 PRD 生成技术方案，并验证架构可行性。</p>
+      </div>
+      <div class="ds-card">
+        <h4>Bug 修复</h4>
+        <p>修复侧边栏在窄屏幕下的布局溢出问题。</p>
+      </div>
+      <div class="ds-card">
+        <h4>代码重构</h4>
+        <p>将 paper-card 重构为 TRAE Work 设计令牌驱动的 ds-card。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3d: Tags / Pills -->
+  <div style="margin-bottom:40px;">
+    <div style="font-size:13px; font-weight:600; color:var(--text-default); margin-bottom:16px;">d) Tags & Pills / 标签</div>
+
+    <div style="margin-bottom:12px;">
+      <div style="font-size:11px; color:var(--text-tertiary); margin-bottom:8px;">ds-tag (square radius-4)</div>
+      <div class="tag-showcase">
+        <span class="ds-tag neutral">Neutral</span>
+        <span class="ds-tag brand">Brand</span>
+        <span class="ds-tag success">Success</span>
+        <span class="ds-tag warning">Warning</span>
+        <span class="ds-tag danger">Danger</span>
+        <span class="ds-tag info">Info</span>
+        <span class="ds-tag alert">Alert</span>
+      </div>
+    </div>
+
+    <div>
+      <div style="font-size:11px; color:var(--text-tertiary); margin-bottom:8px;">ds-pill (rounded-full) / 状态药丸</div>
+      <div class="tag-showcase">
+        <span class="ds-tag ds-pill neutral">进行中</span>
+        <span class="ds-tag ds-pill brand">PRD</span>
+        <span class="ds-tag ds-pill success">完成</span>
+        <span class="ds-tag ds-pill warning">待确认</span>
+        <span class="ds-tag ds-pill danger">阻塞</span>
+        <span class="ds-tag ds-pill info">审阅中</span>
+        <span class="ds-tag ds-pill alert">风险</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3e: Tabs -->
+  <div style="margin-bottom:40px;">
+    <div style="font-size:13px; font-weight:600; color:var(--text-default); margin-bottom:16px;">e) Tabs / 选项卡</div>
+    <div class="ds-tabs" style="max-width:400px;">
+      <button class="ds-tab">全部</button>
+      <button class="ds-tab active">进行中</button>
+      <button class="ds-tab">已完成</button>
+    </div>
+  </div>
+
+  <!-- 3f: Empty State -->
+  <div style="margin-bottom:40px;">
+    <div style="font-size:13px; font-weight:600; color:var(--text-default); margin-bottom:16px;">f) Empty State / 空状态</div>
+    <div class="ds-card" style="max-width:420px;">
+      <div class="ds-empty">
+        <svg class="empty-icon" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M24 4L6 20v20a4 4 0 004 4h28a4 4 0 004-4V20L24 4z"/>
+          <path d="M18 44V28h12v16"/>
+        </svg>
+        <h3>还没有 Dev Run 任务</h3>
+        <p>点击「新建任务」创建第一个研发任务，开始你的 Dev Run 工作流。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3g: Notification / Alert -->
+  <div>
+    <div style="font-size:13px; font-weight:600; color:var(--text-default); margin-bottom:16px;">g) Notification & Alert / 通知与警告</div>
+
+    <div style="margin-bottom:16px;">
+      <div style="font-size:11px; color:var(--text-tertiary); margin-bottom:8px;">ds-notif (inline, no background)</div>
+      <div class="alert-stack">
+        <div class="ds-notif info">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="7"/><path d="M8 5v3M8 10.5v.5"/></svg>
+          <span>知识库结构健康，未发现问题。</span>
+        </div>
+        <div class="ds-notif success">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 8l3 3 5-6"/></svg>
+          <span>任务已成功创建。</span>
+        </div>
+        <div class="ds-notif warning">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2l6 10H2L8 2z"/><path d="M8 6.5V9M8 11v.5"/></svg>
+          <span>2 条 claim 缺少直接证据，建议补充来源。</span>
+        </div>
+        <div class="ds-notif error">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="7"/><path d="M5.5 5.5l5 5M10.5 5.5l-5 5"/></svg>
+          <span>创建任务失败，请检查网络连接。</span>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div style="font-size:11px; color:var(--text-tertiary); margin-bottom:8px;">ds-alert (surface background)</div>
+      <div class="alert-stack">
+        <div class="ds-alert info">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="7"/><path d="M8 5v3M8 10.5v.5"/></svg>
+          <span>Dev Run 工作流已启动，正在收集上下文。</span>
+        </div>
+        <div class="ds-alert success">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 8l3 3 5-6"/></svg>
+          <span>所有 3 条 claim 已通过验证。</span>
+        </div>
+        <div class="ds-alert warning">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2l6 10H2L8 2z"/><path d="M8 6.5V9M8 11v.5"/></svg>
+          <span>审阅阶段有待确认的输出，请及时处理。</span>
+        </div>
+        <div class="ds-alert error">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="7"/><path d="M5.5 5.5l5 5M10.5 5.5l-5 5"/></svg>
+          <span>加载任务列表失败，请稍后重试。</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     Section 4: Full Page Layout — Main Dashboard
+     ============================================================ -->
+<div class="preview-section" id="dashboard">
+  <div class="section-label">Section 4</div>
+  <div class="section-title">Full Page Layout — Main Dashboard / 主仪表盘</div>
+  <div class="section-desc">真实的主页面布局预览，包含顶部导航栏、左侧边栏和任务列表。注意：任务列表使用行分割线而非 paper-card 包裹。</div>
+
+  <div class="page-frame">
+    <div class="page-layout">
+      <!-- Header -->
+      <div class="page-header">
+        <div class="header-brand">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10 2L2 8v8a2 2 0 002 2h12a2 2 0 002-2V8L10 2z"/>
+            <path d="M7 20v-6h6v6"/>
+          </svg>
+          Inkdesk
+        </div>
+        <nav>
+          <div class="nav-tab active">Dashboard</div>
+          <div class="nav-tab">Wiki</div>
+          <div class="nav-tab">Sources</div>
+          <div class="nav-tab">Reviews</div>
+          <div class="nav-tab">Ask</div>
+          <div class="nav-tab">Raw</div>
+        </nav>
+        <div class="header-user">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="5" r="3"/><path d="M2 15c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>
+        </div>
+      </div>
+
+      <!-- Sidebar -->
+      <div class="page-sidebar">
+        <div class="sidebar-logo">
+          <div class="logo-icon">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M8 1L1 6.5V14a1.5 1.5 0 001.5 1.5h11A1.5 1.5 0 0015 14V6.5L8 1z"/>
+              <path d="M5.5 15.5V10h5v5.5"/>
+            </svg>
+          </div>
+          <div>
+            <div class="logo-text">Inkdesk</div>
+            <div class="logo-sub">Dev Run</div>
+          </div>
+        </div>
+
+        <button class="sidebar-new-btn">
+          <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 1v12M1 7h12"/></svg>
+          新建任务
+        </button>
+
+        <div class="sidebar-history-title">对话历史</div>
+
+        <div class="sidebar-item active">
+          <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 2h8v10H3z"/><path d="M5 5h4M5 7.5h3"/></svg>
+          <span>用户认证模块 PRD</span>
+          <span class="item-time">2h</span>
+        </div>
+        <div class="sidebar-item">
+          <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 2h8v10H3z"/><path d="M5 5h4M5 7.5h3"/></svg>
+          <span>修复侧边栏溢出 Bug</span>
+          <span class="item-time">1d</span>
+        </div>
+        <div class="sidebar-item">
+          <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 2h8v10H3z"/><path d="M5 5h4M5 7.5h3"/></svg>
+          <span>重构 paper-card 组件</span>
+          <span class="item-time">3d</span>
+        </div>
+        <div class="sidebar-item">
+          <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 2h8v10H3z"/><path d="M5 5h4M5 7.5h3"/></svg>
+          <span>API 错误处理改造</span>
+          <span class="item-time">5d</span>
+        </div>
+        <div class="sidebar-item">
+          <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 2h8v10H3z"/><path d="M5 5h4M5 7.5h3"/></svg>
+          <span>性能监控仪表盘</span>
+          <span class="item-time">1w</span>
+        </div>
+      </div>
+
+      <!-- Main Content -->
+      <div class="page-main">
+        <div class="main-eyebrow">任务</div>
+        <div class="main-heading">Dev Run 任务</div>
+
+        <!-- Task Metrics Strip -->
+        <div class="task-metrics">
+          <div class="task-metric active">
+            <span class="metric-value">3</span>
+            <span class="metric-label">进行中</span>
+          </div>
+          <div class="task-metric completed">
+            <span class="metric-value">2</span>
+            <span class="metric-label">完成</span>
+          </div>
+          <div class="task-metric blocked">
+            <span class="metric-value">1</span>
+            <span class="metric-label">阻塞</span>
+          </div>
+        </div>
+
+        <!-- Task List -->
+        <div class="task-list">
+          <div class="task-row">
+            <span class="ds-tag ds-pill brand">PRD</span>
+            <span class="ds-tag ds-pill info">进行中</span>
+            <span class="task-title">用户认证模块需求分析与技术方案</span>
+            <span class="task-time">2h ago</span>
+          </div>
+          <div class="task-row">
+            <span class="ds-tag ds-pill brand">PRD</span>
+            <span class="ds-tag ds-pill warning">待确认</span>
+            <span class="task-title">支付系统集成架构设计</span>
+            <span class="task-time">6h ago</span>
+          </div>
+          <div class="task-row">
+            <span class="ds-tag ds-pill danger">BUG</span>
+            <span class="ds-tag ds-pill info">进行中</span>
+            <span class="task-title">修复侧边栏在窄屏幕下的布局溢出问题</span>
+            <span class="task-time">1d ago</span>
+          </div>
+          <div class="task-row">
+            <span class="ds-tag ds-pill neutral">REFACTOR</span>
+            <span class="ds-tag ds-pill danger">阻塞</span>
+            <span class="task-title">paper-card 到 ds-card 的设计令牌迁移</span>
+            <span class="task-time">3d ago</span>
+          </div>
+          <div class="task-row">
+            <span class="ds-tag ds-pill brand">PRD</span>
+            <span class="ds-tag ds-pill success">完成</span>
+            <span class="task-title">知识库索引优化 PRD</span>
+            <span class="task-time">5d ago</span>
+          </div>
+          <div class="task-row">
+            <span class="ds-tag ds-pill danger">BUG</span>
+            <span class="ds-tag ds-pill success">完成</span>
+            <span class="task-title">API 请求超时未正确处理</span>
+            <span class="task-time">1w ago</span>
+          </div>
+        </div>
+
+        <!-- Collapsed Form Panel -->
+        <div class="form-panel">
+          <div class="form-panel-title">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 2v12M2 8h12"/></svg>
+            新建任务
+          </div>
+
+          <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.15em; color:var(--text-tertiary); margin-bottom:8px;">任务类型</div>
+          <div class="type-selector">
+            <div class="type-option selected">PRD</div>
+            <div class="type-option">Bug</div>
+            <div class="type-option">改造</div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-field full">
+              <input class="ds-input" placeholder="任务标题" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-field full">
+              <textarea class="ds-textarea" placeholder="任务目标描述..." rows="2"></textarea>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-field full">
+              <input class="ds-input" placeholder="仓库上下文（可选）" />
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="ds-btn md tertiary">取消</button>
+            <button class="ds-btn md primary">创建</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     Section 5: Full Page Layout — Wiki Detail Page
+     ============================================================ -->
+<div class="preview-section" id="wiki">
+  <div class="section-label">Section 5</div>
+  <div class="section-title">Full Page Layout — Wiki Detail / Wiki 详情页</div>
+  <div class="section-desc">Wiki 详情页布局。Claim 卡片使用 bg-overlay-l1 圆角容器，而非 paper-card。</div>
+
+  <div class="page-frame">
+    <div class="page-layout">
+      <!-- Header -->
+      <div class="page-header">
+        <div class="header-brand">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10 2L2 8v8a2 2 0 002 2h12a2 2 0 002-2V8L10 2z"/>
+            <path d="M7 20v-6h6v6"/>
+          </svg>
+          Inkdesk
+        </div>
+        <nav>
+          <div class="nav-tab">Dashboard</div>
+          <div class="nav-tab active">Wiki</div>
+          <div class="nav-tab">Sources</div>
+          <div class="nav-tab">Reviews</div>
+          <div class="nav-tab">Ask</div>
+          <div class="nav-tab">Raw</div>
+        </nav>
+        <div class="header-user">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="5" r="3"/><path d="M2 15c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>
+        </div>
+      </div>
+
+      <!-- Sidebar (same as dashboard) -->
+      <div class="page-sidebar">
+        <div class="sidebar-logo">
+          <div class="logo-icon">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M8 1L1 6.5V14a1.5 1.5 0 001.5 1.5h11A1.5 1.5 0 0015 14V6.5L8 1z"/>
+              <path d="M5.5 15.5V10h5v5.5"/>
+            </svg>
+          </div>
+          <div>
+            <div class="logo-text">Inkdesk</div>
+            <div class="logo-sub">Dev Run</div>
+          </div>
+        </div>
+
+        <button class="sidebar-new-btn">
+          <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 1v12M1 7h12"/></svg>
+          新建任务
+        </button>
+
+        <div class="sidebar-history-title">对话历史</div>
+
+        <div class="sidebar-item">
+          <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 2h8v10H3z"/><path d="M5 5h4M5 7.5h3"/></svg>
+          <span>用户认证模块 PRD</span>
+          <span class="item-time">2h</span>
+        </div>
+        <div class="sidebar-item active">
+          <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 2h8v10H3z"/><path d="M5 5h4M5 7.5h3"/></svg>
+          <span>修复侧边栏溢出 Bug</span>
+          <span class="item-time">1d</span>
+        </div>
+        <div class="sidebar-item">
+          <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 2h8v10H3z"/><path d="M5 5h4M5 7.5h3"/></svg>
+          <span>重构 paper-card 组件</span>
+          <span class="item-time">3d</span>
+        </div>
+      </div>
+
+      <!-- Main Content: Wiki Detail -->
+      <div class="page-main">
+        <div class="wiki-content">
+          <div class="main-eyebrow">wiki page</div>
+          <h1 class="wiki-title">用户认证模块技术方案</h1>
+          <p class="wiki-summary">
+            本文档详细描述了用户认证模块的整体架构设计，包括 JWT token 生命周期管理、Session 策略、OAuth2.0 集成方案以及安全审计日志的实现路径。方案基于已有 PRD 需求文档，结合代码仓库现状进行分析。
+          </p>
+
+          <div class="wiki-vault-path">
+            <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2 3.5C2 2.67 2.67 2 3.5 2h7c.83 0 1.5.67 1.5 1.5v7c0 .83-.67 1.5-1.5 1.5h-7c-.83 0-1.5-.67-1.5-1.5v-7z"/><path d="M5 2V1M9 2V1M2 5.5h10"/></svg>
+            vault://projects/auth-module/technical-spec.md
+          </div>
+
+          <div class="wiki-meta">
+            <span class="ds-tag ds-pill success">claim 风险已清空</span>
+            <span class="ds-tag neutral">5 条 raw 来源</span>
+            <span class="ds-tag neutral">2 个开放问题</span>
+            <span class="ds-tag ds-pill brand">auth</span>
+            <span class="ds-tag ds-pill brand">security</span>
+            <span class="ds-tag ds-pill brand">JWT</span>
+          </div>
+
+          <div class="wiki-claims-title">Claims / 论断</div>
+
+          <div class="claim-card">
+            <div class="claim-text">JWT token 应使用 RS256 算法签名，而非 HS256，以避免密钥泄露导致的伪造风险。</div>
+            <div class="claim-meta">
+              <span class="ds-tag ds-pill success" style="font-size:10px; padding:2px 8px;">已验证</span>
+              来源: OWASP Token Storage Cheat Sheet
+            </div>
+          </div>
+
+          <div class="claim-card" style="border-left-color: var(--status-warning-default);">
+            <div class="claim-text">Session TTL 设置为 30 分钟，Refresh Token TTL 设置为 7 天，符合行业最佳实践。</div>
+            <div class="claim-meta">
+              <span class="ds-tag ds-pill warning" style="font-size:10px; padding:2px 8px;">待重审</span>
+              来源: RFC 6749 Section 5
+            </div>
+          </div>
+
+          <div class="claim-card" style="border-left-color: var(--status-success-default);">
+            <div class="claim-text">OAuth2.0 PKCE 流程适用于公开客户端（SPA / Mobile），能有效防止授权码拦截攻击。</div>
+            <div class="claim-meta">
+              <span class="ds-tag ds-pill success" style="font-size:10px; padding:2px 8px;">已验证</span>
+              来源: RFC 7636
+            </div>
+          </div>
+
+          <div class="claim-card" style="border-left-color: var(--status-primary-default);">
+            <div class="claim-text">审计日志应记录所有认证事件（登录、登出、token 刷新、密码变更），保留周期不少于 90 天。</div>
+            <div class="claim-meta">
+              <span class="ds-tag ds-pill info" style="font-size:10px; padding:2px 8px;">审阅中</span>
+              来源: SOC2 Type II 合规要求
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     Section 6: Radius & Spacing Comparison
+     ============================================================ -->
+<div class="preview-section" id="comparison">
+  <div class="section-label">Section 6</div>
+  <div class="section-title">Radius & Spacing Comparison / 圆角与间距对比</div>
+  <div class="section-desc">对比旧的 paper-card (28px + shadow-paper) 与新的 ds-card (12px + border + surface)。左侧为旧样式，右侧为新样式。</div>
+
+  <div class="comparison-strip">
+    <!-- Card Radius Comparison -->
+    <div class="comparison-item">
+      <div class="label">
+        OLD: rounded-[28px] + shadow-paper<br/>
+        <span style="color:var(--text-disabled); font-size:10px;">box-shadow: 0 18px 40px rgba(25,28,29,0.06)</span>
+      </div>
+      <div class="old-card">
+        <h4>旧卡片样式</h4>
+        <p>使用 28px 大圆角和悬浮阴影，风格偏向纸张质感。在密集信息展示场景下占用过多视觉空间。</p>
+        <div style="margin-top:12px; display:flex; gap:6px;">
+          <span style="display:inline-block; padding:3px 10px; border-radius:999px; background:#e8f6f4; color:#00685f; font-size:11px; font-weight:600;">旧标签</span>
+          <span style="display:inline-block; padding:3px 10px; border-radius:999px; background:#f3f4f5; color:#687573; font-size:11px;">PRD</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="comparison-item">
+      <div class="label">
+        NEW: --radius-12 + border + surface<br/>
+        <span style="color:var(--text-disabled); font-size:10px;">border: 1px solid var(--border-neutral-l1)</span>
+      </div>
+      <div class="new-card">
+        <h4>新卡片样式</h4>
+        <p>使用 12px 圆角加细边框和灰色背景，更紧凑、更适合信息密度高的工作台界面。</p>
+        <div style="margin-top:12px; display:flex; gap:8px;">
+          <span class="ds-tag ds-pill success">新标签</span>
+          <span class="ds-tag ds-pill brand">PRD</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Spacing Scale -->
+  <div style="margin-top:40px;">
+    <div style="font-size:13px; font-weight:600; color:var(--text-default); margin-bottom:16px;">Spacer Scale / 间距刻度</div>
+    <div style="max-width:400px;">
+      <div class="spacing-demo">
+        <div class="spacing-row">
+          <span class="spacer-label">--spacer-4</span>
+          <div class="spacer-box" style="width:4px;">4</div>
+        </div>
+        <div class="spacing-row">
+          <span class="spacer-label">--spacer-6</span>
+          <div class="spacer-box" style="width:6px;">6</div>
+        </div>
+        <div class="spacing-row">
+          <span class="spacer-label">--spacer-8</span>
+          <div class="spacer-box" style="width:8px;">8</div>
+        </div>
+        <div class="spacing-row">
+          <span class="spacer-label">--spacer-12</span>
+          <div class="spacer-box" style="width:12px;">12</div>
+        </div>
+        <div class="spacing-row">
+          <span class="spacer-label">--spacer-16</span>
+          <div class="spacer-box" style="width:16px;">16</div>
+        </div>
+        <div class="spacing-row">
+          <span class="spacer-label">--spacer-20</span>
+          <div class="spacer-box" style="width:20px;">20</div>
+        </div>
+        <div class="spacing-row">
+          <span class="spacer-label">--spacer-24</span>
+          <div class="spacer-box" style="width:24px;">24</div>
+        </div>
+        <div class="spacing-row">
+          <span class="spacer-label">--spacer-32</span>
+          <div class="spacer-box" style="width:32px;">32</div>
+        </div>
+        <div class="spacing-row">
+          <span class="spacer-label">--spacer-40</span>
+          <div class="spacer-box" style="width:40px;">40</div>
+        </div>
+        <div class="spacing-row">
+          <span class="spacer-label">--spacer-48</span>
+          <div class="spacer-box" style="width:48px;">48</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,362 @@
+<style>
+  /* ===== Token System ===== */
+  :root {
+    --bg-base-default: #FFFFFF;
+    --bg-base-secondary: #F5F5F5;
+    --bg-base-tertiary: #E5E5E5;
+    --bg-overlay-l1: rgba(115, 115, 115, 0.08);
+    --bg-overlay-l2: rgba(115, 115, 115, 0.12);
+    --bg-overlay-l3: rgba(115, 115, 115, 0.16);
+    --bg-overlay-l4: rgba(115, 115, 115, 0.20);
+    --bg-menu: #FFFFFF;
+    --bg-tooltip: #FFFFFF;
+    --bg-invert: #262626;
+    --bg-invert-hover: #404040;
+    --ink-brand: #334155;
+    --ink-brand-hover: #1e293b;
+    --ink-brand-active: #0f172a;
+    --ink-brand-disabled: rgba(51, 65, 85, 0.22);
+    --ink-brand-onbrand: #ffffff;
+    --ink-brand-popup: #f1f5f9;
+    --ink-brand-border: #334155;
+    --text-default: #171717;
+    --text-secondary: #404040;
+    --text-tertiary: #737373;
+    --text-disabled: #A1A1A1;
+    --text-white: #FFFFFF;
+    --border-neutral-l1: rgba(115, 115, 115, 0.12);
+    --border-neutral-l2: rgba(115, 115, 115, 0.18);
+    --border-neutral-l3: rgba(115, 115, 115, 0.36);
+    --border-contrast: #000000;
+    --status-primary-default: #2F74FF;
+    --status-primary-surface-l1: rgba(47, 116, 255, 0.12);
+    --status-success-default: #15A877;
+    --status-success-surface-l1: rgba(64, 176, 139, 0.12);
+    --status-warning-default: #E27900;
+    --status-warning-surface-l1: rgba(226, 121, 0, 0.12);
+    --status-alert-default: #FEA900;
+    --status-alert-surface-l1: rgba(254, 169, 0, 0.14);
+    --status-error-default: #E8463A;
+    --status-error-surface-l1: rgba(232, 70, 58, 0.12);
+    --status-error-surface-l2: rgba(232, 70, 58, 0.16);
+    --radius-0: 0px;
+    --radius-4: 4px;
+    --radius-6: 6px;
+    --radius-8: 8px;
+    --radius-12: 12px;
+    --radius-full: 999px;
+    --font-family-default: "SF Pro Text", "PingFang SC", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --font-family-heading: "SF Pro", "PingFang SC", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --font-family-metric: "Inter", "SF Pro Text", "PingFang SC", system-ui, sans-serif;
+    --font-family-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    --spacer-4: 4px;
+    --spacer-6: 6px;
+    --spacer-8: 8px;
+    --spacer-12: 12px;
+    --spacer-16: 16px;
+    --spacer-20: 20px;
+    --spacer-24: 24px;
+    --spacer-32: 32px;
+    --spacer-40: 40px;
+    --spacer-48: 48px;
+  }
+
+  /* ===== Reset ===== */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-family-default);
+    background: var(--bg-base-default);
+    color: var(--text-default);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* ===== Global Transitions ===== */
+  *, *::before, *::after {
+    transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+  }
+
+  /* ===== Layout Shell ===== */
+  .ds-shell {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    grid-template-rows: 56px 1fr;
+    grid-template-areas:
+      "header  header"
+      "sidebar main";
+    min-height: 100vh;
+  }
+
+  /* ===== Header ===== */
+  .ds-header {
+    grid-area: header;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 56px;
+    padding: 0 var(--spacer-24);
+    background: var(--bg-base-default);
+    border-bottom: 1px solid var(--border-neutral-l1);
+    z-index: 10;
+  }
+
+  .ds-header__brand {
+    font-family: var(--font-family-heading);
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--ink-brand);
+    line-height: 1;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* Center nav tabs */
+  .ds-header__nav {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    list-style: none;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .ds-header__nav-item {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px;
+    border-radius: var(--radius-8);
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    white-space: nowrap;
+    user-select: none;
+    background: transparent;
+    border: none;
+    font-family: inherit;
+  }
+
+  .ds-header__nav-item:hover {
+    background: var(--bg-overlay-l1);
+    color: var(--text-secondary);
+  }
+
+  .ds-header__nav-item[data-active-nav] {
+    background: var(--ink-brand);
+    color: var(--ink-brand-onbrand);
+  }
+
+  .ds-header__nav-item[data-active-nav]:hover {
+    background: var(--ink-brand-hover);
+    color: var(--ink-brand-onbrand);
+  }
+
+  /* Right section */
+  .ds-header__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--spacer-12);
+    flex-shrink: 0;
+  }
+
+  .ds-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-full);
+    background: var(--bg-overlay-l3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    flex-shrink: 0;
+  }
+
+  /* ===== Sidebar ===== */
+  .ds-sidebar {
+    grid-area: sidebar;
+    width: 260px;
+    height: calc(100vh - 56px);
+    background: var(--bg-base-secondary);
+    border-right: 1px solid var(--border-neutral-l1);
+    overflow-y: auto;
+    padding: var(--spacer-16) 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .ds-sidebar__section {
+    padding: 0 var(--spacer-16);
+  }
+
+  .ds-sidebar__section + .ds-sidebar__section {
+    margin-top: var(--spacer-20);
+  }
+
+  /* New task button */
+  .ds-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacer-6);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1;
+    border: none;
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+  }
+
+  .ds-btn--brand {
+    background: var(--ink-brand);
+    color: var(--ink-brand-onbrand);
+    border-radius: var(--radius-8);
+  }
+
+  .ds-btn--brand:hover {
+    background: var(--ink-brand-hover);
+  }
+
+  .ds-btn--sm {
+    height: 28px;
+    padding: 0 var(--spacer-12);
+  }
+
+  .ds-btn--md {
+    height: 32px;
+    padding: 0 var(--spacer-16);
+  }
+
+  .ds-btn--full {
+    width: 100%;
+  }
+
+  /* History section */
+  .ds-sidebar__label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    padding: 0 var(--spacer-16);
+    margin-bottom: var(--spacer-8);
+  }
+
+  .ds-history-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .ds-history-item {
+    display: flex;
+    flex-direction: column;
+    padding: var(--spacer-12) var(--spacer-16);
+    border-left: 2px solid transparent;
+    cursor: pointer;
+    transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+  }
+
+  .ds-history-item:hover {
+    background: var(--bg-overlay-l1);
+  }
+
+  .ds-history-item[data-active-history] {
+    border-left-color: var(--ink-brand);
+    background: var(--bg-overlay-l1);
+  }
+
+  .ds-history-item__title {
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--text-secondary);
+    line-height: 1.4;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .ds-history-item[data-active-history] .ds-history-item__title {
+    font-weight: 500;
+    color: var(--text-default);
+  }
+
+  .ds-history-item__time {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin-top: 2px;
+    line-height: 1;
+  }
+
+  /* ===== Main content slot ===== */
+  .ds-main {
+    grid-area: main;
+    overflow-y: auto;
+    background: var(--bg-base-default);
+  }
+</style>
+
+<!-- SHELL:HEADER_START -->
+<div class="ds-shell">
+  <header class="ds-header">
+    <span class="ds-header__brand">Inkdesk</span>
+
+    <nav>
+      <ul class="ds-header__nav">
+        <li><button class="ds-header__nav-item" data-nav="dashboard">控制台</button></li>
+        <li><button class="ds-header__nav-item" data-nav="wiki">Wiki</button></li>
+        <li><button class="ds-header__nav-item" data-nav="sources">来源</button></li>
+        <li><button class="ds-header__nav-item" data-nav="review">审查</button></li>
+        <li><button class="ds-header__nav-item" data-nav="ask">提问</button></li>
+        <li><button class="ds-header__nav-item" data-nav="import">导入</button></li>
+      </ul>
+    </nav>
+
+    <div class="ds-header__actions">
+      <div class="ds-avatar" aria-label="用户">U</div>
+    </div>
+  </header>
+<!-- SHELL:HEADER_END -->
+
+<!-- SHELL:SIDEBAR_START -->
+  <aside class="ds-sidebar">
+    <div class="ds-sidebar__section">
+      <button class="ds-btn ds-btn--brand ds-btn--md ds-btn--full">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M8 3V13M3 8H13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        新建任务
+      </button>
+    </div>
+
+    <div class="ds-sidebar__section">
+      <div class="ds-sidebar__label">历史记录</div>
+      <ul class="ds-history-list">
+        <li class="ds-history-item" data-active-history>
+          <span class="ds-history-item__title">基于 RAG 的知识库检索优化方案</span>
+          <span class="ds-history-item__time">2026-07-10 14:32</span>
+        </li>
+        <li class="ds-history-item">
+          <span class="ds-history-item__title">MCP 协议安全审计报告</span>
+          <span class="ds-history-item__time">2026-07-09 10:15</span>
+        </li>
+        <li class="ds-history-item">
+          <span class="ds-history-item__title">多模态 Agent 可观测性设计</span>
+          <span class="ds-history-item__time">2026-07-08 18:45</span>
+        </li>
+        <li class="ds-history-item">
+          <span class="ds-history-item__title">提示词注入防御策略梳理</span>
+          <span class="ds-history-item__time">2026-07-07 09:20</span>
+        </li>
+      </ul>
+    </div>
+  </aside>
+
+  <main class="ds-main">
+<!-- SHELL:SIDEBAR_END -->

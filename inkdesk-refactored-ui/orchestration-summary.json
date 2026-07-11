@@ -1,0 +1,95 @@
+{
+  "project": {
+    "name": "Inkdesk 重构设计图",
+    "path": "e:\\dev\\projects\\inkdesk\\inkdesk-refactored-ui",
+    "operation": "create",
+    "deviceType": "desktop",
+    "language": "zh-CN",
+    "dashboardMode": false,
+    "replicationMode": null,
+    "sourceUrl": null,
+    "visualSpecExcerpt": null,
+    "styleDefinitionBrief": null,
+    "designRead": null,
+    "designDials": { "layoutVariance": 3, "motionIntensity": 1, "visualDensity": 3 },
+    "styleContinuityAnchors": {
+      "colorSystem": "Slate indigo brand #334155 with TRAE Work neutral grey surfaces. Brand color is scarce: primary CTA, active nav tab, logo mark only. Status colors from TRAE Work semantic tokens.",
+      "shapeSystem": "radius-8 default for cards/buttons/inputs, radius-12 for ds-card panels, radius-full only for tags/pills. No large rounded corners.",
+      "typographySystem": "SF Pro heading / SF Pro Text body. heading-3xs for eyebrow labels (11px/600). body-base 14px as baseline. font-family-metric (Inter) for numeric displays. font-family-mono (JetBrains Mono) for code.",
+      "spacingSystem": "TRAE Work spacer scale. Page padding 32px desktop. Section gaps 32-48px. Card padding 20px.",
+      "componentLanguage": "ds-* component classes from TRAE Work. ds-btn, ds-input, ds-select, ds-card, ds-tabs, ds-tag, ds-empty, ds-notif, ds-alert. No paper-card, no rounded-full buttons, no decorative gradients.",
+      "surfaceAndDepth": "No shadows on static elements. Surface layering via bg-base-default / bg-base-secondary / bg-overlay-l1. Borders only via border-neutral-l1/l2.",
+      "imageryAndIconography": "TRAE Work inline SVG icons at 16px. No ornamental icons.",
+      "interactionTone": "Subtle hover via bg-overlay-l1/l2. Fast 120ms transitions. No scale effects."
+    },
+    "specsConstraints": null,
+    "sharedProjectShellContract": {
+      "navigationShell": "Fixed top header bar with app name left, nav tabs center (ds-tabs style with underline), user area right. Active tab uses --ink-brand (#334155) background fill, not underline.",
+      "primaryColorSystem": "Slate indigo #334155 as single brand hue. Hover: #1e293b. Active: #0f172a. Popup/surface: #f1f5f9.",
+      "typographySystem": "SF Pro heading, SF Pro Text body. heading-3xs (11px/600) eyebrow. heading-md (20px/600) for page titles. body-base (14px/400) for content.",
+      "radiusScale": "radius-8 (8px) default. radius-12 (12px) for cards. radius-full for tags/pills only.",
+      "surfaceDepthModel": "No shadows. Surface via bg-base-default/secondary/overlay. Borders via border-neutral-l1.",
+      "ctaStyle": "ds-btn with --ink-brand bg, --ink-brand-onbrand text, radius-8, height 32px (lg). Secondary: ds-btn--secondary.",
+      "alignmentRules": "Page content max-width ~1200px centered. Section gaps 32px."
+    },
+    "generationTree": {
+      "root": {
+        "nodeId": "gen-project-shell",
+        "kind": "project-shell",
+        "pageIds": ["page-dashboard", "page-wiki-detail", "page-raw-import", "page-ask-workspace"],
+        "output": "partials/project-shell.html",
+        "sharedRegions": ["header", "sidebar"],
+        "privateRegions": ["main-content"],
+        "mutableSlots": ["activeNavItem", "pageTitle", "pageContent"],
+        "status": "generated",
+        "children": [
+          { "nodeId": "gen-page-dashboard", "kind": "page-leaf", "pageIds": ["page-dashboard"], "output": "pages/dashboard.html", "status": "generated" },
+          { "nodeId": "gen-page-wiki-detail", "kind": "page-leaf", "pageIds": ["page-wiki-detail"], "output": "pages/wiki-detail.html", "status": "generated" },
+          { "nodeId": "gen-page-raw-import", "kind": "page-leaf", "pageIds": ["page-raw-import"], "output": "pages/raw-import.html", "status": "generated" },
+          { "nodeId": "gen-page-ask-workspace", "kind": "page-leaf", "pageIds": ["page-ask-workspace"], "output": "pages/ask-workspace.html", "status": "generated" }
+        ]
+      }
+    }
+  },
+  "designSource": {
+    "operatingMode": "library-bound",
+    "libraryIdentity": {
+      "name": "TRAE Work",
+      "id": "dl_builtin_trae_work",
+      "version": null,
+      "scope": "built-in-global",
+      "path": "c:\\Users\\whq\\.trae-cn\\design_libraries\\dl_builtin_trae_work",
+      "versionSource": null
+    },
+    "brandOverride": {
+      "description": "Inkdesk uses custom slate-indigo brand #334155, overriding TRAE Work's --bg-brand #4b3fe3. All other tokens follow TRAE Work.",
+      "inkBrand": "#334155",
+      "inkBrandHover": "#1e293b",
+      "inkBrandActive": "#0f172a",
+      "inkBrandDisabled": "rgba(51,65,85,0.22)",
+      "inkBrandOnbrand": "#ffffff",
+      "inkBrandPopup": "#f1f5f9",
+      "inkBrandBorder": "#334155"
+    },
+    "tokenMapping": {
+      "inkBg": "--bg-base-default",
+      "inkSurface": "--bg-base-secondary",
+      "inkLow": "--bg-base-secondary (structural), --bg-overlay-l1 (interactive hover)",
+      "inkHigh": "--bg-base-tertiary",
+      "inkText": "--text-default",
+      "inkMuted": "--text-tertiary",
+      "inkPrimary": "#334155 (custom, overrides --bg-brand)",
+      "inkPrimarySoft": "#f1f5f9",
+      "inkTertiary": "--status-warning-default",
+      "inkErrorSoft": "--status-error-surface-l1",
+      "inkErrorText": "--status-error-default",
+      "inkLine": "--border-neutral-l1"
+    }
+  },
+  "pages": [
+    { "id": "page-dashboard", "title": "Dev Run Console", "htmlSrc": "pages/dashboard.html", "activeNavItem": "dashboard", "pageContent": "Main dashboard with task list, overview metrics, create form" },
+    { "id": "page-wiki-detail", "title": "Wiki 详情", "htmlSrc": "pages/wiki-detail.html", "activeNavItem": "wiki", "pageContent": "Wiki page detail with title, summary, vault path, claims" },
+    { "id": "page-raw-import", "title": "Raw 导入", "htmlSrc": "pages/raw-import.html", "activeNavItem": "raw", "pageContent": "Raw import panel with web URL, text, PDF import tabs" },
+    { "id": "page-ask-workspace", "title": "提问工作台", "htmlSrc": "pages/ask-workspace.html", "activeNavItem": "ask", "pageContent": "Ask workspace with question form, answer display, follow-ups" }
+  ]
+}
