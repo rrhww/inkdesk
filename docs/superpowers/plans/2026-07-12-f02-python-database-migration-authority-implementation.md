@@ -1,7 +1,7 @@
 # F02 Python 数据库迁移权威实施计划
 
 > 日期：2026-07-12
-> 状态：待用户确认；F01 已验收通过，F02 可实施
+> 状态：实现与专项 verifier 已完成（run `20260714T151606Z` 为 `PASS`）；代码提交/合并和全量回归证据待闭环
 > 路线图：[`2026-07-11-inkdesk-capability-platform-master-roadmap.md`](./2026-07-11-inkdesk-capability-platform-master-roadmap.md)
 > 上位设计：[`2026-07-11-inkdesk-team-rd-capability-platform-design.md`](../specs/2026-07-11-inkdesk-team-rd-capability-platform-design.md)
 > 前置依赖：F01 当前行为契约与恢复基线

@@ -1,7 +1,7 @@
 # Inkdesk 团队 AI 研发能力平台总开发路线图
 
 > 日期：2026-07-11
-> 状态：已确认；F01 已完成，F02 已展开待确认
+> 状态：已确认；F01 已完成，F02 专项验收通过但交付待闭环，F03 方案已展开待确认
 > 上位设计：[`2026-07-11-inkdesk-team-rd-capability-platform-design.md`](../specs/2026-07-11-inkdesk-team-rd-capability-platform-design.md)
 > 计划性质：Plan of Plans；定义全局顺序、能力边界和阶段门禁，不在一个计划中实施整个系统
 > 协作约束：Codex 维护计划、解释设计并审阅；用户负责编码、失败测试、调试、测试执行和浏览器验收
@@ -254,7 +254,7 @@ flowchart TD
 | --- | --- | --- | --- | --- |
 | [F01](./2026-07-11-f01-current-contract-recovery-baseline-implementation.md) | 当前行为契约与恢复基线 | 无 | `server/tests/**`、`web/tests/**`、`docs/delivery/**` | 用户执行并保存后端、前端、OpenAPI、Vault 备份与数据库恢复证据；Codex 审阅，已知失败单独登记 |
 | [F02](./2026-07-12-f02-python-database-migration-authority-implementation.md) | Python 数据库迁移权威 | F01 | `server/pyproject.toml`、`server/alembic*`、`db.py` | 空库与现有库升级到同一 schema；后续不再向运行时升级数组新增 DDL |
-| F03 | 模块化应用组合壳 | F01 | `main.py`、新 `api/app.py` 与 `api/routers/` | 先迁移 health / vault 路由；OpenAPI、状态码和响应体保持兼容 |
+| [F03](./2026-07-14-f03-modular-application-composition-shell-implementation.md) | 模块化应用组合壳 | F01；实施前关闭 F02 交付门禁 | `main.py`、新 `api/app.py` 与 `api/routers/` | 先迁移 system health / vault 四个路由；纯壳无运行时副作用，OpenAPI、状态码和响应体保持兼容 |
 | F04 | 默认 Organization 与 Capability Space | F02、F03 | 新 `modules/spaces/`、身份与空间表、兼容 Workspace Adapter | 现有 Workspace 数据幂等回填到默认组织、个人空间和项目空间；暂不增加登录或团队 UI |
 | F05 | Durable Job / Attempt Kernel | F02、F03 | `infrastructure/jobs/`、Compile Worker Adapter | Job、Attempt、lease、heartbeat 和 idempotency key 可持久化；进程重启能接管未完成任务且不重复副作用 |
 
@@ -455,15 +455,17 @@ npm run e2e:fullstack
 
 [`F01 当前行为契约与恢复基线`](./2026-07-11-f01-current-contract-recovery-baseline-implementation.md) 已完成。默认 Docker Compose run `20260711T113950Z` 的完整 manifest 为 `PASS`：10/10 必需 suite、PostgreSQL + Vault 成对恢复、源/恢复指纹、7 条恢复后只读 API 和临时目标清理全部通过，known issue 为 0。
 
-当前只展开 [`F02 Python 数据库迁移权威`](./2026-07-12-f02-python-database-migration-authority-implementation.md)。F02 必须回答：
+[`F02 Python 数据库迁移权威`](./2026-07-12-f02-python-database-migration-authority-implementation.md) 已完成本地实现与专项 verifier。run `20260714T151606Z` 的 `overallStatus` 为 `PASS`：fresh upgrade、F01 adoption、unsupported schema、permission failure 和 migration lock 五项检查通过，接管前后 schema/data hash 相等，7 条只读路径通过。F02 尚未在路线图中标记“交付完成”，直到代码提交合并、后端全量、PostgreSQL integration、Docker 启动和 full-stack 输出全部审阅。
 
-- 空库如何只通过 Alembic 到达当前 schema。
-- F01 认证的现有库如何在应用 schema 与数据不变的前提下被严格接管。
-- 未知、partial、drift 和并发 migration 如何 fail closed。
-- 应用启动如何停止执行 `create_all`、runtime `ALTER TABLE` 和 extension DDL。
-- migration 失败时如何阻止服务启动，并使用 F01 备份完成回退。
+当前展开 [`F03 模块化应用组合壳`](./2026-07-14-f03-modular-application-composition-shell-implementation.md)。规划可以立即确认，生产代码必须等待 F02 交付门禁关闭。F03 必须回答：
 
-F02 不新增业务表或业务字段，不重构应用组合，不自动猜测未知历史 schema，也不删除旧 Flyway SQL。
+- 如何创建不初始化数据库、不 seed、不启动 Worker/MCP 的纯 FastAPI 壳。
+- 如何只迁移 `/health`、`/actuator/health` 与两个 Vault 端点，并保持 operation ID 和完整 OpenAPI 不变。
+- 如何让新 router 通过 dependency override 独立测试，同时继续复用 legacy research service。
+- 如何保留 `main.create_app()` 的 F02 readiness、seed、MCP 与 Compile Worker 生命周期。
+- 如何证明 Knowledge Health 未被误迁移、新旧 route 没有双注册、`inkdesk_server.main:app` 仍兼容。
+
+F03 不新增数据库结构，不修改 API 行为，不迁移 Knowledge Health，不重构 F02 migration、Compile Worker 或 MCP，也不拆分其余 legacy routes。
 
 ## 24. 最终完成语义
 
