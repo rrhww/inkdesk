@@ -106,6 +106,10 @@ def _configure_isolated_app(root: Path) -> None:
     get_settings.cache_clear()
     get_engine.cache_clear()
     get_session_factory.cache_clear()
+    from inkdesk_server.db_migrations import main
+
+    if main(["upgrade"]) != 0:
+        raise RuntimeError("Unable to migrate the isolated F01 representative-record database")
 
 
 def _dispose_isolated_app() -> None:

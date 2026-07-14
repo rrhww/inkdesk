@@ -25,6 +25,7 @@ from export_postgres_schema import (  # noqa: E402
 )
 from export_representative_records import capture_representative_records  # noqa: E402
 from baseline_contracts import canonical_json  # noqa: E402
+import export_postgres_schema  # noqa: E402
 
 
 def _current_openapi() -> dict:
@@ -123,6 +124,34 @@ def test_schema_canonicalizer_is_stable_across_catalog_ordering() -> None:
     shuffled["postgres"]["extensions"].reverse()
 
     assert canonicalize_schema(catalog) == canonicalize_schema(shuffled)
+
+
+def test_schema_exporter_excludes_only_explicitly_requested_tables(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    captured: dict[str, object] = {}
+
+    def fake_fetch(database_url: str, *, exclude_tables: set[str]) -> dict:
+        captured["database_url"] = database_url
+        captured["exclude_tables"] = exclude_tables
+        return _schema_catalog()
+
+    monkeypatch.setattr(export_postgres_schema, "fetch_postgres_catalog", fake_fetch)
+
+    assert export_postgres_schema.main(
+        [
+            "capture",
+            "--database-url",
+            "postgresql://example.invalid/inkdesk",
+            "--snapshot",
+            str(tmp_path / "schema.json"),
+            "--exclude-table",
+            "alembic_version",
+        ]
+    ) == 0
+
+    assert captured == {
+        "database_url": "postgresql://example.invalid/inkdesk",
+        "exclude_tables": {"alembic_version"},
+    }
 
 
 def test_schema_compatibility_digest_changes_for_type_or_on_delete_change() -> None:

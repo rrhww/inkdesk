@@ -40,6 +40,11 @@ class Settings(BaseSettings):
         default="postgresql+psycopg://inkdesk:inkdesk@localhost:5432/inkdesk",
         alias="INKDESK_DB_URL",
     )
+    migration_lock_timeout_seconds: float = Field(
+        default=30.0,
+        ge=0,
+        alias="INKDESK_MIGRATION_LOCK_TIMEOUT_SECONDS",
+    )
     vault_root: Path = Field(default=Path("./inkdesk-vault"), alias="INKDESK_VAULT_ROOT")
     agent_runtime: str = Field(default="langgraph", alias="INKDESK_AGENT_RUNTIME")
     agent_provider_profile: str = Field(default="openai", alias="INKDESK_AGENT_PROVIDER_PROFILE")

@@ -7,7 +7,7 @@ import copy
 import json
 import re
 import sys
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Any
 
@@ -108,7 +108,7 @@ def normalize_representative_records(records: Any) -> Any:
     return normalize(records)
 
 
-def fetch_postgres_catalog(database_url: str) -> dict[str, Any]:
+def fetch_postgres_catalog(database_url: str, *, exclude_tables: Iterable[str] = ()) -> dict[str, Any]:
     """Read the public schema from PostgreSQL system catalogs, never ORM metadata."""
 
     if not database_url or not database_url.strip():
@@ -118,6 +118,7 @@ def fetch_postgres_catalog(database_url: str) -> dict[str, Any]:
     except ImportError as error:  # pragma: no cover - setup failure is reported to the operator.
         raise RuntimeError("psycopg is required to export PostgreSQL schema") from error
 
+    excluded_tables = set(exclude_tables)
     connection_url = database_url.replace("postgresql+psycopg://", "postgresql://", 1)
     with psycopg.connect(connection_url) as connection:
         with connection.cursor() as cursor:
@@ -133,7 +134,7 @@ def fetch_postgres_catalog(database_url: str) -> dict[str, Any]:
                 ORDER BY table_name
                 """
             )
-            table_names = [row[0] for row in cursor.fetchall()]
+            table_names = [row[0] for row in cursor.fetchall() if row[0] not in excluded_tables]
             tables = [_fetch_table(cursor, table_name) for table_name in table_names]
     return {"postgres": {"version": version, "extensions": extensions}, "tables": tables}
 
@@ -395,8 +396,9 @@ def main(argv: list[str] | None = None) -> int:
         command = subparsers.add_parser(name)
         command.add_argument("--database-url", required=True, help="Explicit PostgreSQL source URL")
         command.add_argument("--snapshot", type=Path, required=True, help="Schema snapshot path")
+        command.add_argument("--exclude-table", action="append", default=[], help="Explicit public table to exclude")
     arguments = parser.parse_args(argv)
-    catalog = fetch_postgres_catalog(arguments.database_url)
+    catalog = fetch_postgres_catalog(arguments.database_url, exclude_tables=set(arguments.exclude_table))
     if arguments.command == "capture":
         write_schema_snapshot(catalog, arguments.snapshot)
         return 0
