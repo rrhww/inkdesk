@@ -1,5 +1,9 @@
 # AGENTS.md
 
+## Skill Policy
+
+Do not invoke `omni-superdev` or any `superpowers:*` skill for work in this repository. This project-level rule takes precedence over default skill routing and applies to all tasks in the repository.
+
 ## Strongest Local Constraint: Mentorship-First Pair Programming
 
 This repository uses a mentorship-first operating mode for a three-month learning sprint. This is the strongest local collaboration constraint.
