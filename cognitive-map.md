@@ -63,6 +63,14 @@
 - manifest 将测试结果、契约/备份 SHA-256、数据库与 Vault 的组合源指纹、恢复报告和实际匹配的已知问题写到 `.local/f01-baseline/<runId>/`。部分模式只能诊断，不能报告通过。
 - `verify_restored_read_paths.py` 使用隔离设置，关闭 seed、编译 worker 和 web assist，只验证恢复后读路径，不会向恢复库写入产品数据。
 
+### F02 Alembic 数据库权威
+
+- `server/alembic/versions/20260712_f02_0001_baseline.py` 是当前 16 张应用表和 PostgreSQL `vector` extension 的唯一 DDL baseline；它显式 `op.create_table`，不调用 ORM `create_all()`，downgrade 明确拒绝。
+- `python -m inkdesk_server.db_migrations status|check|upgrade` 是唯一公开 migration 入口。未管理 PostgreSQL 只有在 F01 compatibility digest 精确匹配时才允许 stamp；unknown、partial、drift 和未知 revision 都 fail closed。
+- `db.init_db()` 仍保留给 app factory 兼容调用，但它只检查 head revision 与 schema readiness，不创建表、加列或创建 extension。测试 fixture 与 Docker entrypoint 必须先显式 upgrade。
+- PostgreSQL migration 在 preflight 到 postflight 持有 advisory lock；F02 verifier 使用 F01 dump 只恢复到 `inkdesk_f02_*` 临时目标，记录 schema/data 指纹和只读 API 结果后清理。
+- `server/src/main/resources/db/migration/V1-V8` 是冻结的 Flyway 历史，不再是运行权威。后续 schema 变化只能新增 Alembic revision。
+
 ## 模糊区
 
 - behavioral contract cases 的实际执行 — 格式已定，contents 待 Skill 实战后产生

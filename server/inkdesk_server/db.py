@@ -3,66 +3,13 @@ from __future__ import annotations
 from contextlib import contextmanager
 from functools import lru_cache
 
-from sqlalchemy import create_engine, inspect, text
+from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
 
 from inkdesk_server.core.config import get_settings
 
 
 Base = declarative_base()
-
-
-ASK_TURNS_SCHEMA_UPGRADES = (
-    ("parent_ask_turn_id", "ALTER TABLE ask_turns ADD COLUMN parent_ask_turn_id VARCHAR(64) REFERENCES ask_turns (id) ON DELETE SET NULL"),
-    ("thread_root_ask_turn_id", "ALTER TABLE ask_turns ADD COLUMN thread_root_ask_turn_id VARCHAR(64) REFERENCES ask_turns (id) ON DELETE SET NULL"),
-    ("mode", "ALTER TABLE ask_turns ADD COLUMN mode VARCHAR(32) NOT NULL DEFAULT 'vault'"),
-    ("confidence", "ALTER TABLE ask_turns ADD COLUMN confidence FLOAT NOT NULL DEFAULT 0"),
-    ("retrieval_mode", "ALTER TABLE ask_turns ADD COLUMN retrieval_mode VARCHAR(32) NOT NULL DEFAULT 'lexical_fallback'"),
-    ("used_wiki_ids", "ALTER TABLE ask_turns ADD COLUMN used_wiki_ids TEXT NOT NULL DEFAULT ''"),
-    ("used_source_ids", "ALTER TABLE ask_turns ADD COLUMN used_source_ids TEXT NOT NULL DEFAULT ''"),
-    ("used_chunk_ids", "ALTER TABLE ask_turns ADD COLUMN used_chunk_ids TEXT NOT NULL DEFAULT ''"),
-    ("used_web_sources_json", "ALTER TABLE ask_turns ADD COLUMN used_web_sources_json TEXT NOT NULL DEFAULT '[]'"),
-    ("knowledge_gaps_json", "ALTER TABLE ask_turns ADD COLUMN knowledge_gaps_json TEXT NOT NULL DEFAULT '[]'"),
-    ("follow_up_questions_json", "ALTER TABLE ask_turns ADD COLUMN follow_up_questions_json TEXT NOT NULL DEFAULT '[]'"),
-    ("can_writeback", "ALTER TABLE ask_turns ADD COLUMN can_writeback BOOLEAN NOT NULL DEFAULT 1"),
-    ("writeback_package_json", "ALTER TABLE ask_turns ADD COLUMN writeback_package_json TEXT NOT NULL DEFAULT '{}'"),
-    ("judgment_payload_json", "ALTER TABLE ask_turns ADD COLUMN judgment_payload_json TEXT NOT NULL DEFAULT '{}'"),
-)
-
-REVIEW_ITEMS_SCHEMA_UPGRADES = (
-    ("proposal_payload_json", "ALTER TABLE review_items ADD COLUMN proposal_payload_json TEXT NOT NULL DEFAULT '{}'"),
-)
-
-ASK_TURNS_V2_UPGRADES = (
-    ("run_id", "ALTER TABLE ask_turns ADD COLUMN run_id VARCHAR(64) REFERENCES dev_runs (id) ON DELETE SET NULL"),
-)
-
-TOPIC_CLAIMS_SCHEMA_UPGRADES = (
-    ("evidence_count", "ALTER TABLE topic_claims ADD COLUMN evidence_count INTEGER NOT NULL DEFAULT 0"),
-    ("provenance_status", "ALTER TABLE topic_claims ADD COLUMN provenance_status VARCHAR(20) NOT NULL DEFAULT 'unsupported'"),
-    ("last_verified_at", "ALTER TABLE topic_claims ADD COLUMN last_verified_at TIMESTAMP NULL"),
-    ("updated_at", "ALTER TABLE topic_claims ADD COLUMN updated_at TIMESTAMP NULL"),
-    ("usage_count", "ALTER TABLE topic_claims ADD COLUMN usage_count INTEGER NOT NULL DEFAULT 0"),
-    ("last_used_at", "ALTER TABLE topic_claims ADD COLUMN last_used_at TIMESTAMP NULL"),
-)
-
-COMPILE_TASKS_SCHEMA_UPGRADES = (
-    ("content_hash", "ALTER TABLE compile_tasks ADD COLUMN content_hash VARCHAR(128)"),
-    ("error_message", "ALTER TABLE compile_tasks ADD COLUMN error_message TEXT"),
-    ("started_at", "ALTER TABLE compile_tasks ADD COLUMN started_at TIMESTAMP NULL"),
-    ("completed_at", "ALTER TABLE compile_tasks ADD COLUMN completed_at TIMESTAMP NULL"),
-)
-
-COMPILE_STEPS_SCHEMA_UPGRADES = (
-    ("compile_task_id", "ALTER TABLE compile_steps ADD COLUMN compile_task_id VARCHAR(64) REFERENCES compile_tasks (id) ON DELETE CASCADE"),
-    ("step_name", "ALTER TABLE compile_steps ADD COLUMN step_name VARCHAR(20) NOT NULL DEFAULT 'INSIGHT'"),
-    ("sort_order", "ALTER TABLE compile_steps ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0"),
-    ("status", "ALTER TABLE compile_steps ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'PENDING'"),
-    ("error_message", "ALTER TABLE compile_steps ADD COLUMN error_message TEXT"),
-    ("payload_json", "ALTER TABLE compile_steps ADD COLUMN payload_json TEXT NOT NULL DEFAULT '{}'"),
-    ("started_at", "ALTER TABLE compile_steps ADD COLUMN started_at TIMESTAMP NULL"),
-    ("completed_at", "ALTER TABLE compile_steps ADD COLUMN completed_at TIMESTAMP NULL"),
-)
 
 
 @lru_cache(maxsize=1)
@@ -78,70 +25,10 @@ def get_session_factory():
 
 
 def init_db() -> None:
-    from inkdesk_server import models  # noqa: F401
+    """Compatibility facade that only validates the Alembic-managed schema."""
+    from inkdesk_server.db_migrations import assert_database_ready
 
-    engine = get_engine()
-    ensure_pgvector_extension(engine)
-    Base.metadata.create_all(bind=engine)
-    upgrade_existing_schema(engine)
-
-
-def ensure_pgvector_extension(engine) -> None:
-    if engine.dialect.name != "postgresql":
-        return
-    with engine.begin() as connection:
-        connection.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
-
-
-def upgrade_existing_schema(engine) -> None:
-    with engine.begin() as connection:
-        inspector = inspect(connection)
-        if not inspector.has_table("ask_turns"):
-            pass
-        else:
-            existing_columns = {column["name"] for column in inspector.get_columns("ask_turns")}
-            for column_name, ddl in ASK_TURNS_SCHEMA_UPGRADES:
-                if column_name in existing_columns:
-                    continue
-                connection.exec_driver_sql(ddl)
-                existing_columns.add(column_name)
-            for column_name, ddl in ASK_TURNS_V2_UPGRADES:
-                if column_name in existing_columns:
-                    continue
-                connection.exec_driver_sql(ddl)
-                existing_columns.add(column_name)
-
-        if inspector.has_table("review_items"):
-            review_columns = {column["name"] for column in inspector.get_columns("review_items")}
-            for column_name, ddl in REVIEW_ITEMS_SCHEMA_UPGRADES:
-                if column_name in review_columns:
-                    continue
-                connection.exec_driver_sql(ddl)
-                review_columns.add(column_name)
-
-        if inspector.has_table("topic_claims"):
-            topic_claim_columns = {column["name"] for column in inspector.get_columns("topic_claims")}
-            for column_name, ddl in TOPIC_CLAIMS_SCHEMA_UPGRADES:
-                if column_name in topic_claim_columns:
-                    continue
-                connection.exec_driver_sql(ddl)
-                topic_claim_columns.add(column_name)
-
-        if inspector.has_table("compile_tasks"):
-            task_columns = {column["name"] for column in inspector.get_columns("compile_tasks")}
-            for column_name, ddl in COMPILE_TASKS_SCHEMA_UPGRADES:
-                if column_name in task_columns:
-                    continue
-                connection.exec_driver_sql(ddl)
-                task_columns.add(column_name)
-
-        if inspector.has_table("compile_steps"):
-            step_columns = {column["name"] for column in inspector.get_columns("compile_steps")}
-            for column_name, ddl in COMPILE_STEPS_SCHEMA_UPGRADES:
-                if column_name in step_columns:
-                    continue
-                connection.exec_driver_sql(ddl)
-                step_columns.add(column_name)
+    assert_database_ready()
 
 
 def get_db() -> Session:

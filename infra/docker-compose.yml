@@ -33,7 +33,12 @@ services:
 
   server:
     build:
-      context: ../server
+      context: ..
+      dockerfile: infra/docker/local-server.Dockerfile
+      args:
+        HTTP_PROXY: ${HTTP_PROXY:-}
+        HTTPS_PROXY: ${HTTPS_PROXY:-}
+        NO_PROXY: ${NO_PROXY:-}
     container_name: inkdesk-server
     restart: unless-stopped
     depends_on:
@@ -41,6 +46,7 @@ services:
         condition: service_healthy
     environment:
       INKDESK_DB_URL: postgresql+psycopg://${POSTGRES_USER:-inkdesk}:${POSTGRES_PASSWORD:-inkdesk}@postgres:5432/${POSTGRES_DB:-inkdesk}
+      INKDESK_MIGRATION_LOCK_TIMEOUT_SECONDS: ${INKDESK_MIGRATION_LOCK_TIMEOUT_SECONDS:-30}
       INKDESK_VAULT_ROOT: /app/inkdesk-vault
       INKDESK_AGENT_PROVIDER_PROFILE: ${INKDESK_AGENT_PROVIDER_PROFILE:-openai}
       INKDESK_AGENT_MODEL: ${INKDESK_AGENT_MODEL:-}
