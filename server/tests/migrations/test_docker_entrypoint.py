@@ -35,3 +35,12 @@ def test_local_server_entrypoint_does_not_start_uvicorn_when_migration_fails(tmp
 
     assert completed.returncode == 19
     assert marker.exists() is False
+
+
+def test_local_server_image_normalizes_entrypoint_line_endings() -> None:
+    repository_root = Path(__file__).resolve().parents[3]
+    dockerfile = repository_root / "infra" / "docker" / "local-server.Dockerfile"
+
+    assert "sed -i 's/\\r$//' ./local-server-entrypoint.sh" in dockerfile.read_text(
+        encoding="utf-8"
+    )
