@@ -7,12 +7,12 @@ from pathlib import Path
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, File, Query, Request, Response, UploadFile
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from inkdesk_server.core.config import Settings, get_settings
+from inkdesk_server.api.app import create_api_app
 from inkdesk_server.db import get_db, init_db, session_scope
 from inkdesk_server.deposit_service import DepositService
 from inkdesk_server.health_service import HealthService
@@ -26,7 +26,6 @@ from inkdesk_server.run_service import RunService
 from inkdesk_server.schemas import (
     AddRunEventRequest,
     AdvanceRunRequest,
-    ApiErrorResponse,
     AskBriefingResponse,
     AskRequest,
     AskResponse,
@@ -47,8 +46,6 @@ from inkdesk_server.schemas import (
     SourceResponse,
     TopicDetailResponse,
     TopicSummaryResponse,
-    VaultInitializeRequest,
-    VaultStatusResponse,
     WebRawImportRequest,
 )
 from inkdesk_server.security import ApiError, ResourceNotFoundError
@@ -114,56 +111,7 @@ def create_app() -> FastAPI:
             yield
         compile_worker.stop()
 
-    app = FastAPI(title="Inkdesk Python Server", version="0.1.0", lifespan=app_lifespan)
-
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=["http://localhost:3000"],
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
-
-    @app.exception_handler(ApiError)
-    async def handle_api_error(_, exception: ApiError):
-        return JSONResponse(status_code=exception.status_code, content=ApiErrorResponse(code=exception.code, message=exception.message).model_dump())
-
-    @app.exception_handler(ResourceNotFoundError)
-    async def handle_not_found(_, exception: ResourceNotFoundError):
-        return JSONResponse(status_code=exception.status_code, content=ApiErrorResponse(code=exception.code, message=exception.message).model_dump())
-
-    @app.exception_handler(Exception)
-    async def handle_unexpected(_, __):
-        return JSONResponse(status_code=500, content=ApiErrorResponse(code="INTERNAL_ERROR", message="Unexpected server error.").model_dump())
-
-    @app.get("/health")
-    def health():
-        return {"status": "ok"}
-
-    @app.get("/actuator/health")
-    def actuator_health(
-        db: Annotated[Session, Depends(get_db)],
-        settings: Annotated[Settings, Depends(get_settings)],
-    ):
-        return {
-            "status": "UP",
-            "retrieval": get_research_service(db, settings).get_retrieval_health(),
-        }
-
-    @app.get("/api/vault/status", response_model=VaultStatusResponse)
-    def vault_status(
-        db: Annotated[Session, Depends(get_db)],
-        settings: Annotated[Settings, Depends(get_settings)],
-    ):
-        return get_research_service(db, settings).get_vault_status()
-
-    @app.post("/api/vault/initialize", response_model=VaultStatusResponse)
-    def vault_initialize(
-        request: VaultInitializeRequest,
-        db: Annotated[Session, Depends(get_db)],
-        settings: Annotated[Settings, Depends(get_settings)],
-    ):
-        return get_research_service(db, settings).initialize_vault(request.vaultType)
+    app = create_api_app(lifespan=app_lifespan)
 
     @app.get("/api/admin/home", response_model=ResearchDashboardResponse)
     def home(

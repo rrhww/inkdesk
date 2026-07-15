@@ -17,6 +17,7 @@ RUN HTTP_PROXY="$HTTP_PROXY" HTTPS_PROXY="$HTTPS_PROXY" NO_PROXY="$NO_PROXY" \
     pip install --no-cache-dir ./inkdesk_skill_sdk \
     && HTTP_PROXY="$HTTP_PROXY" HTTPS_PROXY="$HTTPS_PROXY" NO_PROXY="$NO_PROXY" \
     pip install --no-cache-dir . \
+    && sed -i 's/\r$//' ./local-server-entrypoint.sh \
     && chmod +x ./local-server-entrypoint.sh
 
 EXPOSE 8080

@@ -253,8 +253,8 @@ flowchart TD
 | ID | 单一能力 | 依赖 | 主要边界 | 可观察验收 |
 | --- | --- | --- | --- | --- |
 | [F01](./2026-07-11-f01-current-contract-recovery-baseline-implementation.md) | 当前行为契约与恢复基线 | 无 | `server/tests/**`、`web/tests/**`、`docs/delivery/**` | 用户执行并保存后端、前端、OpenAPI、Vault 备份与数据库恢复证据；Codex 审阅，已知失败单独登记 |
-| F02 | Python 数据库迁移权威 | F01 | `server/pyproject.toml`、`server/alembic*`、`db.py` | 空库与现有库升级到同一 schema；后续不再向运行时升级数组新增 DDL |
-| F03 | 模块化应用组合壳 | F01 | `main.py`、新 `api/app.py` 与 `api/routers/` | 先迁移 health / vault 路由；OpenAPI、状态码和响应体保持兼容 |
+| F02（已完成） | Python 数据库迁移权威 | F01 | `server/pyproject.toml`、`server/alembic*`、`db.py` | 空库与现有库升级到同一 schema；后续不再向运行时升级数组新增 DDL |
+| [F03（实现与验收完成，待推送并合并）](./2026-07-14-f03-modular-application-composition-shell-implementation.md) | 模块化应用组合壳 | F01、F02 | `main.py`、新 `api/app.py` 与 `api/routers/` | 已迁移 health / vault 路由；OpenAPI、状态码和响应体保持兼容 |
 | F04 | 默认 Organization 与 Capability Space | F02、F03 | 新 `modules/spaces/`、身份与空间表、兼容 Workspace Adapter | 现有 Workspace 数据幂等回填到默认组织、个人空间和项目空间；暂不增加登录或团队 UI |
 | F05 | Durable Job / Attempt Kernel | F02、F03 | `infrastructure/jobs/`、Compile Worker Adapter | Job、Attempt、lease、heartbeat 和 idempotency key 可持久化；进程重启能接管未完成任务且不重复副作用 |
 
@@ -453,7 +453,7 @@ npm run e2e:fullstack
 
 ## 23. 当前激活计划
 
-路线图已经确认，当前只激活 [`F01 当前行为契约与恢复基线`](./2026-07-11-f01-current-contract-recovery-baseline-implementation.md)。F01 工具与测试已通过 PR #4 合并，详细计划已经回答：
+F01 与 F02 已完成。F03 的实现与验收已完成，正在等待推送并合并；其完整范围、回归证据和提交追溯记录见 [`F03 模块化应用组合壳实施计划`](./2026-07-14-f03-modular-application-composition-shell-implementation.md)。
 
 - 当前哪些 API 和浏览器流程属于必须保留的行为。
 - 用户当前能稳定运行哪些测试，哪些失败是已知基线。
@@ -461,9 +461,7 @@ npm run e2e:fullstack
 - OpenAPI、数据库 schema 和关键示例数据如何形成迁移前快照。
 - 哪些旧实现明确只是兼容层，不应被测试永久固化。
 
-F01 不修改产品行为，不创建新领域表，也不开始 UI 重构。
-
-F01 尚未完成：只有用户执行一次完整 `capture-baseline.ps1 -Mode all`，保存真实测试、备份、隔离恢复和校验证据，并经 Codex 审阅通过后，才能解锁 F02/F03。
+F03 不修改产品行为，不创建新领域表，也不开始 UI 重构。F04 与 F05 仅在 F03 提交并合并后，才可依赖已验证的组合壳接入。
 
 ## 24. 最终完成语义
 
