@@ -1,7 +1,7 @@
 # F03 模块化应用组合壳实施计划
 
 > 日期：2026-07-14
-> 状态：实现与验收完成；代码提交 `aef1c4f`，待推送并合并
+> 状态：已完成并通过 PR #7 合并；实现提交 `aef1c4f`，merge commit `77a848a`
 > 路线图：[`2026-07-11-inkdesk-capability-platform-master-roadmap.md`](./2026-07-11-inkdesk-capability-platform-master-roadmap.md)
 > 上位设计：[`2026-07-11-inkdesk-team-rd-capability-platform-design.md`](../specs/2026-07-11-inkdesk-team-rd-capability-platform-design.md)
 > 前置依赖：F01 当前行为契约与恢复基线；F02 代码提交、合并和全量回归闭环
