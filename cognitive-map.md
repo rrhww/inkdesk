@@ -71,6 +71,13 @@
 - PostgreSQL migration 在 preflight 到 postflight 持有 advisory lock；F02 verifier 使用 F01 dump 只恢复到 `inkdesk_f02_*` 临时目标，记录 schema/data 指纹和只读 API 结果后清理。
 - `server/src/main/resources/db/migration/V1-V8` 是冻结的 Flyway 历史，不再是运行权威。后续 schema 变化只能新增 Alembic revision。
 
+### F03 模块化应用组合壳
+
+- `inkdesk_server.api.app.create_api_app()` 只拥有 HTTP 组合：FastAPI metadata、CORS、统一错误处理，以及 system health 和 Vault 两个 router；它不初始化数据库、不 seed、不启动 Worker，也不构建 MCP。
+- `inkdesk_server.main.create_app()` 仍是 production composition root：它传入 lifespan 来组合纯壳，继续拥有 F02 readiness/seed、legacy routes、MCP mount 和 Compile Worker 生命周期。
+- 首次迁移只覆盖四个端点：`GET /health`、`GET /actuator/health`、`GET /api/vault/status`、`POST /api/vault/initialize`。知识健康的 `/api/health*` 是独立业务领域，保留在 legacy main。
+- 路由迁移的兼容性不能只看 HTTP 200：要同时锁定无 duplicate method/path、operation ID、错误处理、完整 canonical OpenAPI，以及 Docker 与真实浏览器的全栈闭环。
+
 ## 模糊区
 
 - behavioral contract cases 的实际执行 — 格式已定，contents 待 Skill 实战后产生

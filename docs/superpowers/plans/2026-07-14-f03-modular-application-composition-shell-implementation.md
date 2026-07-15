@@ -1,7 +1,7 @@
 # F03 模块化应用组合壳实施计划
 
 > 日期：2026-07-14
-> 状态：待用户确认；方案已敲定，实施须先通过 F02 交付门禁
+> 状态：实现与验收完成；代码提交 `aef1c4f`，待推送并合并
 > 路线图：[`2026-07-11-inkdesk-capability-platform-master-roadmap.md`](./2026-07-11-inkdesk-capability-platform-master-roadmap.md)
 > 上位设计：[`2026-07-11-inkdesk-team-rd-capability-platform-design.md`](../specs/2026-07-11-inkdesk-team-rd-capability-platform-design.md)
 > 前置依赖：F01 当前行为契约与恢复基线；F02 代码提交、合并和全量回归闭环
@@ -387,6 +387,17 @@ npm run e2e:fullstack
 12. `cognitive-map.md` 与路线图状态已更新，验证输出可追溯到 commit SHA。
 
 任一 OpenAPI diff、duplicate route、纯壳产生运行时副作用、MCP/Worker 生命周期变化，或用更新 F01 snapshot 的方式消除 diff，都属于阻塞失败。
+
+### 7.1 2026-07-15 实施与验收记录
+
+- `api/app.py` 提供无运行时副作用的 `create_api_app()`；`main.create_app()` 仍是唯一 production composition root，并保留 readiness、seed、MCP、Worker 和未迁移 legacy routes 的所有权。
+- 仅迁移 `GET /health`、`GET /actuator/health`、`GET /api/vault/status`、`POST /api/vault/initialize`；`/api/health*` 保留在 legacy main。
+- focused API/runtime/OpenAPI 契约测试为 `23 passed`；其中 production `app.openapi()` 与 F01 checked-in canonical snapshot 完整相等。
+- 后端全量测试为 `386 passed, 7 skipped`；PostgreSQL migration + pgvector 为 `17 passed, 1 skipped`。
+- Docker 实测服务器在 `f02_0001` / `MANAGED_CURRENT` 后启动，`/health`、`/actuator/health`、`/api/vault/status` 均为 HTTP 200。镜像构建时显式规范化入口脚本为 LF，并以测试锁定 Windows CRLF 工作树的启动兼容性。
+- Docker 服务的 `export_openapi.py compare --url http://localhost:8080` 与 F01 checked-in snapshot 比较通过。
+- 隔离的真实全栈 Playwright 回归为 `10 passed`，覆盖 F01 关键浏览器流和 Dev Run 创建、Ask、Deposit、阶段推进、完成与非法状态转换。
+- F03 代码实现与测试提交：`aef1c4f`（`feat: 建立 F03 模块化 API 组合壳`）。
 
 ## 8. 回滚策略
 
