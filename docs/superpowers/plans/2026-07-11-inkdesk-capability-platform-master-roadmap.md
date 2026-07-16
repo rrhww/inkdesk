@@ -199,6 +199,31 @@ docs/superpowers/plans/YYYY-MM-DD-<plan-id>-<capability>-implementation.md
 
 本文共登记 56 个长期计划包。它们不是 56 个同时承诺的功能，也不是预先排满的迭代；当前只激活 P0，P1-P3 必须在前级门禁通过后重新检查必要性、边界和实现文件。
 
+### 6.1 并行开发契约
+
+计划之间没有直接依赖，只是允许评估并行的必要条件，不是充分条件。两个计划同时进入技术实施前，必须同时满足：
+
+1. 不存在直接或传递依赖，且都已通过所属阶段门禁。
+2. 不依赖对方未合并的代码、数据库状态或聊天结论；若采用 stacked branch，必须在开始前显式记录基线、重放顺序和拆栈条件。
+3. 主要领域目录、状态机和对外契约所有权不同；共享热点有预先确定的唯一集成顺序。
+4. 每个计划使用独立 worktree、分支、测试证据和回滚边界，不能共享未提交文件。
+5. 任一计划失败或延期，不得让另一计划通过临时兼容代码、关闭测试或双写未认证 schema 继续推进。
+
+默认最多同时存在 **两个技术实施泳道**。第三条及更多泳道只能做只读调研、详细计划、fixture/契约准备或代码审阅，不能同时修改生产代码。该限制用于控制当前单人实施与审阅带宽，不改变长期团队并行能力。
+
+以下共享资产始终采用单一 merge train，即使业务计划逻辑独立：
+
+| 共享资产 | 并行开发规则 | 集成规则 |
+| --- | --- | --- |
+| Alembic revision 与 schema digest | 可并行设计 models、领域逻辑和失败测试 | 同一时刻只允许一个分支占用下一 revision；另一分支在前者合并后 rebase 并生成后继 revision，禁止多 head |
+| `db_migrations.py`、`model_registry.py` | 可在计划中提出变更 | 由最先进入 migration 集成的计划修改，后续计划复用并做增量变更 |
+| OpenAPI 与公共 schemas | 可并行实现不相交 router | F01 snapshot 只能由明确改变契约的计划处理；兼容性计划一律 exact compare，不得各自更新 snapshot |
+| `main.py`、应用组合与生命周期 | 模块内部代码可并行 | composition root 的 include/adapter/worker 切换按合并顺序逐个接入 |
+| Web 全局导航与共享类型 | feature 内部页面可并行 | 导航、共享 client/type 和最终 Playwright 按单一集成分支验收 |
+| Docker/full-stack 环境 | 单元与模块集成测试可并行 | Docker migration、全栈 E2E、恢复和故障演练串行执行并各自留证 |
+
+并行计划的状态分开记录：`planned -> implementing -> integration_wait -> verifying -> completed`。`integration_wait` 不是阻塞失败，表示模块工作已完成但正在等待共享 merge train；此时不得开始依赖其未合并结果的后续计划。
+
 ## 7. 优先级
 
 | 级别 | 含义 | 进入条件 |
@@ -247,6 +272,49 @@ flowchart TD
 | 安全、审计、数据与 Secret 边界 | H03-H05、T03-T04 |
 | Local / Team / Organization 部署 | F04、T01、T04、X04 |
 | Dynamic Harness、自我改进与跨项目能力 | X01-X03 |
+
+### 8.2 可并行开发区间
+
+下表同时考虑显式依赖、阶段门禁和共享代码热点。`A || B` 表示可以同时开发，不表示可以任意顺序合并。
+
+| 区间 | 泳道 A | 泳道 B | 可并行原因 | 汇合或集成点 |
+| --- | --- | --- | --- | --- |
+| P0-A 当前 | F04 默认 Organization/Space | F05 的纯 Job/Attempt/lease/idempotency 领域契约与失败测试 | F04 属于 Identity/Spaces；F05 属于 Jobs/Worker，均只依赖 F02/F03 | F04 先占用 `f04_0002`；F05 persistence 在 F04 合并后 rebase 为后继 revision |
+| P0-B 前半 | W01-W04 价值闭环主链 | F05 persistence、Compile Worker Adapter 与恢复验收 | W 线围绕 Run/Artifact；F05 围绕通用耐久执行 | F05 必须在 E03 前完成；W 线若新增 revision，按 migration merge train 排在 F05 之后 |
+| P0-B 后半 | W05-W08 | 已完成 F05 后的稳定性修订、评测 fixture/隔离环境准备 | W 线仍是产品主链，辅助泳道不改变未冻结 Evaluation 产品契约 | W08 通过 G1 后才能启动 E01 |
+| P0-C | E01-E07 单一主链 | 只允许数据集准备、重复运行与证据整理 | E01-E07 几乎完全线性，拆成两个生产实现泳道会制造隐式契约 | E07 与 G2 核心价值门禁 |
+| P1-A/B | K01-K06 Knowledge Core | C01-C05 Capability Core | 两条领域主线均只依赖 P0 门禁，业务状态机和目录边界独立 | C06 同时等待 C02-C05、E07、K06 |
+| Capability 分叉 | C03 -> C04 | C05 | 两者都只依赖 C02，分别负责 scope/policy 与 executor contract | C06 汇合；共享 capability schemas 仍串行集成 |
+| P1-C 前半 | H01-H05 Harness 安全主链 | 只允许 Connector fixture、安全测试环境和 UI 原型准备 | H 主线依赖 C06，H01-H05 高度线性且共享 Job/Attempt | H05 完成后才出现稳定分叉 |
+| Harness 尾部分叉 | H06 Operations Console | H07 Testing/Problem Solve Workflow | H06 只依赖 H02/H05；H07 依赖 H04/C06/EvalSuite，UI 与 workflow 目标不同 | 两者共同进入 G4 Harness 安全门禁 |
+| P2 主阶段 | R01-R06 Replay/Relay | T01-T04 Team Governance；O01-O02 Outcome 可作为候选第三逻辑线 | Replay、治理、结果观察是不同领域；P1 门禁后大部分上游已稳定 | 实施上限仍为两条技术泳道；O03 等待 R04/C06，R06 等待 R04/R05/C06 |
+| Replay 内部分叉 | R02 -> R03 -> R04 | R05 Relay Clean Room | R02 与 R05 都只在 R01 后启动，执行环境和目标不同 | R06 汇合 |
+| P3 实验 | X01 | X02、X03、X04 中按价值选择一条 | 四项之间没有直接依赖，且各自上游在 P2 后独立 | 最多同时实施两项；每项必须有独立停止条件，不能因“可并行”默认全做 |
+
+当前真正可以立即启动的组合是：
+
+```text
+泳道 A：F04 完整实施
+泳道 B：F05 领域内核、失败语义和纯测试
+
+F04 merge
+-> 泳道 B rebase，接入 F05 schema/persistence/Compile Worker
+-> 泳道 A 转入 W01-W04
+-> 共享 migration revision 按 F04 -> F05 -> W 线顺序集成
+```
+
+以下区间虽然任务名称不同，但不应拆成并行生产实现：
+
+| 串行链 | 原因 |
+| --- | --- |
+| W01 -> W02 -> W03 -> W04 -> W05 -> W06 -> W07 -> W08 | 后一项持续扩展同一个 Run/Artifact/Review 契约 |
+| E01 -> E02 -> E03 -> E04 -> E05 -> E06 -> E07 | Candidate、Suite、Run、Submission、Judge、Comparison 是同一评测证据链 |
+| K01 -> K02 -> K03 -> K04 -> K05 -> K06 | Snapshot、Proposal、Claim graph、Projection、Compiler、Health 逐层建立真相语义 |
+| H01 -> H02 -> H03 -> H04 -> H05 | Workflow、Checkpoint、Permission、Executor、Compensation 共享同一执行安全状态机 |
+| T01 -> T02 -> T03 -> T04 | 成员/角色是审阅分工、审计和 Team identity 的前置基础 |
+| O01 -> O02 -> O03 | 先建立交付关联，再记录结果，最后才能形成影响反馈 |
+
+阶段门禁仍是硬依赖。P0 未证明核心价值时，不因 K/C 两条线可以并行就提前进入 P1；P1 领域边界和 Promotion 未稳定时，不提前启动 Replay、团队治理或 Outcome 自动反馈。
 
 ## 9. P0-A：安全迁移底座
 
@@ -423,7 +491,7 @@ flowchart TD
 7. `web/**` 变更由用户和 Codex 共同在真实浏览器检查后签收。
 8. 更新认知地图和计划状态，再激活下一个计划。
 
-同一时间只允许一个小计划处于 `in_progress`。计划之间不得用未提交文件、手工数据库状态或聊天上下文作为隐式依赖。
+默认最多两个小计划处于 `implementing`，并遵循第 6.1 节并行开发契约和第 8.2 节区间表。同一共享 merge train 仍只能有一个计划处于 `verifying`；计划之间不得用未提交文件、手工数据库状态或聊天上下文作为隐式依赖。
 
 ## 22. 验证命令基线
 
@@ -455,7 +523,7 @@ npm run e2e:fullstack
 
 F01-F03 已完成并合并。F03 通过 PR #7 进入 `origin/main`，merge commit 为 `77a848a`；focused、后端全量、PostgreSQL、Docker、OpenAPI 与全栈证据见 [`F03 模块化应用组合壳实施计划`](./2026-07-14-f03-modular-application-composition-shell-implementation.md)。
 
-当前只展开 [`F04 默认 Organization 与 Capability Space`](./2026-07-16-f04-default-organization-capability-spaces-implementation.md)。F04 必须回答：
+当前主泳道展开 [`F04 默认 Organization 与 Capability Space`](./2026-07-16-f04-default-organization-capability-spaces-implementation.md)。F04 必须回答：
 
 - 如何把每个旧 Workspace 映射到默认 Organization、Project Space 和 owner Personal Overlay，而不改写旧业务表。
 - 如何让 migration backfill 与 fresh seed bootstrap 使用同一确定性身份并保持幂等。
@@ -464,6 +532,8 @@ F01-F03 已完成并合并。F03 通过 PR #7 进入 `origin/main`，merge commi
 - 如何证明拓扑损坏 fail closed、旧数据 fingerprint 不变，并能安全撤销 F04 派生数据。
 
 F04 不增加登录、团队管理 API/UI、RBAC、Domain Space、四级能力继承，也不把旧业务对象批量改为 `space_id`。
+
+并行泳道允许立即开始 F05 的详细方案、纯 Job/Attempt 状态机、lease/idempotency 失败语义和无数据库领域测试。F05 不得在 F04 合并前占用 Alembic revision、修改 current schema digest 或接入 Compile Worker；F04 合并后，F05 rebase 到新 head，再完成 persistence、Worker Adapter 和恢复演练。
 
 ## 24. 最终完成语义
 

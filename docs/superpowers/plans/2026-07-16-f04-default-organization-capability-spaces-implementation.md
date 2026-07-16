@@ -381,6 +381,18 @@ F01 adoption 不再 stamp 到 `HEAD_REVISION`。代码必须显式保留 `F01_AD
 
 不修改任何 `web/**`、现有 request/response schema、F01 OpenAPI snapshot、Vault 文件结构、Skill contract、Run 状态机、Compile Worker 或 MCP tool contract。
 
+### 7.1 与 F05 并行时的所有权
+
+F04 与 F05 没有业务前后依赖，但共享 migration authority。并行期间固定以下所有权：
+
+| 阶段 | F04 泳道 | F05 泳道 |
+| --- | --- | --- |
+| F04 合并前 | 独占 `f04_0002`、`db_migrations.py`、`schema_contract.py`、`model_registry.py` 和 migration verifier | 只实现 Job/Attempt/lease/idempotency 纯领域契约、状态转换和无数据库失败测试；不创建 revision，不接 Compile Worker |
+| F04 合并后 | 发布新 head、schema digest、model registry 使用方式和验收证据 | rebase 到 F04 merge commit，创建后继 revision，再实现 persistence、Compile Worker Adapter 和恢复演练 |
+| 集成验收 | F04 独立完成 topology/rollback/full-stack | F05 独立完成 restart/lease/idempotency/full-stack，不复用 F04 未提交证据 |
+
+F05 分支不得预先创建另一个以 `f02_0001` 为 `down_revision` 的 head，也不得临时修改 F04 revision ID。若 F05 领域设计反向要求修改 Space schema，停止并回到路线图重新划分边界，不能跨分支直接改 F04 文件。
+
 ## 8. 分段实施计划
 
 F04 分为三个连续增量。每个增量由用户执行 Red -> Green -> Refactor -> 验证并提交 diff；Codex 审阅通过后才能进入下一增量。
