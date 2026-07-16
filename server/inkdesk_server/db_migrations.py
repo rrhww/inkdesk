@@ -20,7 +20,7 @@ from inkdesk_server.db import get_engine
 from inkdesk_server.schema_contract import F01_COMPATIBILITY_DIGEST, application_schema_digest, schema_digest_for_revision, table_data_fingerprints
 
 
-HEAD_REVISION = "f04_0002"
+HEAD_REVISION = "f05_0003"
 F01_ADOPTION_REVISION = "f02_0001"
 VERSION_TABLE = "alembic_version"
 MIGRATION_LOCK_KEY = 518_020_001
