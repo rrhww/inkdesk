@@ -315,9 +315,42 @@ def _rollback_f04(status: DatabaseStatus, engine: Engine) -> int:
     return 1
 
 
+def _rollback_f05(status: DatabaseStatus, engine: Engine) -> int:
+    if status.currentRevision != HEAD_REVISION:
+        _print(_error("DB_MIGRATION_ROLLBACK_UNSAFE", status))
+        return 1
+    with engine.begin() as connection:
+        runtime_jobs = connection.execute(
+            text("SELECT count(*) FROM jobs WHERE id NOT LIKE 'job-f05-%'")
+        ).scalar_one()
+        runtime_attempts = connection.execute(
+            text(
+                """
+                SELECT count(*)
+                FROM job_attempts
+                WHERE status != 'abandoned'
+                   OR worker_id != 'legacy-worker'
+                   OR error_code != 'LEGACY_WORKER_INTERRUPTED'
+                """
+            )
+        ).scalar_one()
+        if runtime_jobs or runtime_attempts:
+            _print(_error("DB_MIGRATION_ROLLBACK_UNSAFE", status))
+            return 1
+        connection.execute(text("DROP TABLE job_attempts"))
+        connection.execute(text("DROP TABLE jobs"))
+        connection.execute(text("UPDATE alembic_version SET version_num = 'f04_0002'"))
+    rolled_back = inspect_database(engine)
+    if rolled_back.state is DatabaseState.MANAGED_BEHIND and rolled_back.currentRevision == "f04_0002":
+        _print(asdict(rolled_back))
+        return 0
+    _print(_error("DB_MIGRATION_ROLLBACK_UNSAFE", rolled_back))
+    return 1
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m inkdesk_server.db_migrations")
-    parser.add_argument("command", choices=("status", "check", "upgrade", "rollback-f04"))
+    parser.add_argument("command", choices=("status", "check", "upgrade", "rollback-f04", "rollback-f05"))
     args = parser.parse_args(argv)
     if args.command == "status":
         status = inspect_database(get_engine())
@@ -335,6 +368,8 @@ def main(argv: list[str] | None = None) -> int:
         with _migration_lock(engine):
             if args.command == "rollback-f04":
                 return _rollback_f04(inspect_database(engine), engine)
+            if args.command == "rollback-f05":
+                return _rollback_f05(inspect_database(engine), engine)
             return _upgrade(inspect_database(engine))
     except MigrationLockTimeout:
         status = DatabaseStatus(
