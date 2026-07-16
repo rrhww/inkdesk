@@ -1,7 +1,7 @@
 # Inkdesk 团队 AI 研发能力平台总开发路线图
 
 > 日期：2026-07-11
-> 状态：已确认；F01-F04 实现与验收完成，F04 待提交并合并
+> 状态：已确认；F01-F04 已合并，F05 实现与验收完成但待最终证据重放、推送并合并；W01 方案已敲定
 > 上位设计：[`2026-07-11-inkdesk-team-rd-capability-platform-design.md`](../specs/2026-07-11-inkdesk-team-rd-capability-platform-design.md)
 > 计划性质：Plan of Plans；定义全局顺序、能力边界和阶段门禁，不在一个计划中实施整个系统
 > 协作约束：Codex 维护计划、解释设计并审阅；用户负责编码、失败测试、调试、测试执行和浏览器验收
@@ -255,8 +255,8 @@ flowchart TD
 | [F01](./2026-07-11-f01-current-contract-recovery-baseline-implementation.md) | 当前行为契约与恢复基线 | 无 | `server/tests/**`、`web/tests/**`、`docs/delivery/**` | 用户执行并保存后端、前端、OpenAPI、Vault 备份与数据库恢复证据；Codex 审阅，已知失败单独登记 |
 | F02（已完成） | Python 数据库迁移权威 | F01 | `server/pyproject.toml`、`server/alembic*`、`db.py` | 空库与现有库升级到同一 schema；后续不再向运行时升级数组新增 DDL |
 | [F03（已完成）](./2026-07-14-f03-modular-application-composition-shell-implementation.md) | 模块化应用组合壳 | F01、F02 | `main.py`、新 `api/app.py` 与 `api/routers/` | 已迁移 health / vault 路由；OpenAPI、状态码和响应体保持兼容 |
-| [F04（实现与验收完成，待提交）](./2026-07-16-f04-default-organization-capability-spaces-implementation.md) | 默认 Organization 与 Capability Space | F02、F03 | 新 `modules/spaces/`、身份与空间表、兼容 Workspace Adapter | 现有 Workspace 幂等映射到默认 Organization、Project Space 和 owner Personal Overlay；旧表与 API 不变，暂不增加登录或团队 UI |
-| F05 | Durable Job / Attempt Kernel | F02、F03 | `infrastructure/jobs/`、Compile Worker Adapter | Job、Attempt、lease、heartbeat 和 idempotency key 可持久化；进程重启能接管未完成任务且不重复副作用 |
+| [F04（已完成）](./2026-07-16-f04-default-organization-capability-spaces-implementation.md) | 默认 Organization 与 Capability Space | F02、F03 | 新 `modules/spaces/`、身份与空间表、兼容 Workspace Adapter | 现有 Workspace 幂等映射到默认 Organization、Project Space 和 owner Personal Overlay；旧表与 API 不变，暂不增加登录或团队 UI |
+| F05（实现与验收完成，待最终证据重放、推送并合并） | Durable Job / Attempt Kernel | F02、F03 | `infrastructure/jobs/`、Compile Worker Adapter | Job、Attempt、lease、heartbeat 和 idempotency key 可持久化；进程重启能接管未完成任务且不重复副作用 |
 
 ### P0-A 门禁
 
@@ -270,7 +270,7 @@ flowchart TD
 
 | ID | 单一能力 | 依赖 | 主要边界 | 可观察验收 |
 | --- | --- | --- | --- | --- |
-| W01 | Goal Contract | F04 | Runs domain、Run API、创建 Run UI | 新 Run 明确目标、受影响对象、技术指标、Outcome / proxy、观察时间和回滚条件；旧 Run 可兼容读取 |
+| [W01（方案已敲定，待 F05 合并后实施）](./2026-07-17-w01-goal-contract-implementation.md) | Goal Contract | F04；实施基线等待 F05 merge | Runs domain、Run API、创建 Run UI | 新 Run 明确目标、受影响对象、技术指标、Outcome / proxy、观察时间和回滚条件；旧 Run 可兼容读取 |
 | W02 | Run 状态机与失败语义 v2 | W01 | Runs domain、`run_service.py` 兼容层 | 纯领域测试覆盖合法/非法转换、blocked、failed、cancelled、retry；API 返回稳定原因码 |
 | W03 | Artifact 与 Evidence 主干 | F02、W02 | Runs domain、对象存储接口、stage output 适配 | 阶段产物有不可变内容哈希、类型、来源和验证证据；Event 只引用 Artifact，不再是唯一载体 |
 | W04 | Capability Manifest | W03 | Runs / Capabilities 边界 | 每次执行记录 Wiki、Schema、Skill、Policy、Executor、Context 和代码版本；缺失版本时明确标记 unknown |
@@ -453,17 +453,20 @@ npm run e2e:fullstack
 
 ## 23. 当前激活计划
 
-F01-F03 已完成并合并。F03 通过 PR #7 进入 `origin/main`，merge commit 为 `77a848a`；focused、后端全量、PostgreSQL、Docker、OpenAPI 与全栈证据见 [`F03 模块化应用组合壳实施计划`](./2026-07-14-f03-modular-application-composition-shell-implementation.md)。
+F01-F04 已完成并合并。F04 通过 PR #8 进入 `origin/main`，实现提交为 `38d5fd5`，默认 Organization / Project Space / Personal Overlay 和 Workspace Adapter 已成为后续 Run scope 的公共基线。
 
-当前只展开 [`F04 默认 Organization 与 Capability Space`](./2026-07-16-f04-default-organization-capability-spaces-implementation.md)。F04 必须回答：
+F05 的本地实现与验收提交为 `8bdccdd`。现有 verifier 清单记录 58 项检查、0 失败，但绑定的是较早提交 `5806242`；因此 F05 当前处于“实现与验收完成，交付闭环未完成”，必须在最终 HEAD 重放并生成 commit-matched manifest 后再推送、创建 PR 和合并。
 
-- 如何把每个旧 Workspace 映射到默认 Organization、Project Space 和 owner Personal Overlay，而不改写旧业务表。
-- 如何让 migration backfill 与 fresh seed bootstrap 使用同一确定性身份并保持幂等。
-- 如何让 HTTP、Research service 与 MCP 的默认 Workspace 解析经过兼容 Adapter，同时保持外部 ID/API 不变。
-- 如何让 F02 migration authority 正确支持第二个 revision、revision-aware schema contract 和 F01 adoption。
-- 如何证明拓扑损坏 fail closed、旧数据 fingerprint 不变，并能安全撤销 F04 派生数据。
+下一阶段只激活 [`W01 Goal Contract`](./2026-07-17-w01-goal-contract-implementation.md)。W01 文档方案已经敲定，实施必须等待 F05 合并后的唯一 `f05_0003` Alembic head。W01 必须回答：
 
-F04 不增加登录、团队管理 API/UI、RBAC、Domain Space、四级能力继承，也不把旧业务对象批量改为 `space_id`。
+- 如何让新 Run 在执行前固定结构化 Goal Contract，同时不伪造旧 Run 缺失的信息。
+- 如何把 Run 直接绑定 Organization、Project Space 和 creator membership，并保留 Workspace 兼容字段。
+- 如何让 `goal` 降为 purpose 兼容投影，而结构化快照成为 Canonical Truth。
+- 如何通过 canonical JSON、hash 和单事务创建证明 Contract 没有静默漂移或 orphan。
+- 如何显式管理创建 API 的契约变化，保持历史读取和非 Run API 不漂移。
+- 如何在真实浏览器中完成 direct/proxy Outcome、观察窗口、失败和回滚条件的创建与查看。
+
+W01 不修改 Run 状态机，不创建 Artifact/Evidence/Outcome 实体，不接入 F05 Job，也不开放 Goal Contract 编辑或完整 Space 选择器。
 
 ## 24. 最终完成语义
 
