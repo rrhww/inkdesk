@@ -58,8 +58,9 @@ def test_upgrade_adopts_exact_f01_postgres_schema_without_changing_data(temporar
     capsys.readouterr()
 
     f04_tables = {"organizations", "organization_memberships", "capability_spaces", "workspace_space_bindings"}
-    assert table_data_fingerprints(engine, exclude_tables={"alembic_version", *f04_tables}) == before_data
-    assert f04_tables <= set(inspect(engine).get_table_names())
+    f05_tables = {"jobs", "job_attempts"}
+    assert table_data_fingerprints(engine, exclude_tables={"alembic_version", *f04_tables, *f05_tables}) == before_data
+    assert f04_tables | f05_tables <= set(inspect(engine).get_table_names())
     with engine.connect() as connection:
         assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == HEAD_REVISION
 

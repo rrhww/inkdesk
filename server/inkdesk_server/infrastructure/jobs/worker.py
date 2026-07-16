@@ -55,6 +55,10 @@ class DurableWorker:
             self._thread.join(timeout=timeout)
 
     def run_once(self, *, now: datetime | None = None) -> bool:
+        # A standalone worker process must load every FK target before flushing attempts.
+        from inkdesk_server.model_registry import load_orm_models
+
+        load_orm_models()
         timestamp = now or datetime.now(UTC)
         with self._session_factory() as claim_db:
             repository = DurableJobRepository(claim_db)
