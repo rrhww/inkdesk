@@ -38,3 +38,6 @@ include = ["inkdesk_server*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+markers = [
+  "postgres: requires INKDESK_TEST_PGVECTOR_URL",
+]
