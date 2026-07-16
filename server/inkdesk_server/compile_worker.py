@@ -229,6 +229,7 @@ class CompileWorker:
                 registry,
                 lease_duration=timedelta(seconds=self._settings.job_lease_seconds),
                 poll_interval=self._settings.job_poll_interval_seconds,
+                heartbeat_interval=self._settings.job_heartbeat_seconds,
             )
 
     @property

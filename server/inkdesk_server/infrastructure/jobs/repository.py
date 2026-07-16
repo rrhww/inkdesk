@@ -260,6 +260,24 @@ class DurableJobRepository:
         self.db.flush()
         return recovered
 
+    def manual_retry(self, job_id: str, *, now: datetime) -> bool:
+        job = self.db.scalar(
+            select(Job)
+            .where(Job.id == job_id, Job.status == JobStatus.FAILED.value)
+            .with_for_update()
+        )
+        if job is None:
+            return False
+        job.status = JobStatus.PENDING.value
+        job.max_attempts = max(job.max_attempts, job.attempt_count + 1)
+        job.available_at = now
+        job.last_error_code = None
+        job.last_error_message = None
+        job.updated_at = now
+        self.db.add(job)
+        self.db.flush()
+        return True
+
     def get_job(self, job_id: str) -> Job:
         job = self.db.get(Job, job_id)
         if job is None:

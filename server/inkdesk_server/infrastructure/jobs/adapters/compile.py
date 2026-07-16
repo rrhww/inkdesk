@@ -87,3 +87,23 @@ class CompileJobAdapter:
                 step.error_message = message
                 step.completed_at = task.completed_at
         db.add(task)
+
+    def retry_task(self, db: Session, task: CompileTask, settings) -> bool:
+        job = db.scalar(select(Job).where(Job.kind == self.kind, Job.subject_type == "compile_task", Job.subject_id == task.id).order_by(Job.created_at.desc()))
+        if job is not None:
+            return DurableJobRepository(db).manual_retry(job.id, now=datetime.now(UTC))
+        context = require_workspace_context_by_id(db, workspace_id=task.workspace_id)
+        source_id = task.source_id or "none"
+        deduplication_key = f"compile:{task.workspace_id}:{source_id}:{task.content_hash or 'none'}"
+        DurableJobRepository(db).enqueue(
+            JobRequest(
+                command=JobCommand(self.kind, context.organization.id, context.project_space.id, {"compile_task_id": task.id}),
+                idempotency_key=f"compile-task:{task.id}",
+                deduplication_key=deduplication_key,
+                subject_type="compile_task",
+                subject_id=task.id,
+                max_attempts=settings.job_default_max_attempts,
+            ),
+            now=datetime.now(UTC),
+        )
+        return True

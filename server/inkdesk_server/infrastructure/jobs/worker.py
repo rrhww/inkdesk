@@ -27,12 +27,14 @@ class DurableWorker:
         worker_id: str | None = None,
         lease_duration: timedelta = timedelta(seconds=60),
         poll_interval: float = 1.0,
+        heartbeat_interval: float | None = None,
     ) -> None:
         self._session_factory = session_factory
         self._registry = registry
         self._worker_id = worker_id or f"worker-{uuid4().hex}"
         self._lease_duration = lease_duration
         self._poll_interval = poll_interval
+        self._heartbeat_interval = heartbeat_interval
         self._stop_event = threading.Event()
         self._thread: threading.Thread | None = None
 
@@ -70,13 +72,20 @@ class DurableWorker:
             self._finish_failure(claim, now, ReasonCode.JOB_HANDLER_NOT_REGISTERED, "No handler is registered for this job kind.")
             return
 
+        heartbeat_stop = threading.Event()
+        lease_lost = threading.Event()
+        heartbeat_thread = self._start_heartbeat(claim, heartbeat_stop, lease_lost)
         try:
             with self._session_factory() as db:
                 result = handler(db, claim) or {}
+                if lease_lost.is_set():
+                    db.rollback()
+                    logger.warning("Durable job completion rejected because its lease heartbeat was lost: %s", claim.job_id)
+                    return
                 completed = DurableJobRepository(db).finish(
                     claim,
                     status=AttemptStatus.SUCCEEDED,
-                    now=now,
+                    now=datetime.now(UTC) if heartbeat_thread is not None else now,
                     result=result,
                 )
                 if not completed:
@@ -86,7 +95,40 @@ class DurableWorker:
                 db.commit()
         except Exception:
             logger.exception("Durable job handler failed: %s", claim.job_id)
-            self._finish_failure(claim, now, ReasonCode.JOB_HANDLER_FAILED, "Job handler failed.", handler=handler)
+            if not lease_lost.is_set():
+                self._finish_failure(
+                    claim,
+                    datetime.now(UTC) if heartbeat_thread is not None else now,
+                    ReasonCode.JOB_HANDLER_FAILED,
+                    "Job handler failed.",
+                    handler=handler,
+                )
+        finally:
+            heartbeat_stop.set()
+            if heartbeat_thread is not None:
+                heartbeat_thread.join(timeout=1.0)
+
+    def _start_heartbeat(self, claim: ClaimedJob, stop_event: threading.Event, lease_lost: threading.Event) -> threading.Thread | None:
+        if self._heartbeat_interval is None:
+            return None
+
+        def renew() -> None:
+            while not stop_event.wait(self._heartbeat_interval):
+                with self._session_factory() as db:
+                    accepted = DurableJobRepository(db).heartbeat(
+                        claim,
+                        now=datetime.now(UTC),
+                        lease_duration=self._lease_duration,
+                    )
+                    if not accepted:
+                        db.rollback()
+                        lease_lost.set()
+                        return
+                    db.commit()
+
+        thread = threading.Thread(target=renew, daemon=True, name="durable-job-heartbeat")
+        thread.start()
+        return thread
 
     def _finish_failure(self, claim: ClaimedJob, now: datetime, reason: ReasonCode, message: str, handler=None) -> None:
         with self._session_factory() as db:
