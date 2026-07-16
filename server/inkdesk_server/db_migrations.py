@@ -17,10 +17,11 @@ from sqlalchemy import Engine, inspect, text
 
 from inkdesk_server.core.config import get_settings
 from inkdesk_server.db import get_engine
-from inkdesk_server.schema_contract import F01_COMPATIBILITY_DIGEST, application_schema_digest, table_data_fingerprints
+from inkdesk_server.schema_contract import F01_COMPATIBILITY_DIGEST, application_schema_digest, schema_digest_for_revision, table_data_fingerprints
 
 
-HEAD_REVISION = "f02_0001"
+HEAD_REVISION = "f04_0002"
+F01_ADOPTION_REVISION = "f02_0001"
 VERSION_TABLE = "alembic_version"
 MIGRATION_LOCK_KEY = 518_020_001
 
@@ -64,11 +65,11 @@ def inspect_database(engine: Engine) -> DatabaseStatus:
         with engine.connect() as connection:
             revisions = list(connection.execute(text("SELECT version_num FROM alembic_version")))
         current_revision = revisions[0][0] if len(revisions) == 1 else None
-        if current_revision == HEAD_REVISION:
+        if current_revision in _known_revisions():
             schema_digest = None
             if dialect == "postgresql":
                 schema_digest = application_schema_digest(engine, exclude_tables={VERSION_TABLE})
-                if schema_digest != F01_COMPATIBILITY_DIGEST:
+                if schema_digest != schema_digest_for_revision(current_revision):
                     return DatabaseStatus(
                         state=DatabaseState.SCHEMA_DRIFT,
                         currentRevision=current_revision,
@@ -77,7 +78,7 @@ def inspect_database(engine: Engine) -> DatabaseStatus:
                         requiredAction="manual_intervention",
                         dialect=dialect,
                     )
-            elif _sqlite_metadata_drift(engine):
+            elif current_revision == HEAD_REVISION and _sqlite_metadata_drift(engine):
                 return DatabaseStatus(
                     state=DatabaseState.SCHEMA_DRIFT,
                     currentRevision=current_revision,
@@ -87,20 +88,11 @@ def inspect_database(engine: Engine) -> DatabaseStatus:
                     dialect=dialect,
                 )
             return DatabaseStatus(
-                state=DatabaseState.MANAGED_CURRENT,
+                state=DatabaseState.MANAGED_CURRENT if current_revision == HEAD_REVISION else DatabaseState.MANAGED_BEHIND,
                 currentRevision=current_revision,
                 headRevision=HEAD_REVISION,
                 schemaDigest=schema_digest,
-                requiredAction="none",
-                dialect=dialect,
-            )
-        if current_revision in _known_revisions():
-            return DatabaseStatus(
-                state=DatabaseState.MANAGED_BEHIND,
-                currentRevision=current_revision,
-                headRevision=HEAD_REVISION,
-                schemaDigest=None,
-                requiredAction="upgrade",
+                requiredAction="none" if current_revision == HEAD_REVISION else "upgrade",
                 dialect=dialect,
             )
         return DatabaseStatus(
@@ -179,8 +171,10 @@ def _known_revisions() -> set[str]:
 
 
 def _sqlite_metadata_drift(engine: Engine) -> bool:
-    from inkdesk_server import models  # noqa: F401
     from inkdesk_server.db import Base
+    from inkdesk_server.model_registry import load_orm_models
+
+    load_orm_models()
 
     with engine.connect() as connection:
         context = MigrationContext.configure(connection)
@@ -220,11 +214,12 @@ def _upgrade_empty_database() -> DatabaseStatus:
 def _adopt_f01_database(engine: Engine) -> DatabaseStatus:
     before_schema = application_schema_digest(engine)
     before_data = table_data_fingerprints(engine)
-    command.stamp(_alembic_config(), HEAD_REVISION)
+    command.stamp(_alembic_config(), F01_ADOPTION_REVISION)
     after_schema = application_schema_digest(engine, exclude_tables={VERSION_TABLE})
     after_data = table_data_fingerprints(engine, exclude_tables={VERSION_TABLE})
     if after_schema != before_schema or after_data != before_data:
         raise RuntimeError("F01 adoption changed the application schema or data")
+    command.upgrade(_alembic_config(), "head")
     return inspect_database(engine)
 
 
@@ -289,9 +284,40 @@ def _upgrade(status: DatabaseStatus) -> int:
     return 1
 
 
+def _rollback_f04(status: DatabaseStatus, engine: Engine) -> int:
+    if status.currentRevision != HEAD_REVISION:
+        _print(_error("DB_MIGRATION_ROLLBACK_UNSAFE", status))
+        return 1
+    if engine.dialect.name != "postgresql":
+        _print(_error("DB_MIGRATION_ROLLBACK_UNSAFE", status))
+        return 1
+    with engine.begin() as connection:
+        workspace_count = connection.execute(text("SELECT count(*) FROM workspaces")).scalar_one()
+        owner_count = connection.execute(text("SELECT count(DISTINCT owner_user_id) FROM workspaces")).scalar_one()
+        organization_count = connection.execute(text("SELECT count(*) FROM organizations" )).scalar_one()
+        membership_count = connection.execute(text("SELECT count(*) FROM organization_memberships" )).scalar_one()
+        space_count = connection.execute(text("SELECT count(*) FROM capability_spaces" )).scalar_one()
+        binding_count = connection.execute(text("SELECT count(*) FROM workspace_space_bindings" )).scalar_one()
+        expected_spaces = 0 if workspace_count == 0 else 1 + 2 * workspace_count
+        if owner_count > 1 or organization_count != (1 if workspace_count else 0) or membership_count != (1 if workspace_count else 0) or space_count != expected_spaces or binding_count != workspace_count:
+            _print(_error("DB_MIGRATION_ROLLBACK_UNSAFE", status))
+            return 1
+        connection.execute(text("DROP TABLE workspace_space_bindings"))
+        connection.execute(text("DROP TABLE capability_spaces"))
+        connection.execute(text("DROP TABLE organization_memberships"))
+        connection.execute(text("DROP TABLE organizations"))
+        connection.execute(text("UPDATE alembic_version SET version_num = :revision"), {"revision": F01_ADOPTION_REVISION})
+    rolled_back = inspect_database(engine)
+    if rolled_back.state is DatabaseState.MANAGED_BEHIND and rolled_back.currentRevision == F01_ADOPTION_REVISION:
+        _print(asdict(rolled_back))
+        return 0
+    _print(_error("DB_MIGRATION_ROLLBACK_UNSAFE", rolled_back))
+    return 1
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m inkdesk_server.db_migrations")
-    parser.add_argument("command", choices=("status", "check", "upgrade"))
+    parser.add_argument("command", choices=("status", "check", "upgrade", "rollback-f04"))
     args = parser.parse_args(argv)
     if args.command == "status":
         status = inspect_database(get_engine())
@@ -307,6 +333,8 @@ def main(argv: list[str] | None = None) -> int:
     engine = get_engine()
     try:
         with _migration_lock(engine):
+            if args.command == "rollback-f04":
+                return _rollback_f04(inspect_database(engine), engine)
             return _upgrade(inspect_database(engine))
     except MigrationLockTimeout:
         status = DatabaseStatus(

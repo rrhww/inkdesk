@@ -10,6 +10,15 @@ from sqlalchemy import Engine, text
 
 
 F01_COMPATIBILITY_DIGEST = "4c7413a2ef0b1c571513bbeb672c9f18dc8afd9cf0a64e1fa7533c4a9c6ba519"
+F04_COMPATIBILITY_DIGEST = "dc3924443c15c37e017e54494b2d6f4b75846595bb7a5ce05eb0cdef7947407d"
+REVISION_SCHEMA_DIGESTS = {
+    "f02_0001": F01_COMPATIBILITY_DIGEST,
+    "f04_0002": F04_COMPATIBILITY_DIGEST,
+}
+
+
+def schema_digest_for_revision(revision: str) -> str:
+    return REVISION_SCHEMA_DIGESTS[revision]
 
 
 def application_schema_digest(engine: Engine, *, exclude_tables: Iterable[str] = ()) -> str:

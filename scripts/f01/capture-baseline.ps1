@@ -180,7 +180,7 @@ try {
             python (Join-Path $PSScriptRoot "export_openapi.py") compare --url $dockerInfo.ServerUrl --snapshot (Join-Path $contractsDirectory "openapi.json")
         }
         $schemaResult = Invoke-F01Capture -Suite "postgres-schema-compare" -Command "python scripts/f01/export_postgres_schema.py compare" -Action {
-            python (Join-Path $PSScriptRoot "export_postgres_schema.py") compare --database-url $dockerInfo.DatabaseUrl --snapshot (Join-Path $contractsDirectory "postgres-schema.json")
+            python (Join-Path $PSScriptRoot "export_postgres_schema.py") compare --database-url $dockerInfo.DatabaseUrl --snapshot (Join-Path $contractsDirectory "postgres-schema.json") --exclude-table alembic_version
         }
         $testRecords += $openapiResult, $schemaResult
         if ($openapiResult.exitCode -ne 0 -or $schemaResult.exitCode -ne 0) { throw "F01 contract comparison failed" }
@@ -196,10 +196,11 @@ try {
         $testRecords += Invoke-F01Capture -Suite "web-typecheck" -Command "cd web; npm run typecheck" -Action { Push-Location (Join-Path $repositoryRoot "web"); npm run typecheck; Pop-Location }
         $testRecords += Invoke-F01Capture -Suite "web-lint" -Command "cd web; npm run lint" -Action { Push-Location (Join-Path $repositoryRoot "web"); npm run lint; Pop-Location }
         $testRecords += Invoke-F01Capture -Suite "web-build" -Command "cd web; npm run build" -Action { Push-Location (Join-Path $repositoryRoot "web"); npm run build; Pop-Location }
-        $testRecords += Invoke-F01Capture -Suite "web-e2e" -Command "cd web; npm run e2e" -Action { Push-Location (Join-Path $repositoryRoot "web"); npm run e2e; Pop-Location }
+        $testRecords += Invoke-F01Capture -Suite "web-e2e" -Command "cd web; INKDESK_API_BASE_URL=<compose server>; INKDESK_E2E_WEB_PORT=3304 npm run e2e" -Action { $env:INKDESK_API_BASE_URL = $dockerInfo.ServerUrl; $env:NEXT_PUBLIC_API_BASE_URL = $dockerInfo.ServerUrl; $env:INKDESK_E2E_WEB_PORT = "3304"; Push-Location (Join-Path $repositoryRoot "web"); npm run e2e; Pop-Location }
         $testRecords += Invoke-F01Capture -Suite "web-fullstack" -Command "cd web; INKDESK_API_BASE_URL=<compose server>; npm run e2e:fullstack" -Action {
             $env:INKDESK_API_BASE_URL = $dockerInfo.ServerUrl
             $env:NEXT_PUBLIC_API_BASE_URL = $dockerInfo.ServerUrl
+            $env:INKDESK_E2E_WEB_PORT = "3304"
             Push-Location (Join-Path $repositoryRoot "web"); npm run e2e:fullstack; Pop-Location
         }
         $testRecords += Invoke-F01PgvectorIntegration -DockerInfo $dockerInfo

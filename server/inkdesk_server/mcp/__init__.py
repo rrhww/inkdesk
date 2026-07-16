@@ -19,15 +19,14 @@ MAX_QUERY_LENGTH = 500
 
 
 def _resolve_workspace_id(settings: Settings) -> str:
-    from sqlalchemy import select
-    from inkdesk_server.models import Workspace
     from inkdesk_server.research import DEFAULT_WORKSPACE_SLUG
+    from inkdesk_server.modules.spaces.workspace_adapter import require_workspace_context
 
     with session_scope() as db:
-        workspace = db.scalar(select(Workspace).where(Workspace.slug == DEFAULT_WORKSPACE_SLUG))
-        if workspace is None:
+        try:
+            return require_workspace_context(db, workspace_slug=DEFAULT_WORKSPACE_SLUG).workspace.id
+        except Exception as error:
             raise PermissionError(f"Workspace not found: {DEFAULT_WORKSPACE_SLUG}")
-        return workspace.id
 
 
 def _build_context_pack(workspace_id: str, run_id: str) -> str:

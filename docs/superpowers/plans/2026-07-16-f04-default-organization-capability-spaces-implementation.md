@@ -1,7 +1,7 @@
 # F04 默认 Organization 与 Capability Space 实施计划
 
 > 日期：2026-07-16
-> 状态：待用户确认；F01-F03 已完成并合并，F04 可实施
+> 状态：实现与验收完成，待提交并合并
 > 路线图：[`2026-07-11-inkdesk-capability-platform-master-roadmap.md`](./2026-07-11-inkdesk-capability-platform-master-roadmap.md)
 > 上位设计：[`2026-07-11-inkdesk-team-rd-capability-platform-design.md`](../specs/2026-07-11-inkdesk-team-rd-capability-platform-design.md)
 > 前置依赖：F02 Alembic 数据库迁移权威、F03 模块化应用组合壳
@@ -614,6 +614,14 @@ F04 无前端变更，不要求新增视觉截图；真实 full-stack 流仍必�
 15. F04 manifest、数据库文档、脚本说明和 cognitive map 已更新，证据可追溯到 commit SHA。
 
 任一旧业务 fingerprint 变化、F01 直接 stamp 到 F04、Adapter 可被默认入口绕过、错误 topology 被静默修复、额外 Space 被 rollback 删除，或通过更新 F01 OpenAPI snapshot 接受契约变化，都属于阻塞失败。
+
+### 9.1 2026-07-16 实施与验收记录
+
+- 迁移前 F01 run `20260716T142517Z` 为 `PASS`，覆盖 PostgreSQL/Vault 备份、隔离恢复与全量契约采集。
+- F04 PostgreSQL schema contract 为 `dc3924443c15c37e017e54494b2d6f4b75846595bb7a5ce05eb0cdef7947407d`；Docker server 已从 `f02_0001` 升级到 `f04_0002 / MANAGED_CURRENT`。
+- 后端全量为 `388 passed, 7 skipped`；PostgreSQL migration + pgvector 为 `17 passed, 1 skipped`；F04 verifier 通过。
+- Docker `/health`、`/actuator/health`、`/api/vault/status` 均为 HTTP 200；F01 OpenAPI compare 通过；真实全栈 Playwright 为 `10 passed`。
+- 实现保留 Workspace API 与 OpenAPI 不变，未新增 Space HTTP router 或前端产品功能。
 
 ## 10. 回滚策略
 

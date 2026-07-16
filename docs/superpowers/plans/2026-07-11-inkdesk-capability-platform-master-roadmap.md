@@ -1,7 +1,7 @@
 # Inkdesk 团队 AI 研发能力平台总开发路线图
 
 > 日期：2026-07-11
-> 状态：已确认；F01-F03 已完成并合并，F04 方案已展开待确认
+> 状态：已确认；F01-F04 实现与验收完成，F04 待提交并合并
 > 上位设计：[`2026-07-11-inkdesk-team-rd-capability-platform-design.md`](../specs/2026-07-11-inkdesk-team-rd-capability-platform-design.md)
 > 计划性质：Plan of Plans；定义全局顺序、能力边界和阶段门禁，不在一个计划中实施整个系统
 > 协作约束：Codex 维护计划、解释设计并审阅；用户负责编码、失败测试、调试、测试执行和浏览器验收
@@ -255,7 +255,7 @@ flowchart TD
 | [F01](./2026-07-11-f01-current-contract-recovery-baseline-implementation.md) | 当前行为契约与恢复基线 | 无 | `server/tests/**`、`web/tests/**`、`docs/delivery/**` | 用户执行并保存后端、前端、OpenAPI、Vault 备份与数据库恢复证据；Codex 审阅，已知失败单独登记 |
 | F02（已完成） | Python 数据库迁移权威 | F01 | `server/pyproject.toml`、`server/alembic*`、`db.py` | 空库与现有库升级到同一 schema；后续不再向运行时升级数组新增 DDL |
 | [F03（已完成）](./2026-07-14-f03-modular-application-composition-shell-implementation.md) | 模块化应用组合壳 | F01、F02 | `main.py`、新 `api/app.py` 与 `api/routers/` | 已迁移 health / vault 路由；OpenAPI、状态码和响应体保持兼容 |
-| [F04](./2026-07-16-f04-default-organization-capability-spaces-implementation.md) | 默认 Organization 与 Capability Space | F02、F03 | 新 `modules/spaces/`、身份与空间表、兼容 Workspace Adapter | 现有 Workspace 幂等映射到默认 Organization、Project Space 和 owner Personal Overlay；旧表与 API 不变，暂不增加登录或团队 UI |
+| [F04（实现与验收完成，待提交）](./2026-07-16-f04-default-organization-capability-spaces-implementation.md) | 默认 Organization 与 Capability Space | F02、F03 | 新 `modules/spaces/`、身份与空间表、兼容 Workspace Adapter | 现有 Workspace 幂等映射到默认 Organization、Project Space 和 owner Personal Overlay；旧表与 API 不变，暂不增加登录或团队 UI |
 | F05 | Durable Job / Attempt Kernel | F02、F03 | `infrastructure/jobs/`、Compile Worker Adapter | Job、Attempt、lease、heartbeat 和 idempotency key 可持久化；进程重启能接管未完成任务且不重复副作用 |
 
 ### P0-A 门禁
