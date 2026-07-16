@@ -256,7 +256,7 @@ flowchart TD
 | F02（已完成） | Python 数据库迁移权威 | F01 | `server/pyproject.toml`、`server/alembic*`、`db.py` | 空库与现有库升级到同一 schema；后续不再向运行时升级数组新增 DDL |
 | [F03（实现与验收完成，待推送并合并）](./2026-07-14-f03-modular-application-composition-shell-implementation.md) | 模块化应用组合壳 | F01、F02 | `main.py`、新 `api/app.py` 与 `api/routers/` | 已迁移 health / vault 路由；OpenAPI、状态码和响应体保持兼容 |
 | F04 | 默认 Organization 与 Capability Space | F02、F03 | 新 `modules/spaces/`、身份与空间表、兼容 Workspace Adapter | 现有 Workspace 数据幂等回填到默认组织、个人空间和项目空间；暂不增加登录或团队 UI |
-| F05 | Durable Job / Attempt Kernel | F02、F03 | `infrastructure/jobs/`、Compile Worker Adapter | Job、Attempt、lease、heartbeat 和 idempotency key 可持久化；进程重启能接管未完成任务且不重复副作用 |
+| [F05](./2026-07-16-f05-durable-job-attempt-kernel-implementation.md) | Durable Job / Attempt Kernel | F02、F03；persistence 等待 F04 merge | `infrastructure/jobs/`、Compile Worker Adapter | Job、Attempt、lease、heartbeat 和 idempotency key 可持久化；进程重启能接管未完成任务且 stale Worker 不能提交副作用 |
 
 ### P0-A 门禁
 
