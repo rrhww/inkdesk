@@ -161,4 +161,4 @@ def _backfill_active_compile_tasks() -> None:
 
 
 def downgrade() -> None:
-    raise RuntimeError("F05 downgrade requires the guarded rollback-f05 command")
+    raise RuntimeError("F05 downgrade is irreversible without the guarded rollback-f05 command")

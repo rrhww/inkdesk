@@ -18,7 +18,7 @@ def test_status_reports_empty_sqlite_database(raw_temp_app_env, capsys):
     status = _read_status(capsys)
     assert status["state"] == "EMPTY"
     assert status["currentRevision"] is None
-    assert status["headRevision"] == "f04_0002"
+    assert status["headRevision"] == "f05_0003"
     assert status["requiredAction"] == "upgrade"
 
 
