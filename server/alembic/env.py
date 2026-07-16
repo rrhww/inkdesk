@@ -3,9 +3,12 @@ from __future__ import annotations
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
-from inkdesk_server import models  # noqa: F401
 from inkdesk_server.core.config import get_settings
 from inkdesk_server.db import Base
+from inkdesk_server.model_registry import load_orm_models
+
+
+load_orm_models()
 
 
 config = context.config

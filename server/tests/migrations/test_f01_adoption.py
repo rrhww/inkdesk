@@ -10,12 +10,13 @@ def _read_output(capsys) -> dict[str, object]:
 
 
 def _build_unmanaged_f01_database(engine) -> None:
-    from inkdesk_server import models  # noqa: F401
-    from inkdesk_server.db import Base
+    from alembic import command
+    from inkdesk_server.db_migrations import _alembic_config
 
+    command.upgrade(_alembic_config(), "f02_0001")
     with engine.begin() as connection:
-        connection.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
-    Base.metadata.create_all(bind=engine)
+        connection.execute(text("DROP TABLE alembic_version"))
+
     with engine.begin() as connection:
         connection.execute(
             text(
@@ -56,8 +57,9 @@ def test_upgrade_adopts_exact_f01_postgres_schema_without_changing_data(temporar
     assert main(["upgrade"]) == 0
     capsys.readouterr()
 
-    assert application_schema_digest(engine, exclude_tables={"alembic_version"}) == before_schema
-    assert table_data_fingerprints(engine, exclude_tables={"alembic_version"}) == before_data
+    f04_tables = {"organizations", "organization_memberships", "capability_spaces", "workspace_space_bindings"}
+    assert table_data_fingerprints(engine, exclude_tables={"alembic_version", *f04_tables}) == before_data
+    assert f04_tables <= set(inspect(engine).get_table_names())
     with engine.connect() as connection:
         assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == HEAD_REVISION
 

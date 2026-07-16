@@ -78,6 +78,13 @@
 - 首次迁移只覆盖四个端点：`GET /health`、`GET /actuator/health`、`GET /api/vault/status`、`POST /api/vault/initialize`。知识健康的 `/api/health*` 是独立业务领域，保留在 legacy main。
 - 路由迁移的兼容性不能只看 HTTP 200：要同时锁定无 duplicate method/path、operation ID、错误处理、完整 canonical OpenAPI，以及 Docker 与真实浏览器的全栈闭环。
 
+### F04 默认 Organization 与 Capability Space
+
+- 旧 `workspace_id` 仍是所有现有领域的兼容隔离键；`workspace_space_bindings` 只把 Workspace 映射到 Project Space，不把 Personal Overlay 固化为单一外键。
+- 默认拓扑是 Organization -> Project -> Personal Overlay；固定 Organization ID 和 UUIDv5 identity 使 migration、seed bootstrap 与重复启动可幂等重建。
+- Adapter 是唯一默认 Workspace 入口：Research、HTTP legacy routes 和 MCP 仍返回 Workspace/workspace ID，但先验证 Space topology；拓扑缺失或损坏 fail closed。
+- `f02_0001` 与 `f04_0002` 使用不同 PostgreSQL schema digest。F01 adoption 必须先 stamp F02 再 upgrade F04，不能直接把 F01 schema 标记为新 head。
+
 ## 模糊区
 
 - behavioral contract cases 的实际执行 — 格式已定，contents 待 Skill 实战后产生

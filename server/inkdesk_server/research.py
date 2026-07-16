@@ -104,6 +104,10 @@ class ResearchWorkspaceService:
 
     def bootstrap_seed_data(self) -> None:
         if self.db.scalar(select(func.count(User.id))) > 0:
+            from inkdesk_server.modules.spaces.bootstrap import ensure_default_topology
+
+            ensure_default_topology(self.db)
+            self.db.commit()
             return
         now = datetime.fromisoformat("2026-04-12T08:00:00+00:00")
         owner = User(
@@ -160,6 +164,10 @@ class ResearchWorkspaceService:
             700,
         )
         self.db.add_all([owner, workspace, folder_product, folder_system, folder_review, note1, note2, note3])
+        self.db.commit()
+        from inkdesk_server.modules.spaces.bootstrap import ensure_default_topology
+
+        ensure_default_topology(self.db)
         self.db.commit()
 
     def get_dashboard(self) -> ResearchDashboardResponse:
@@ -568,6 +576,10 @@ class ResearchWorkspaceService:
 
     def ensure_research_seed_state(self) -> None:
         self.bootstrap_seed_data()
+        from inkdesk_server.modules.spaces.bootstrap import ensure_default_topology
+
+        ensure_default_topology(self.db)
+        self.db.commit()
         self.vault_service.ensure_initialized()
         self.import_legacy_notes_as_sources()
         topics = self._topics()
@@ -2267,10 +2279,15 @@ class ResearchWorkspaceService:
         return review
 
     def require_workspace(self) -> Workspace:
-        workspace = self.db.scalar(select(Workspace).where(Workspace.slug == DEFAULT_WORKSPACE_SLUG))
-        if not workspace:
-            raise ResourceNotFoundError(f"Workspace not found for slug: {DEFAULT_WORKSPACE_SLUG}")
-        return workspace
+        from inkdesk_server.modules.spaces.topology import SpaceTopologyError
+        from inkdesk_server.modules.spaces.workspace_adapter import require_workspace_context
+
+        try:
+            return require_workspace_context(self.db, workspace_slug=DEFAULT_WORKSPACE_SLUG).workspace
+        except SpaceTopologyError as error:
+            if error.code == "SPACE_WORKSPACE_NOT_FOUND":
+                raise ResourceNotFoundError(f"Workspace not found for slug: {DEFAULT_WORKSPACE_SLUG}") from error
+            raise
 
     def _sources(self) -> list[Source]:
         workspace = self.require_workspace()

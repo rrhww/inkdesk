@@ -52,10 +52,15 @@ from inkdesk_server.security import ApiError, ResourceNotFoundError
 
 
 def _resolve_workspace(db: Session) -> Workspace:
-    workspace = db.scalar(select(Workspace).where(Workspace.slug == DEFAULT_WORKSPACE_SLUG))
-    if workspace is None:
-        raise ResourceNotFoundError(f"Workspace not found: {DEFAULT_WORKSPACE_SLUG}")
-    return workspace
+    from inkdesk_server.modules.spaces.topology import SpaceTopologyError
+    from inkdesk_server.modules.spaces.workspace_adapter import require_workspace_context
+
+    try:
+        return require_workspace_context(db, workspace_slug=DEFAULT_WORKSPACE_SLUG).workspace
+    except SpaceTopologyError as error:
+        if error.code == "SPACE_WORKSPACE_NOT_FOUND":
+            raise ResourceNotFoundError(f"Workspace not found: {DEFAULT_WORKSPACE_SLUG}") from error
+        raise
 
 
 def _read_skill_file(path: Path) -> str:
