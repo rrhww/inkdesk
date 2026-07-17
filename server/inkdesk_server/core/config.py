@@ -45,6 +45,12 @@ class Settings(BaseSettings):
         ge=0,
         alias="INKDESK_MIGRATION_LOCK_TIMEOUT_SECONDS",
     )
+    job_backend: str = Field(default="durable", alias="INKDESK_JOB_BACKEND")
+    job_poll_interval_seconds: float = Field(default=1.0, gt=0, alias="INKDESK_JOB_POLL_INTERVAL_SECONDS")
+    job_lease_seconds: int = Field(default=60, gt=0, alias="INKDESK_JOB_LEASE_SECONDS")
+    job_heartbeat_seconds: int = Field(default=10, gt=0, alias="INKDESK_JOB_HEARTBEAT_SECONDS")
+    job_shutdown_grace_seconds: int = Field(default=10, ge=0, alias="INKDESK_JOB_SHUTDOWN_GRACE_SECONDS")
+    job_default_max_attempts: int = Field(default=3, gt=0, alias="INKDESK_JOB_DEFAULT_MAX_ATTEMPTS")
     vault_root: Path = Field(default=Path("./inkdesk-vault"), alias="INKDESK_VAULT_ROOT")
     agent_runtime: str = Field(default="langgraph", alias="INKDESK_AGENT_RUNTIME")
     agent_provider_profile: str = Field(default="openai", alias="INKDESK_AGENT_PROVIDER_PROFILE")

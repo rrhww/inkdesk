@@ -2483,6 +2483,10 @@ class ResearchWorkspaceService:
         return f"{prefix}-{uuid4().hex}"
 
     def _enqueue_compile_for_source(self, source: Source):
+        if self.settings.job_backend == "durable":
+            from inkdesk_server.infrastructure.jobs.adapters.compile import CompileJobAdapter
+
+            return CompileJobAdapter().enqueue_for_source(self, source)
         from inkdesk_server.models import CompileTask, CompileStep
         from inkdesk_server.compile_worker import COMPILE_STEP_NAMES, get_compile_worker
 

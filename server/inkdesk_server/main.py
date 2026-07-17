@@ -680,7 +680,6 @@ def create_app() -> FastAPI:
         db: Annotated[Session, Depends(get_db)],
         settings: Annotated[Settings, Depends(get_settings)],
     ):
-        from inkdesk_server.compile_worker import get_compile_worker
         workspace = _resolve_workspace(db)
         task = db.get(CompileTask, task_id)
         if task is None or task.workspace_id != workspace.id:
@@ -700,7 +699,15 @@ def create_app() -> FastAPI:
         task.completed_at = None
         db.add(task)
         db.flush()
-        get_compile_worker(settings).enqueue(task.id)
+        if settings.job_backend == "durable":
+            from inkdesk_server.infrastructure.jobs.adapters.compile import CompileJobAdapter
+
+            if not CompileJobAdapter().retry_task(db, task, settings):
+                raise ApiError(409, "TASK_RETRY_REJECTED", "The durable job cannot be retried.")
+        else:
+            from inkdesk_server.compile_worker import get_compile_worker
+
+            get_compile_worker(settings).enqueue(task.id)
         db.commit()
         return get_research_service(db, settings)._to_compile_task_response(task)
 

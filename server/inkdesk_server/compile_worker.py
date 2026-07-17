@@ -32,7 +32,7 @@ def _reset_compile_worker() -> None:
             _worker = None
 
 
-class CompileWorker:
+class LegacyCompileWorker:
     def __init__(self, settings: Settings | None = None):
         self._settings = settings or get_settings()
         self._queue: queue.Queue[str] = queue.Queue()
@@ -205,3 +205,43 @@ class CompileWorker:
         if source is None:
             raise ValueError("Source not found")
         service._compile_and_create_review(source)
+
+
+class CompileWorker:
+    """Compatibility facade selecting the durable backend by default."""
+
+    def __init__(self, settings: Settings | None = None):
+        self._settings = settings or get_settings()
+        if self._settings.job_backend == "legacy":
+            self._delegate = LegacyCompileWorker(self._settings)
+        else:
+            from datetime import timedelta
+
+            from inkdesk_server.infrastructure.jobs.adapters.compile import CompileJobAdapter
+            from inkdesk_server.infrastructure.jobs.registry import JobHandlerRegistry
+            from inkdesk_server.infrastructure.jobs.worker import DurableWorker
+
+            registry = JobHandlerRegistry()
+            adapter = CompileJobAdapter()
+            registry.register(adapter.kind, adapter.handle)
+            self._delegate = DurableWorker(
+                get_session_factory(),
+                registry,
+                lease_duration=timedelta(seconds=self._settings.job_lease_seconds),
+                poll_interval=self._settings.job_poll_interval_seconds,
+                heartbeat_interval=self._settings.job_heartbeat_seconds,
+            )
+
+    @property
+    def running(self) -> bool:
+        return self._delegate.running
+
+    def start(self) -> None:
+        self._delegate.start()
+
+    def stop(self, timeout: float = 10.0) -> None:
+        self._delegate.stop(timeout=timeout)
+
+    def enqueue(self, task_id: str) -> None:
+        if isinstance(self._delegate, LegacyCompileWorker):
+            self._delegate.enqueue(task_id)
