@@ -16,6 +16,11 @@ type AppChromeProps = {
 
 export function AppChrome({ children, snapshot, devRuns }: AppChromeProps) {
   const pathname = usePathname() ?? "/app";
+
+  if (pathname === "/app/wiki") {
+    return children;
+  }
+
   const chrome = getAppRouteChrome(pathname, snapshot);
 
   return (

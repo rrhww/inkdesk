@@ -18,15 +18,20 @@
     "e2e:fullstack": "node scripts/run-fullstack-e2e.mjs"
   },
   "dependencies": {
+    "clsx": "^2.1.1",
+    "lucide-react": "^1.25.0",
     "next": "16.2.4",
     "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "react-dom": "19.1.0",
+    "reactflow": "^11.11.4",
+    "tailwind-merge": "^3.6.0"
   },
   "overrides": {
     "postcss": "$postcss"
   },
   "devDependencies": {
     "@playwright/test": "^1.59.1",
+    "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
