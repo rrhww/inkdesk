@@ -228,13 +228,27 @@ class RunService:
         return run
 
     def _to_response(self, run: DevRun) -> DevRunResponse:
+        from inkdesk_server.modules.runs.models import RunGoalContract
+
         events = sorted(run.events, key=lambda e: ensure_utc_datetime(e.created_at))
+        goal_contract = self.db.scalar(select(RunGoalContract).where(RunGoalContract.run_id == run.id))
+        serialized_contract = json.loads(goal_contract.contract_json) if goal_contract else None
         return DevRunResponse(
             id=run.id,
             workspaceId=run.workspace_id,
+            organizationId=run.organization_id,
+            capabilitySpaceId=run.capability_space_id,
+            createdByMembershipId=run.created_by_membership_id,
             type=run.type,
             title=run.title,
             goal=run.goal,
+            goalContractState="structured" if goal_contract else "legacy",
+            goalContract=None if serialized_contract is None else {
+                "id": goal_contract.id,
+                "schemaVersion": goal_contract.schema_version,
+                "hash": goal_contract.contract_hash,
+                **serialized_contract,
+            },
             repoContext=run.repo_context,
             status=run.status,
             currentStage=run.current_stage,

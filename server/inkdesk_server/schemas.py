@@ -305,7 +305,7 @@ class AskThreadResponse(BaseModel):
 class CreateDevRunRequest(BaseModel):
     type: str
     title: str
-    goal: str
+    goalContract: dict | None = None
     repoContext: str | None = None
 
 
@@ -325,9 +325,14 @@ class RunEventResponse(BaseModel):
 class DevRunResponse(BaseModel):
     id: str
     workspaceId: str
+    organizationId: str | None = None
+    capabilitySpaceId: str | None = None
+    createdByMembershipId: str | None = None
     type: str
     title: str
     goal: str
+    goalContractState: str = "legacy"
+    goalContract: dict | None = None
     repoContext: str | None = None
     status: str
     currentStage: str

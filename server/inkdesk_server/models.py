@@ -204,6 +204,9 @@ class DevRun(Base):
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True)
     workspace_id: Mapped[str] = mapped_column(String(64), ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False)
+    organization_id: Mapped[str] = mapped_column(String(64), ForeignKey("organizations.id", ondelete="RESTRICT"), nullable=False, index=True)
+    capability_space_id: Mapped[str] = mapped_column(String(64), ForeignKey("capability_spaces.id", ondelete="RESTRICT"), nullable=False, index=True)
+    created_by_membership_id: Mapped[str] = mapped_column(String(64), ForeignKey("organization_memberships.id", ondelete="RESTRICT"), nullable=False, index=True)
     type: Mapped[str] = mapped_column(String(20), nullable=False)
     title: Mapped[str] = mapped_column(String(240), nullable=False)
     goal: Mapped[str] = mapped_column(Text, nullable=False)
