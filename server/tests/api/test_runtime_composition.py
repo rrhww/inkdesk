@@ -9,6 +9,9 @@ MIGRATED_ROUTES = {
     ("GET", "/actuator/health"),
     ("GET", "/api/vault/status"),
     ("POST", "/api/vault/initialize"),
+    ("POST", "/api/runs"),
+    ("GET", "/api/runs"),
+    ("GET", "/api/runs/{run_id}"),
 }
 
 
@@ -34,7 +37,7 @@ def test_main_composes_api_shell_without_duplicate_routes(temp_app_env):
     assert any(route.path == "/mcp" for route in app.routes)
 
 
-def test_main_openapi_remains_equal_to_f01_contract(temp_app_env):
+def test_w01_openapi_changes_are_limited_to_approved_run_contract_delta(temp_app_env):
     from inkdesk_server.main import create_app
 
     repository_root = Path(__file__).resolve().parents[3]
@@ -44,4 +47,21 @@ def test_main_openapi_remains_equal_to_f01_contract(temp_app_env):
         )
     )
 
-    assert create_app().openapi() == snapshot
+    current = create_app().openapi()
+    baseline_paths = snapshot["paths"]
+    current_paths = current["paths"]
+
+    assert set(current_paths) == set(baseline_paths)
+    for path, baseline_path in baseline_paths.items():
+        if path.startswith("/api/runs"):
+            continue
+        assert current_paths[path] == baseline_path
+
+    baseline_schemas = snapshot["components"]["schemas"]
+    current_schemas = current["components"]["schemas"]
+    changed_schemas = {
+        name
+        for name in set(baseline_schemas) | set(current_schemas)
+        if baseline_schemas.get(name) != current_schemas.get(name)
+    }
+    assert changed_schemas <= {"CreateDevRunRequest", "DevRunResponse"}

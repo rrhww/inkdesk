@@ -23,7 +23,6 @@ from inkdesk_server.models import CompileTask, CompileStep, Source, Workspace
 from inkdesk_server.vault import VaultService
 from inkdesk_server.research import DEFAULT_WORKSPACE_SLUG, ResearchWorkspaceService, get_research_service
 from inkdesk_server.run_service import RunService
-from inkdesk_server.modules.runs.service import RunsApplicationService
 from inkdesk_server.schemas import (
     AddRunEventRequest,
     AdvanceRunRequest,
@@ -245,37 +244,6 @@ def create_app() -> FastAPI:
         settings: Annotated[Settings, Depends(get_settings)],
     ):
         return get_research_service(db, settings).create_ask_writeback_proposal(ask_turn_id)
-
-    @app.post("/api/runs", response_model=DevRunResponse, status_code=201)
-    def run_create(
-        request: CreateDevRunRequest,
-        db: Annotated[Session, Depends(get_db)],
-    ):
-        from inkdesk_server.modules.spaces.workspace_adapter import require_workspace_context
-
-        context = require_workspace_context(db, workspace_slug=DEFAULT_WORKSPACE_SLUG)
-        return RunsApplicationService(db).create_run(
-            context=context,
-            run_type=request.type,
-            title=request.title,
-            repo_context=request.repoContext,
-            goal_contract=request.goalContract,
-        )
-
-    @app.get("/api/runs", response_model=list[DevRunSummaryResponse])
-    def run_list(
-        db: Annotated[Session, Depends(get_db)],
-    ):
-        workspace = _resolve_workspace(db)
-        return RunService(db).get_runs(workspace.id)
-
-    @app.get("/api/runs/{run_id}", response_model=DevRunResponse)
-    def run_detail(
-        run_id: str,
-        db: Annotated[Session, Depends(get_db)],
-    ):
-        workspace = _resolve_workspace(db)
-        return RunService(db).get_run(run_id, workspace.id)
 
     @app.post("/api/runs/{run_id}/events", response_model=DevRunResponse)
     def run_add_event(
