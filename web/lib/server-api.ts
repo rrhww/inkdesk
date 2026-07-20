@@ -108,3 +108,21 @@ export async function postInkdeskFormData<T>(path: string, body: FormData) {
   const response = await requestInkdesk(path, { method: "POST", body });
   return (await response.json()) as T;
 }
+
+export type GraphData = {
+  nodes: unknown[];
+  edges: unknown[];
+};
+
+export type GraphNodeDocument = {
+  content: string;
+};
+
+// The graph reader keeps its future Python API contract separate from the local preview route.
+export const ServerAPI = {
+  fetchGraphTopology: () => fetchInkdeskJson<GraphData>("/vault/graph"),
+  fetchNodeContent: async (nodeId: string) => {
+    const document = await fetchInkdeskJson<GraphNodeDocument>(`/vault/doc/${encodeURIComponent(nodeId)}`);
+    return document.content;
+  }
+};

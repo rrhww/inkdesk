@@ -15,6 +15,12 @@ import type {
 } from "@/lib/types";
 import type { Edge, Node } from "reactflow";
 
+export type GraphNodeData = {
+  label: string;
+  module?: string;
+  documentId: string;
+};
+
 export const researchSourcesFixture: ResearchSourceRecord[] = [
   {
     id: "source-004",
@@ -1109,32 +1115,42 @@ export function getCompileTaskFixture(taskId: string): CompileTaskResponse | und
   return map[taskId];
 }
 
-export const initialNodes: Node[] = [
-  { id: "c-1", type: "concept", position: { x: 300, y: 50 }, data: { label: "C2M预约" } },
-  { id: "c-2", type: "concept", position: { x: 550, y: 50 }, data: { label: "批量持久化" } },
+export const initialNodes: Node<GraphNodeData>[] = [
+  {
+    id: "c-1",
+    type: "concept",
+    position: { x: 300, y: 50 },
+    data: { label: "C2M预约", documentId: "product-roadmap" }
+  },
+  {
+    id: "c-2",
+    type: "concept",
+    position: { x: 550, y: 50 },
+    data: { label: "批量持久化", documentId: "tech-decisions" }
+  },
   {
     id: "e-1",
     type: "entity",
     position: { x: 150, y: 250 },
-    data: { label: "OrderBookingService", module: "link-service" }
+    data: { label: "OrderBookingService", module: "link-service", documentId: "system-architecture" }
   },
   {
     id: "e-2",
     type: "entity",
     position: { x: 450, y: 250 },
-    data: { label: "RocketMQListener", module: "link-infrastructure" }
+    data: { label: "RocketMQListener", module: "link-infrastructure", documentId: "system-architecture" }
   },
   {
     id: "e-3",
     type: "entity",
     position: { x: 700, y: 250 },
-    data: { label: "BatchPersistenceTask", module: "link-domain" }
+    data: { label: "BatchPersistenceTask", module: "link-domain", documentId: "system-architecture" }
   },
   {
     id: "doc-1",
     type: "action",
-    position: { x: 420, y: 450 },
-    data: { label: "2026-07-消息削峰技术方案.md" }
+    position: { x: 250, y: 450 },
+    data: { label: "2026-07-消息削峰技术方案.md", documentId: "tech-decisions" }
   }
 ];
 
@@ -1142,44 +1158,56 @@ export const initialEdges: Edge[] = [
   {
     id: "e1-c1",
     source: "c-1",
+    sourceHandle: "source-left",
     target: "e-1",
+    targetHandle: "target-center",
     type: "straight",
     style: { stroke: "#CBD5E0", strokeWidth: 1.5 }
   },
   {
     id: "e2-c1",
     source: "c-1",
+    sourceHandle: "source-right",
     target: "e-2",
+    targetHandle: "target-left",
     type: "straight",
     style: { stroke: "#CBD5E0", strokeWidth: 1.5 }
   },
   {
     id: "e2-c2",
     source: "c-2",
+    sourceHandle: "source-left",
     target: "e-2",
+    targetHandle: "target-right",
     type: "straight",
     style: { stroke: "#CBD5E0", strokeWidth: 1.5 }
   },
   {
     id: "e3-c2",
     source: "c-2",
+    sourceHandle: "source-right",
     target: "e-3",
+    targetHandle: "target-center",
     type: "straight",
     style: { stroke: "#CBD5E0", strokeWidth: 1.5 }
   },
   {
     id: "doc-e1",
-    source: "doc-1",
-    target: "e-1",
-    type: "smoothstep",
+    source: "e-1",
+    sourceHandle: "source",
+    target: "doc-1",
+    targetHandle: "target-left",
+    type: "step",
     animated: true,
     style: { stroke: "#10B981", strokeWidth: 2 }
   },
   {
     id: "doc-e2",
-    source: "doc-1",
-    target: "e-2",
-    type: "smoothstep",
+    source: "e-2",
+    sourceHandle: "source",
+    target: "doc-1",
+    targetHandle: "target-right",
+    type: "step",
     animated: true,
     style: { stroke: "#10B981", strokeWidth: 2 }
   }
