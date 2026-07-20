@@ -5,8 +5,7 @@ import { join } from "node:path";
 
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { initialEdges, initialNodes, researchDashboardFixture } from "../lib/mock/research-fixtures";
-import { getVaultPreviewDocument } from "../lib/vault-preview";
+import { researchDashboardFixture } from "../lib/mock/research-fixtures";
 
 function compact(html: string) {
   return html.replace(/\s+/g, " ");
@@ -99,6 +98,7 @@ test("raw page presents imported files waiting for ingest", async () => {
 test("wiki index renders the graph board while detail pages retain knowledge provenance", async () => {
   const wikiDetailPage = await import("../app/app/wiki/[id]/page");
   const wikiSource = readFileSync(join(process.cwd(), "app/app/wiki/page.tsx"), "utf8");
+  const graphNodeSource = readFileSync(join(process.cwd(), "components/ui/graph-nodes.tsx"), "utf8");
   const detailHtml = compact(
     renderToStaticMarkup(
       await wikiDetailPage.default({
@@ -113,26 +113,15 @@ test("wiki index renders the graph board while detail pages retain knowledge pro
   assert.match(wikiSource, /fitView/);
   assert.match(wikiSource, /onNodeClick/);
   assert.match(wikiSource, /role="dialog"/);
-  assert.match(wikiSource, /graph-doc/);
-  assert.match(wikiSource, /GRAPH SYNC ACTIVE/);
-  assert.deepEqual(
-    initialNodes.map((node) => node.data.label),
-    [
-      "C2M预约",
-      "批量持久化",
-      "OrderBookingService",
-      "RocketMQListener",
-      "BatchPersistenceTask",
-      "2026-07-消息削峰技术方案.md"
-    ]
-  );
-  const documentEdges = initialEdges.filter((edge) => edge.target === "doc-1");
-  assert.equal(documentEdges.length, 2);
-  assert.ok(documentEdges.every((edge) => edge.source.startsWith("e-") && edge.type === "step"));
-  assert.deepEqual(
-    documentEdges.map((edge) => edge.targetHandle).sort(),
-    ["target-left", "target-right"]
-  );
+  assert.match(wikiSource, /ServerAPI\.fetchGraphTopology/);
+  assert.match(wikiSource, /ServerAPI\.fetchNodeDocument/);
+  assert.match(wikiSource, /layoutGraphSnapshot/);
+  assert.match(wikiSource, /<MarkdownViewer/);
+  assert.match(wikiSource, /RETRY SYNC/);
+  assert.match(wikiSource, /nodesConnectable=\{false\}/);
+  assert.doesNotMatch(wikiSource, /initialNodes|initialEdges|graph-doc/);
+  assert.doesNotMatch(graphNodeSource, /group-hover:opacity-100/);
+  assert.match(graphNodeSource, /pointerEvents: "none"/);
   assert.match(detailHtml, /Current Understanding/);
   assert.match(detailHtml, /Open Questions/);
   assert.match(detailHtml, /Key Claims/);
@@ -149,15 +138,6 @@ test("wiki index renders the graph board while detail pages retain knowledge pro
   assert.match(detailHtml, /存在冲突/);
   assert.match(detailHtml, /这条 claim 当前和同主题里的另一条判断互相打架/);
   assert.match(detailHtml, /wiki\//);
-});
-
-test("graph reader exposes allow-listed local vault markdown", async () => {
-  const document = await getVaultPreviewDocument("tech-decisions");
-
-  assert.equal(document.sourcePath, "server/vault/wiki/tech-decisions.md");
-  assert.match(document.title, /技术决策/);
-  assert.match(document.content, /AI 不能直接写 wiki/);
-  await assert.rejects(() => getVaultPreviewDocument("../../package"));
 });
 
 test("ingest, ask, and raw pages form the new core workflow", async () => {

@@ -20,7 +20,7 @@ function normalizeApiBaseUrl(baseUrl: string) {
 }
 
 export function resolveApiBaseUrl() {
-  if (typeof window !== "undefined" && process.env.NEXT_PUBLIC_API_BASE_URL) {
+  if (typeof window !== "undefined") {
     return "/api";
   }
 
@@ -109,20 +109,44 @@ export async function postInkdeskFormData<T>(path: string, body: FormData) {
   return (await response.json()) as T;
 }
 
-export type GraphData = {
-  nodes: unknown[];
-  edges: unknown[];
+export type GraphSnapshotNode = {
+  id: string;
+  label: string;
+  kind: string;
+  path: string;
+  source: string;
+  status: string;
+  summary: string;
+};
+
+export type GraphSnapshotEdge = {
+  id: string;
+  source: string;
+  target: string;
+  kind: string;
+};
+
+export type GraphSnapshot = {
+  version: string;
+  generatedAt: string;
+  nodes: GraphSnapshotNode[];
+  edges: GraphSnapshotEdge[];
+  stats: {
+    nodeCount: number;
+    edgeCount: number;
+    missingCount: number;
+  };
 };
 
 export type GraphNodeDocument = {
+  id: string;
+  title: string;
+  sourcePath: string;
   content: string;
 };
 
-// The graph reader keeps its future Python API contract separate from the local preview route.
 export const ServerAPI = {
-  fetchGraphTopology: () => fetchInkdeskJson<GraphData>("/vault/graph"),
-  fetchNodeContent: async (nodeId: string) => {
-    const document = await fetchInkdeskJson<GraphNodeDocument>(`/vault/doc/${encodeURIComponent(nodeId)}`);
-    return document.content;
-  }
+  fetchGraphTopology: () => fetchInkdeskJson<GraphSnapshot>("/graph?source=vault"),
+  fetchNodeDocument: (nodeId: string) =>
+    fetchInkdeskJson<GraphNodeDocument>(`/graph/document?nodeId=${encodeURIComponent(nodeId)}`)
 };
