@@ -11,8 +11,13 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import json
+import os
 import sys
 from pathlib import Path
+from time import perf_counter
+
+import httpx
 
 from inkdesk_skill_sdk.contracts import SkillCategory, SkillKind
 from inkdesk_skill_sdk.graph import build_graph, validate_graph
@@ -160,6 +165,88 @@ def cmd_check(args: argparse.Namespace) -> int:
         return 0
 
 
+def _iter_sse_events(lines):
+    event_name = "message"
+    data_lines: list[str] = []
+    for line in lines:
+        if line == "":
+            if data_lines:
+                raw_data = "\n".join(data_lines)
+                try:
+                    data = json.loads(raw_data)
+                except json.JSONDecodeError:
+                    data = {"raw": raw_data}
+                yield event_name, data
+            event_name = "message"
+            data_lines = []
+            continue
+        if line.startswith(":"):
+            continue
+        if line.startswith("event:"):
+            event_name = line[6:].strip()
+        elif line.startswith("data:"):
+            data_lines.append(line[5:].strip())
+    if data_lines:
+        raw_data = "\n".join(data_lines)
+        try:
+            data = json.loads(raw_data)
+        except json.JSONDecodeError:
+            data = {"raw": raw_data}
+        yield event_name, data
+
+
+def cmd_run(args: argparse.Namespace) -> int:
+    command = " ".join(args.prompt).strip()
+    payload: dict = {"command": command}
+    if args.plan:
+        try:
+            plan = json.loads(Path(args.plan).read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            print(f"Error: invalid DAG plan: {exc}", file=sys.stderr)
+            return 1
+        if isinstance(plan, list):
+            payload["tasks"] = plan
+        elif isinstance(plan, dict):
+            payload.update({key: value for key, value in plan.items() if key in {"tasks", "maxConcurrency"}})
+        else:
+            print("Error: DAG plan must be an object or task array", file=sys.stderr)
+            return 1
+
+    server_url = args.server.rstrip("/")
+    started = perf_counter()
+    first_visible_at: float | None = None
+    current_task: str | None = None
+    failed = False
+    try:
+        with httpx.Client(timeout=None) as client:
+            with client.stream("POST", f"{server_url}/api/engine/stream", json=payload) as response:
+                response.raise_for_status()
+                for event, data in _iter_sse_events(response.iter_lines()):
+                    if first_visible_at is None:
+                        first_visible_at = perf_counter()
+                    if event == "token":
+                        task_id = str(data.get("taskId") or "agent")
+                        if task_id != current_task:
+                            if current_task is not None:
+                                sys.stdout.write("\n")
+                            sys.stdout.write(f"[{task_id}] ")
+                            current_task = task_id
+                        sys.stdout.write(str(data.get("token") or ""))
+                        sys.stdout.flush()
+                    elif event == "stream.error":
+                        failed = True
+                        print(f"\nError: {data.get('error', 'stream failed')}", file=sys.stderr)
+    except (httpx.HTTPError, OSError) as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        return 1
+
+    if current_task is not None:
+        sys.stdout.write("\n")
+    if args.show_ttft and first_visible_at is not None:
+        print(f"TTFT {(first_visible_at - started) * 1000:.1f} ms", file=sys.stderr)
+    return 1 if failed else 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         prog="inkdesk-skill",
@@ -190,6 +277,17 @@ def main() -> int:
     p_chk.add_argument("name", help="Skill name to check")
     p_chk.add_argument("--root", help="Skills directory root")
 
+    # run
+    p_run = sub.add_parser("run", help="Execute an in-memory DAG through the streaming engine")
+    p_run.add_argument("prompt", nargs="+", help="Command sent to the agent DAG")
+    p_run.add_argument("--plan", help="Optional JSON DAG plan")
+    p_run.add_argument(
+        "--server",
+        default=os.environ.get("INKDESK_SERVER_URL", "http://127.0.0.1:8080"),
+        help="Inkdesk server base URL",
+    )
+    p_run.add_argument("--show-ttft", action="store_true", help="Print time to first SSE event")
+
     args = parser.parse_args()
 
     if not args.command:
@@ -204,6 +302,8 @@ def main() -> int:
         return cmd_graph(args)
     elif args.command == "check":
         return cmd_check(args)
+    elif args.command == "run":
+        return cmd_run(args)
     return 0
 
 
