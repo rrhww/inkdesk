@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import test from "node:test";
 import { join } from "node:path";
 
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { researchDashboardFixture } from "../lib/mock/research-fixtures";
+import { initialNodes, researchDashboardFixture } from "../lib/mock/research-fixtures";
 
 function compact(html: string) {
   return html.replace(/\s+/g, " ");
@@ -95,10 +95,9 @@ test("raw page presents imported files waiting for ingest", async () => {
   assert.equal(warnings.length, 0);
 });
 
-test("wiki index and detail pages expose compiled understanding, open questions, and provenance", async () => {
-  const wikiPage = await import("../app/app/wiki/page");
+test("wiki index renders the graph board while detail pages retain knowledge provenance", async () => {
   const wikiDetailPage = await import("../app/app/wiki/[id]/page");
-  const wikiHtml = compact(renderToStaticMarkup(await wikiPage.default()));
+  const wikiSource = readFileSync(join(process.cwd(), "app/app/wiki/page.tsx"), "utf8");
   const detailHtml = compact(
     renderToStaticMarkup(
       await wikiDetailPage.default({
@@ -109,14 +108,20 @@ test("wiki index and detail pages expose compiled understanding, open questions,
     )
   );
 
-  assert.match(wikiHtml, /wiki/);
-  assert.match(wikiHtml, /Inkdesk repositioning/);
-  assert.match(wikiHtml, /claim 治理总览/);
-  assert.match(wikiHtml, /2 条高风险 claim 仍需处理/);
-  assert.match(wikiHtml, /1 条缺少直接证据/);
-  assert.match(wikiHtml, /1 条需要重审/);
-  assert.match(wikiHtml, /2 条 claim 存在冲突/);
-  assert.match(wikiHtml, /知识页里仍有 claim 需要补证或重审/);
+  assert.match(wikiSource, /<ReactFlow/);
+  assert.match(wikiSource, /fitView/);
+  assert.match(wikiSource, /GRAPH SYNC ACTIVE/);
+  assert.deepEqual(
+    initialNodes.map((node) => node.data.label),
+    [
+      "C2M预约",
+      "批量持久化",
+      "OrderBookingService",
+      "RocketMQListener",
+      "BatchPersistenceTask",
+      "2026-07-消息削峰技术方案.md"
+    ]
+  );
   assert.match(detailHtml, /Current Understanding/);
   assert.match(detailHtml, /Open Questions/);
   assert.match(detailHtml, /Key Claims/);

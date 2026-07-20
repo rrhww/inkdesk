@@ -13,6 +13,7 @@ import type {
   ResearchTopicDetail,
   ResearchTopicSummary
 } from "@/lib/types";
+import type { Edge, Node } from "reactflow";
 
 export const researchSourcesFixture: ResearchSourceRecord[] = [
   {
@@ -1107,3 +1108,79 @@ export function getCompileTaskFixture(taskId: string): CompileTaskResponse | und
   };
   return map[taskId];
 }
+
+export const initialNodes: Node[] = [
+  { id: "c-1", type: "concept", position: { x: 300, y: 50 }, data: { label: "C2M预约" } },
+  { id: "c-2", type: "concept", position: { x: 550, y: 50 }, data: { label: "批量持久化" } },
+  {
+    id: "e-1",
+    type: "entity",
+    position: { x: 150, y: 250 },
+    data: { label: "OrderBookingService", module: "link-service" }
+  },
+  {
+    id: "e-2",
+    type: "entity",
+    position: { x: 450, y: 250 },
+    data: { label: "RocketMQListener", module: "link-infrastructure" }
+  },
+  {
+    id: "e-3",
+    type: "entity",
+    position: { x: 700, y: 250 },
+    data: { label: "BatchPersistenceTask", module: "link-domain" }
+  },
+  {
+    id: "doc-1",
+    type: "action",
+    position: { x: 420, y: 450 },
+    data: { label: "2026-07-消息削峰技术方案.md" }
+  }
+];
+
+export const initialEdges: Edge[] = [
+  {
+    id: "e1-c1",
+    source: "c-1",
+    target: "e-1",
+    type: "straight",
+    style: { stroke: "#CBD5E0", strokeWidth: 1.5 }
+  },
+  {
+    id: "e2-c1",
+    source: "c-1",
+    target: "e-2",
+    type: "straight",
+    style: { stroke: "#CBD5E0", strokeWidth: 1.5 }
+  },
+  {
+    id: "e2-c2",
+    source: "c-2",
+    target: "e-2",
+    type: "straight",
+    style: { stroke: "#CBD5E0", strokeWidth: 1.5 }
+  },
+  {
+    id: "e3-c2",
+    source: "c-2",
+    target: "e-3",
+    type: "straight",
+    style: { stroke: "#CBD5E0", strokeWidth: 1.5 }
+  },
+  {
+    id: "doc-e1",
+    source: "doc-1",
+    target: "e-1",
+    type: "smoothstep",
+    animated: true,
+    style: { stroke: "#10B981", strokeWidth: 2 }
+  },
+  {
+    id: "doc-e2",
+    source: "doc-1",
+    target: "e-2",
+    type: "smoothstep",
+    animated: true,
+    style: { stroke: "#10B981", strokeWidth: 2 }
+  }
+];
