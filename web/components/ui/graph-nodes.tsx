@@ -29,7 +29,20 @@ export const ConceptNode: ComponentType<NodeProps<ConceptNodeData>> = ({ data })
         <Database className="mb-1 h-4 w-4 text-slate-300" strokeWidth={1.5} aria-hidden="true" />
         <span className="text-[10px] font-medium uppercase tracking-wider text-white">{data.label}</span>
       </div>
-      <Handle type="source" position={Position.Bottom} className="opacity-0 group-hover:opacity-100" />
+      <Handle
+        id="source-left"
+        type="source"
+        position={Position.Bottom}
+        style={{ left: "34%" }}
+        className="opacity-0 group-hover:opacity-100"
+      />
+      <Handle
+        id="source-right"
+        type="source"
+        position={Position.Bottom}
+        style={{ left: "66%" }}
+        className="opacity-0 group-hover:opacity-100"
+      />
     </div>
   );
 };
@@ -38,8 +51,23 @@ export const EntityNode: ComponentType<NodeProps<EntityNodeData>> = ({ data }) =
   return (
     <div className="group relative min-w-[140px] rounded-none border-2 border-slate-300 bg-white transition-colors hover:border-slate-500">
       <Handle
+        id="target-left"
         type="target"
         position={Position.Top}
+        style={{ left: "25%" }}
+        className="bg-slate-400 opacity-0 group-hover:opacity-100"
+      />
+      <Handle
+        id="target-center"
+        type="target"
+        position={Position.Top}
+        className="bg-slate-400 opacity-0 group-hover:opacity-100"
+      />
+      <Handle
+        id="target-right"
+        type="target"
+        position={Position.Top}
+        style={{ left: "75%" }}
         className="bg-slate-400 opacity-0 group-hover:opacity-100"
       />
       <div className="border-b border-slate-100 bg-slate-50 px-3 py-2">
@@ -50,6 +78,7 @@ export const EntityNode: ComponentType<NodeProps<EntityNodeData>> = ({ data }) =
         <span className="font-mono text-xs font-semibold tracking-tight text-slate-800">{data.label}</span>
       </div>
       <Handle
+        id="source"
         type="source"
         position={Position.Bottom}
         className="bg-slate-400 opacity-0 group-hover:opacity-100"
@@ -60,10 +89,19 @@ export const EntityNode: ComponentType<NodeProps<EntityNodeData>> = ({ data }) =
 
 export const ActionNode: ComponentType<NodeProps<ActionNodeData>> = ({ data }) => {
   return (
-    <div className="group relative min-w-[160px] rounded-none border-2 border-dashed border-emerald-500 bg-emerald-50">
+    <div className="group relative w-[280px] rounded-none border-2 border-dashed border-emerald-500 bg-emerald-50">
       <Handle
+        id="target-left"
         type="target"
         position={Position.Top}
+        style={{ left: "30%" }}
+        className="bg-emerald-500 opacity-0 group-hover:opacity-100"
+      />
+      <Handle
+        id="target-right"
+        type="target"
+        position={Position.Top}
+        style={{ left: "70%" }}
         className="bg-emerald-500 opacity-0 group-hover:opacity-100"
       />
       <div className="flex items-center gap-2 px-4 py-3">
@@ -71,6 +109,7 @@ export const ActionNode: ComponentType<NodeProps<ActionNodeData>> = ({ data }) =
         <span className="text-xs font-bold tracking-wide text-emerald-800">{data.label}</span>
       </div>
       <Handle
+        id="source"
         type="source"
         position={Position.Bottom}
         className="bg-emerald-500 opacity-0 group-hover:opacity-100"
