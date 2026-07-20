@@ -3,7 +3,7 @@ from __future__ import annotations
 from contextlib import contextmanager
 from functools import lru_cache
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
 
 from inkdesk_server.core.config import get_settings
@@ -25,10 +25,13 @@ def get_session_factory():
 
 
 def init_db() -> None:
-    """Compatibility facade that only validates the Alembic-managed schema."""
-    from inkdesk_server.db_migrations import assert_database_ready
+    from inkdesk_server import models  # noqa: F401
 
-    assert_database_ready()
+    engine = get_engine()
+    if engine.dialect.name == "postgresql":
+        with engine.begin() as connection:
+            connection.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
+    Base.metadata.create_all(bind=engine)
 
 
 def get_db() -> Session:

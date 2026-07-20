@@ -11,6 +11,15 @@ from inkdesk_skill_sdk.contracts import (
     WritePolicy,
     generate_contract_json_schema,
 )
+from inkdesk_skill_sdk.scheduler import (
+    DagExecutionEvent,
+    DagExecutionResult,
+    DagTask,
+    DagTaskResult,
+    DagValidationError,
+    KahnDagScheduler,
+    breadth_first_layers,
+)
 
 __all__ = [
     "CanonicalWikiPolicy",
@@ -22,4 +31,11 @@ __all__ = [
     "SkillStatus",
     "WritePolicy",
     "generate_contract_json_schema",
+    "DagExecutionEvent",
+    "DagExecutionResult",
+    "DagTask",
+    "DagTaskResult",
+    "DagValidationError",
+    "KahnDagScheduler",
+    "breadth_first_layers",
 ]
