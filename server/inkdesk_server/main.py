@@ -13,7 +13,7 @@ from inkdesk_server.db import init_db
 from inkdesk_server.engine import EngineRuntime
 from inkdesk_server.graph_index import GraphIndexRuntime
 from inkdesk_server.schemas import ApiErrorResponse, EngineCommandRequest
-from inkdesk_server.security import ApiError
+from inkdesk_server.security import ApiError, ResourceNotFoundError
 
 
 def create_app() -> FastAPI:
@@ -56,8 +56,22 @@ def create_app() -> FastAPI:
         return {"status": "ok", "state": "in-memory"}
 
     @app.get("/api/graph")
-    def graph_snapshot():
-        return graph_runtime.current().to_dict()
+    def graph_snapshot(source: str | None = None):
+        snapshot = graph_runtime.current()
+        if snapshot.version == "empty":
+            snapshot = graph_runtime.refresh("api")
+        if source is None:
+            return snapshot.to_dict()
+        if source not in {"vault", "repo"}:
+            raise ApiError(400, "INVALID_GRAPH_SOURCE", "Graph source must be 'vault' or 'repo'.")
+        return snapshot.for_source(source).to_dict()
+
+    @app.get("/api/graph/document")
+    def graph_document(nodeId: str):
+        try:
+            return graph_runtime.read_document(nodeId)
+        except (FileNotFoundError, UnicodeDecodeError) as error:
+            raise ResourceNotFoundError("Graph document was not found.") from error
 
     @app.get("/api/graph/stream")
     async def graph_stream(request: Request, once: bool = False):

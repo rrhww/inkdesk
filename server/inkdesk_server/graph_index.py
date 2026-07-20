@@ -81,6 +81,25 @@ class GraphSnapshot:
             },
         }
 
+    def for_source(self, source: str) -> "GraphSnapshot":
+        primary_ids = {node.id for node in self.nodes if node.source == source}
+        missing_ids = {
+            edge.target
+            for edge in self.edges
+            if edge.source in primary_ids and edge.target.startswith("missing:")
+        }
+        included_ids = primary_ids | missing_ids
+        return GraphSnapshot(
+            version=self.version,
+            generated_at=self.generated_at,
+            nodes=tuple(node for node in self.nodes if node.id in included_ids),
+            edges=tuple(
+                edge
+                for edge in self.edges
+                if edge.source in primary_ids and edge.target in included_ids
+            ),
+        )
+
 
 @dataclass(frozen=True)
 class ParsedDocument:
@@ -170,6 +189,23 @@ class DirectoryScanner:
             encoding="utf-8",
         )
         temporary.replace(self.snapshot_path)
+
+    def read_document(self, node: GraphNode) -> str:
+        if node.source == "vault":
+            root = self.vault_root
+        elif node.source == "repo":
+            root = self.repo_root
+        else:
+            raise FileNotFoundError(node.id)
+
+        candidate = (root / node.path).resolve()
+        try:
+            candidate.relative_to(root)
+        except ValueError as error:
+            raise FileNotFoundError(node.id) from error
+        if candidate.suffix.casefold() != ".md" or not candidate.is_file():
+            raise FileNotFoundError(node.id)
+        return candidate.read_text(encoding="utf-8")
 
     def _iter_markdown_files(self):
         seen: set[Path] = set()
@@ -379,6 +415,17 @@ class GraphIndexRuntime:
     def current(self) -> GraphSnapshot:
         with self._snapshot_lock:
             return self._snapshot
+
+    def read_document(self, node_id: str) -> dict[str, str]:
+        node = next((item for item in self.current().nodes if item.id == node_id), None)
+        if node is None:
+            raise FileNotFoundError(node_id)
+        return {
+            "id": node.id,
+            "title": node.label,
+            "sourcePath": node.path,
+            "content": self.scanner.read_document(node),
+        }
 
     def start(self, loop: asyncio.AbstractEventLoop) -> None:
         self.events.attach_loop(loop)

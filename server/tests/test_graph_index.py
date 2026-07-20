@@ -4,7 +4,7 @@ import asyncio
 import threading
 from datetime import UTC, datetime
 from pathlib import Path
-from time import perf_counter
+from time import perf_counter, sleep
 from unittest.mock import Mock
 
 import pytest
@@ -103,6 +103,57 @@ def test_directory_scanner_builds_graph_and_rebuildable_vector_cache(
             ).all()
         )
     assert nodes["Streaming Solution"].id not in indexed_ids
+
+    assert scanner.read_document(nodes["Core Concept"]).startswith("---\ntitle: Core Concept")
+    with pytest.raises(FileNotFoundError):
+        scanner.read_document(
+            GraphNode(
+                id="vault:../secret.md",
+                label="Secret",
+                kind="document",
+                path="../secret.md",
+                source="vault",
+                status="indexed",
+                summary="",
+            )
+        )
+
+
+def test_graph_api_filters_vault_nodes_and_reads_snapshot_documents(temp_app_env: Path) -> None:
+    from inkdesk_server.main import create_app
+
+    wiki_root = temp_app_env / "wiki"
+    wiki_root.mkdir(parents=True)
+    (wiki_root / "core.md").write_text(
+        "---\ntitle: Core Concept\ntype: concept\n---\n# Core Concept\nLinks to [[api-contract]].\n",
+        encoding="utf-8",
+    )
+    (wiki_root / "api-contract.md").write_text(
+        "---\ntitle: API Contract\ntype: interface\n---\n# API Contract\nThe public boundary.\n",
+        encoding="utf-8",
+    )
+
+    with TestClient(create_app()) as client:
+        payload = {"nodes": []}
+        for _ in range(50):
+            response = client.get("/api/graph", params={"source": "vault"})
+            assert response.status_code == 200
+            payload = response.json()
+            if payload["nodes"]:
+                break
+            sleep(0.02)
+
+        assert {node["label"] for node in payload["nodes"]} == {"API Contract", "Core Concept"}
+        assert len(payload["edges"]) == 1
+
+        core_node = next(node for node in payload["nodes"] if node["label"] == "Core Concept")
+        document = client.get("/api/graph/document", params={"nodeId": core_node["id"]})
+        assert document.status_code == 200
+        assert document.json()["sourcePath"] == "wiki/core.md"
+        assert "Links to [[api-contract]]" in document.json()["content"]
+
+        unknown = client.get("/api/graph/document", params={"nodeId": "vault:../secret.md"})
+        assert unknown.status_code == 404
 
 
 @pytest.mark.asyncio

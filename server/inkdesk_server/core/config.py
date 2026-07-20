@@ -35,7 +35,10 @@ class Settings(BaseSettings):
         default="postgresql+psycopg://inkdesk:inkdesk@localhost:5432/inkdesk",
         alias="INKDESK_DB_URL",
     )
-    vault_root: Path = Field(default=Path("./inkdesk-vault"), alias="INKDESK_VAULT_ROOT")
+    vault_root: Path = Field(
+        default=Path(__file__).resolve().parents[2] / "vault",
+        alias="INKDESK_VAULT_ROOT",
+    )
     repo_root: str | None = Field(default=None, alias="INKDESK_REPO_ROOT")
 
     agent_runtime: str = Field(default="deterministic", alias="INKDESK_AGENT_RUNTIME")

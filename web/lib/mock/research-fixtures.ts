@@ -1158,45 +1158,45 @@ export const initialEdges: Edge[] = [
   {
     id: "e1-c1",
     source: "c-1",
-    sourceHandle: "source-left",
+    sourceHandle: "source-0",
     target: "e-1",
-    targetHandle: "target-center",
+    targetHandle: "target-1",
     type: "straight",
     style: { stroke: "#CBD5E0", strokeWidth: 1.5 }
   },
   {
     id: "e2-c1",
     source: "c-1",
-    sourceHandle: "source-right",
+    sourceHandle: "source-4",
     target: "e-2",
-    targetHandle: "target-left",
+    targetHandle: "target-0",
     type: "straight",
     style: { stroke: "#CBD5E0", strokeWidth: 1.5 }
   },
   {
     id: "e2-c2",
     source: "c-2",
-    sourceHandle: "source-left",
+    sourceHandle: "source-0",
     target: "e-2",
-    targetHandle: "target-right",
+    targetHandle: "target-4",
     type: "straight",
     style: { stroke: "#CBD5E0", strokeWidth: 1.5 }
   },
   {
     id: "e3-c2",
     source: "c-2",
-    sourceHandle: "source-right",
+    sourceHandle: "source-4",
     target: "e-3",
-    targetHandle: "target-center",
+    targetHandle: "target-1",
     type: "straight",
     style: { stroke: "#CBD5E0", strokeWidth: 1.5 }
   },
   {
     id: "doc-e1",
     source: "e-1",
-    sourceHandle: "source",
+    sourceHandle: "source-0",
     target: "doc-1",
-    targetHandle: "target-left",
+    targetHandle: "target-0",
     type: "step",
     animated: true,
     style: { stroke: "#10B981", strokeWidth: 2 }
@@ -1204,9 +1204,9 @@ export const initialEdges: Edge[] = [
   {
     id: "doc-e2",
     source: "e-2",
-    sourceHandle: "source",
+    sourceHandle: "source-4",
     target: "doc-1",
-    targetHandle: "target-right",
+    targetHandle: "target-4",
     type: "step",
     animated: true,
     style: { stroke: "#10B981", strokeWidth: 2 }
