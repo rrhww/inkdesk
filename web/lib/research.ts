@@ -52,7 +52,7 @@ async function withResearchFallback<T>(run: () => Promise<T>, fallback: () => T)
   try {
     return await run();
   } catch (error) {
-    if (error instanceof InkdeskApiError) {
+    if (error instanceof InkdeskApiError && error.status !== 404) {
       throw error;
     }
 

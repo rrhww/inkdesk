@@ -578,6 +578,33 @@ test("research helper falls back to local research fixtures when API base URL is
   });
 });
 
+test("research helper falls back for routes omitted by the graph-only backend but surfaces server failures", async () => {
+  process.env.NEXT_PUBLIC_API_BASE_URL = "http://localhost:8080";
+
+  await withMockedFetch(
+    () => createJsonResponse({ detail: "Not Found" }, 404),
+    async (calls) => {
+      const module = await import("../lib/research");
+      const snapshot = await module.getResearchDashboard();
+
+      assert.equal(new URL(String(calls[0]?.input)).pathname, "/api/admin/home");
+      assert.equal(snapshot.summary.activeTopics > 0, true);
+    }
+  );
+
+  await withMockedFetch(
+    () => createJsonResponse({ message: "Graph index failed" }, 500),
+    async () => {
+      const module = await import("../lib/research");
+      await assert.rejects(module.getResearchDashboard(), (error: unknown) => {
+        return error instanceof Error && "status" in error && error.status === 500;
+      });
+    }
+  );
+
+  delete process.env.NEXT_PUBLIC_API_BASE_URL;
+});
+
 test("research helper imports raw sources through dedicated web text and pdf entrypoints", async () => {
   process.env.NEXT_PUBLIC_API_BASE_URL = "http://localhost:8080";
 
