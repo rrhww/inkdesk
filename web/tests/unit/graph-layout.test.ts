@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { layoutGraphSnapshot, nodeIdsForGraphReason, traceUpstreamPath } from "@/lib/graph-layout";
+import {
+  deriveTaskFocusGraph,
+  layoutGraphSnapshot,
+  nodeIdsForGraphReason,
+  toMacroGraph,
+  traceUpstreamPath
+} from "@/lib/graph-layout";
 import type { GraphSnapshot } from "@/lib/server-api";
 
 const snapshot: GraphSnapshot = {
@@ -67,5 +73,88 @@ describe("graph layout", () => {
     expect(nodeIdsForGraphReason(snapshot, "modified:api.md")).toEqual(["vault:wiki/api.md"]);
     expect(nodeIdsForGraphReason(snapshot, "startup")).toEqual([]);
     expect(nodeIdsForGraphReason(snapshot, "modified:module.py")).toEqual([]);
+  });
+
+  it("groups related code entities into a parent module with relative child positions", () => {
+    const grouped = layoutGraphSnapshot({
+      ...snapshot,
+      nodes: [
+        snapshot.nodes[0],
+        { id: "repo:link-service/order.ts", label: "OrderBookingService", kind: "class", path: "src/link-service/order.ts", source: "repo", status: "stable", summary: "" },
+        { id: "repo:link-service/context.ts", label: "BookingContextFactory", kind: "class", path: "src/link-service/context.ts", source: "repo", status: "stable", summary: "" },
+        snapshot.nodes[2]
+      ],
+      edges: [
+        { id: "root-order", source: "vault:wiki/index.md", target: "repo:link-service/order.ts", kind: "wikilink" },
+        { id: "root-context", source: "vault:wiki/index.md", target: "repo:link-service/context.ts", kind: "wikilink" },
+        { id: "order-solution", source: "repo:link-service/order.ts", target: "vault:wiki/solution.md", kind: "wikilink" }
+      ],
+      stats: { nodeCount: 4, edgeCount: 3, missingCount: 0 }
+    });
+
+    const module = grouped.nodes.find((node) => node.id === "module:repo:link-service");
+    const children = grouped.nodes.filter((node) => node.parentId === module?.id);
+
+    expect(module).toMatchObject({ type: "module", draggable: false, selectable: false });
+    expect(module?.style).toMatchObject({ width: expect.any(Number), height: expect.any(Number) });
+    expect(children).toHaveLength(2);
+    expect(children.every((node) => node.extent === "parent")).toBe(true);
+    expect(children.every((node) => node.position.x >= 0 && node.position.y >= 0)).toBe(true);
+    expect(grouped.nodes.findIndex((node) => node.id === module?.id)).toBeLessThan(
+      grouped.nodes.findIndex((node) => node.id === children[0]?.id)
+    );
+  });
+
+  it("renders generic repository Markdown as a rectangular entity", () => {
+    const layout = layoutGraphSnapshot({
+      version: "repo-doc",
+      generatedAt: "2026-07-23T00:00:00Z",
+      stats: { nodeCount: 1, edgeCount: 0, missingCount: 0 },
+      nodes: [
+        {
+          id: "repo:AGENTS.md",
+          label: "AGENTS.md",
+          kind: "document",
+          path: "AGENTS.md",
+          source: "repo",
+          status: "indexed",
+          summary: ""
+        }
+      ],
+      edges: []
+    });
+
+    expect(layout.nodes[0]).toMatchObject({ type: "entity" });
+  });
+
+  it("collapses child edges into deduplicated macro edges", () => {
+    const grouped = layoutGraphSnapshot({
+      ...snapshot,
+      nodes: [
+        snapshot.nodes[0],
+        { id: "repo:link-service/order.ts", label: "OrderBookingService", kind: "class", path: "src/link-service/order.ts", source: "repo", status: "stable", summary: "" },
+        { id: "repo:link-service/context.ts", label: "BookingContextFactory", kind: "class", path: "src/link-service/context.ts", source: "repo", status: "stable", summary: "" }
+      ],
+      edges: [
+        { id: "root-order", source: "vault:wiki/index.md", target: "repo:link-service/order.ts", kind: "wikilink" },
+        { id: "root-context", source: "vault:wiki/index.md", target: "repo:link-service/context.ts", kind: "wikilink" }
+      ],
+      stats: { nodeCount: 3, edgeCount: 2, missingCount: 0 }
+    });
+
+    const macro = toMacroGraph(grouped.nodes, grouped.edges);
+
+    expect(macro.nodes.map((node) => node.id).sort()).toEqual(["module:repo:link-service", "vault:wiki/index.md"]);
+    expect(macro.edges).toHaveLength(1);
+    expect(macro.edges[0]).toMatchObject({ source: "vault:wiki/index.md", target: "module:repo:link-service" });
+  });
+
+  it("keeps a bounded task focus subgraph and returns empty without a task root", () => {
+    const layout = layoutGraphSnapshot(snapshot);
+    const focused = deriveTaskFocusGraph(layout.nodes, layout.edges, "vault:wiki/solution.md", 1);
+
+    expect(focused.nodes.map((node) => node.id).sort()).toEqual(["vault:wiki/index.md", "vault:wiki/solution.md"]);
+    expect(focused.edges.map((edge) => edge.id)).toEqual(["edge-2"]);
+    expect(deriveTaskFocusGraph(layout.nodes, layout.edges, null)).toEqual({ nodes: [], edges: [] });
   });
 });

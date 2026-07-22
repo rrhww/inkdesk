@@ -11,11 +11,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "test:smoke": "node --import tsx --test tests/research-api.test.tsx tests/research-pages.test.tsx",
+    "test:smoke": "node --import tsx --test tests/graph-only-shell.test.ts",
     "unit": "vitest run",
     "test": "npm run test:smoke && npm run unit",
-    "e2e": "playwright test",
-    "e2e:fullstack": "node scripts/run-fullstack-e2e.mjs"
+    "e2e": "playwright test"
   },
   "dependencies": {
     "@dagrejs/dagre": "^3.0.0",

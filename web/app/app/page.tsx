@@ -1,12 +1,5 @@
-import { DevRunConsole } from "@/components/workbench/dev-run-console";
-import { getVaultStatus } from "@/lib/research";
-import { VaultInitCard } from "@/components/workbench/vault-init-card";
+import { redirect } from "next/navigation";
 
-export default async function WorkbenchPage() {
-  const status = await getVaultStatus().catch(() => null);
-  if (status && !status.vaultType) {
-    return <VaultInitCard />;
-  }
-
-  return <DevRunConsole />;
+export default function AppPage() {
+  redirect("/app/wiki");
 }

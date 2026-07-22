@@ -4,10 +4,8 @@ from time import perf_counter
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import inspect
 
 from inkdesk_server.core.config import get_settings
-from inkdesk_server.db import get_engine
 from inkdesk_server.engine import EngineRuntime
 from inkdesk_server.graph_index import GraphSnapshot
 from inkdesk_server.schemas import EngineCommandRequest, EngineTaskRequest
@@ -56,8 +54,6 @@ def test_engine_sse_endpoint_streams_default_parallel_plan_without_job_tables(te
     assert "event: token\n" in response.text
     assert "event: result\n" in response.text
     assert "event: stream.end\n" in response.text
-    table_names = set(inspect(get_engine()).get_table_names())
-    assert table_names.isdisjoint({"jobs", "durable_jobs", "dev_runs", "run_events", "compile_tasks", "compile_steps"})
 
 
 def test_engine_rejects_old_persisted_job_payload_shape(temp_app_env) -> None:

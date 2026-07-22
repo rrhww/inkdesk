@@ -18,23 +18,10 @@ class AgentProviderConfig:
     structured_output_method: str
 
 
-@dataclass(frozen=True)
-class EmbeddingProviderConfig:
-    profile: str
-    name: str
-    model: str
-    base_url: str | None
-    api_key: str | None
-
-
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     app_env: str = Field(default="local", alias="INKDESK_ENV")
-    db_url: str = Field(
-        default="postgresql+psycopg://inkdesk:inkdesk@localhost:5432/inkdesk",
-        alias="INKDESK_DB_URL",
-    )
     vault_root: Path = Field(
         default=Path(__file__).resolve().parents[2] / "vault",
         alias="INKDESK_VAULT_ROOT",
@@ -48,11 +35,6 @@ class Settings(BaseSettings):
     agent_base_url: str | None = Field(default=None, alias="INKDESK_AGENT_BASE_URL")
     agent_connect_timeout_seconds: float = Field(default=2.0, alias="INKDESK_AGENT_CONNECT_TIMEOUT_SECONDS")
     agent_read_timeout_seconds: float = Field(default=20.0, alias="INKDESK_AGENT_READ_TIMEOUT_SECONDS")
-
-    embedding_provider_profile: str = Field(default="openai", alias="INKDESK_EMBEDDING_PROVIDER_PROFILE")
-    embedding_model: str | None = Field(default="text-embedding-3-small", alias="INKDESK_EMBEDDING_MODEL")
-    embedding_api_key: str | None = Field(default=None, alias="INKDESK_EMBEDDING_API_KEY")
-    embedding_base_url: str | None = Field(default=None, alias="INKDESK_EMBEDDING_BASE_URL")
 
     enable_file_watcher: bool = Field(default=True, alias="INKDESK_ENABLE_FILE_WATCHER")
     graph_sse_heartbeat_seconds: float = Field(default=15.0, alias="INKDESK_GRAPH_SSE_HEARTBEAT_SECONDS")
@@ -83,21 +65,6 @@ class Settings(BaseSettings):
             api_key=(self.agent_api_key or self.openai_api_key or self.deepseek_api_key or "").strip() or None,
             structured_output_method="json_mode" if "deepseek.com" in base_url.lower() or model.lower().startswith("deepseek") else "json_schema",
         )
-
-    @property
-    def resolved_embedding_provider(self) -> EmbeddingProviderConfig:
-        profile = (self.embedding_provider_profile or "openai").strip().lower()
-        if profile == "deterministic":
-            return EmbeddingProviderConfig("deterministic", "deterministic", (self.embedding_model or "").strip() or "deterministic-32", None, None)
-        normalized = profile if profile in {"openai", "openai_compatible", "custom", "deepseek"} else "openai"
-        return EmbeddingProviderConfig(
-            profile=normalized,
-            name="openai" if normalized == "openai" else "openai-compatible",
-            model=(self.embedding_model or "").strip() or "text-embedding-3-small",
-            base_url=(self.embedding_base_url or self.openai_base_url or self.agent_base_url or "https://api.openai.com/v1").strip(),
-            api_key=(self.embedding_api_key or self.openai_api_key or self.deepseek_api_key or self.agent_api_key or "").strip() or None,
-        )
-
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:
