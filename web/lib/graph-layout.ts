@@ -105,7 +105,7 @@ function nodeType(node: GraphSnapshotNode): GraphNodeType {
   if (node.path.toLowerCase() === "wiki/index.md") {
     return "concept";
   }
-  return node.source === "vault" ? "action" : "concept";
+  return node.source === "vault" ? "action" : "entity";
 }
 
 function nodeModule(node: GraphSnapshotNode) {

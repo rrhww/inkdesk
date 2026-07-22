@@ -155,6 +155,13 @@ function InkdeskGraphCanvas() {
       };
     });
   }, [focusedPath.edgeIds, graphView, interactionFocusedNodeId, viewGraph.edges, zoom]);
+  const initialFitNodes = useMemo(() => {
+    if (graphScope !== "all" || graphView !== "global") {
+      return visibleNodes;
+    }
+    const vaultNodes = visibleNodes.filter((node) => node.data.documentId?.startsWith("vault:"));
+    return vaultNodes.length > 0 ? vaultNodes : visibleNodes;
+  }, [graphScope, graphView, visibleNodes]);
 
   const applyGraphSnapshot = useCallback((snapshot: GraphSnapshot) => {
     const layout = layoutGraphSnapshot(snapshot);
@@ -405,7 +412,7 @@ function InkdeskGraphCanvas() {
           nodeTypes={nodeTypes}
           nodesConnectable={false}
           fitView
-          fitViewOptions={{ padding: 0.2 }}
+          fitViewOptions={{ nodes: initialFitNodes, padding: 0.2 }}
           minZoom={0.1}
           maxZoom={1.5}
           proOptions={{ hideAttribution: true }}

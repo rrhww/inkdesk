@@ -105,6 +105,28 @@ describe("graph layout", () => {
     );
   });
 
+  it("renders generic repository Markdown as a rectangular entity", () => {
+    const layout = layoutGraphSnapshot({
+      version: "repo-doc",
+      generatedAt: "2026-07-23T00:00:00Z",
+      stats: { nodeCount: 1, edgeCount: 0, missingCount: 0 },
+      nodes: [
+        {
+          id: "repo:AGENTS.md",
+          label: "AGENTS.md",
+          kind: "document",
+          path: "AGENTS.md",
+          source: "repo",
+          status: "indexed",
+          summary: ""
+        }
+      ],
+      edges: []
+    });
+
+    expect(layout.nodes[0]).toMatchObject({ type: "entity" });
+  });
+
   it("collapses child edges into deduplicated macro edges", () => {
     const grouped = layoutGraphSnapshot({
       ...snapshot,

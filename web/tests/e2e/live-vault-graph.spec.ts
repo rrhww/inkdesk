@@ -12,6 +12,10 @@ test("renders and reads the live Vault Markdown graph", async ({ page }, testInf
   const nodes = page.locator(".react-flow__node");
   const edges = page.locator(".react-flow__edge");
   await expect.poll(() => nodes.count()).toBeGreaterThan(5);
+  await expect.poll(() => edges.count()).toBeGreaterThan(0);
+  await expect
+    .poll(async () => (await page.getByTestId("rf__node-vault:wiki/tech-decisions.md").boundingBox())?.width ?? 0)
+    .toBeGreaterThan(80);
   await expect(page.getByRole("button", { name: "All nodes" })).toHaveAttribute("aria-pressed", "true");
 
   await page.getByRole("button", { name: "Repository nodes" }).click();
@@ -232,11 +236,12 @@ test("groups code nodes and reduces graph noise through view modes and semantic 
 
   await global.click();
   await expect(graphNodes).toHaveCount(globalNodeCount);
-  for (let index = 0; index < 10; index += 1) {
-    await page.locator(".react-flow__controls-zoomin").click();
-  }
   await expect.poll(() => page.locator(".react-flow__edge").count()).toBeGreaterThan(0);
   await page.locator(".react-flow__controls-fitview").click();
   await expect(page.locator(".react-flow__edge")).toHaveCount(0);
+  for (let index = 0; index < 10 && (await page.locator(".react-flow__edge").count()) === 0; index += 1) {
+    await page.locator(".react-flow__controls-zoomin").click();
+  }
+  await expect.poll(() => page.locator(".react-flow__edge").count()).toBeGreaterThan(0);
   await page.screenshot({ path: testInfo.outputPath("wiki-semantic-zoom.png"), fullPage: true });
 });

@@ -9,7 +9,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 
 from inkdesk_server.core.config import get_settings
-from inkdesk_server.db import init_db
 from inkdesk_server.engine import EngineRuntime
 from inkdesk_server.graph_index import GraphIndexRuntime
 from inkdesk_server.schemas import ApiErrorResponse, EngineCommandRequest
@@ -18,7 +17,6 @@ from inkdesk_server.security import ApiError, ResourceNotFoundError
 
 def create_app() -> FastAPI:
     settings = get_settings()
-    init_db()
     graph_runtime = GraphIndexRuntime(settings)
     engine_runtime = EngineRuntime(settings, graph_runtime.current)
 

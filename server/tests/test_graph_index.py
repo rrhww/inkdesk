@@ -10,43 +10,13 @@ from unittest.mock import Mock
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import select
 from watchdog.events import FileModifiedEvent
 
 from inkdesk_server.core.config import get_settings
-from inkdesk_server.db import init_db, session_scope
 from inkdesk_server.graph_index import DirectoryScanner, GraphEventBus, GraphNode, GraphSnapshot, MarkdownChangeHandler
-from inkdesk_server.models import RetrievalChunk, User, Workspace
 
 
-def _seed_workspace() -> None:
-    init_db()
-    with session_scope() as db:
-        if db.scalar(select(Workspace.id).limit(1)):
-            return
-        now = datetime.now(UTC)
-        owner = User(
-            id="graph-owner",
-            username="graph-owner",
-            email="graph-owner@example.invalid",
-            password_hash="unused",
-            status="ACTIVE",
-            created_at=now,
-            updated_at=now,
-        )
-        db.add(
-            Workspace(
-                id="workspace-inkdesk",
-                owner_user=owner,
-                name="Graph workspace",
-                slug="inkdesk",
-                created_at=now,
-                updated_at=now,
-            )
-        )
-
-
-def test_directory_scanner_builds_graph_and_rebuildable_vector_cache(
+def test_directory_scanner_builds_file_backed_graph(
     temp_app_env: Path,
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -68,13 +38,10 @@ def test_directory_scanner_builds_graph_and_rebuildable_vector_cache(
         encoding="utf-8",
     )
     monkeypatch.setenv("INKDESK_REPO_ROOT", str(repo_root))
-    monkeypatch.setenv("INKDESK_EMBEDDING_PROVIDER_PROFILE", "deterministic")
     get_settings.cache_clear()
-    _seed_workspace()
 
     scanner = DirectoryScanner(get_settings())
-    with session_scope() as db:
-        first = scanner.scan(db)
+    first = scanner.scan()
 
     nodes = {node.label: node for node in first.nodes}
     assert nodes["Core Concept"].kind == "concept"
@@ -84,26 +51,9 @@ def test_directory_scanner_builds_graph_and_rebuildable_vector_cache(
     assert any(edge.source == nodes["Core Concept"].id and edge.target == nodes["API Contract"].id for edge in first.edges)
     assert scanner.snapshot_path.is_file()
 
-    with session_scope() as db:
-        indexed_ids = set(
-            db.scalars(
-                select(RetrievalChunk.entity_id).where(RetrievalChunk.entity_type == "VAULT_PAGE")
-            ).all()
-        )
-    assert nodes["Core Concept"].id in indexed_ids
-    assert nodes["Streaming Solution"].id in indexed_ids
-
     (repo_root / "tech-solution.md").unlink()
-    with session_scope() as db:
-        second = scanner.scan(db)
+    second = scanner.scan()
     assert second.version != first.version
-    with session_scope() as db:
-        indexed_ids = set(
-            db.scalars(
-                select(RetrievalChunk.entity_id).where(RetrievalChunk.entity_type == "VAULT_PAGE")
-            ).all()
-        )
-    assert nodes["Streaming Solution"].id not in indexed_ids
 
     assert scanner.read_document(nodes["Core Concept"]).startswith("---\ntitle: Core Concept")
     with pytest.raises(FileNotFoundError):
@@ -155,6 +105,16 @@ def test_graph_api_filters_vault_nodes_and_reads_snapshot_documents(temp_app_env
 
         unknown = client.get("/api/graph/document", params={"nodeId": "vault:../secret.md"})
         assert unknown.status_code == 404
+
+
+def test_graph_api_starts_without_a_database(temp_app_env: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("INKDESK_DB_URL", "postgresql+psycopg://unavailable.invalid/inkdesk")
+    get_settings.cache_clear()
+    from inkdesk_server.main import create_app
+
+    with TestClient(create_app()) as client:
+        assert client.get("/health").json() == {"status": "ok", "state": "in-memory"}
+        assert client.get("/api/graph").status_code == 200
 
 
 @pytest.mark.asyncio

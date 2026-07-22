@@ -12,16 +12,10 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-from sqlalchemy import select
-from sqlalchemy.orm import Session
 from watchdog.events import FileSystemEvent, FileSystemEventHandler
 from watchdog.observers import Observer
 
 from inkdesk_server.core.config import Settings
-from inkdesk_server.db import session_scope
-from inkdesk_server.embeddings import EmbeddingService
-from inkdesk_server.models import User, Workspace
-from inkdesk_server.retrieval import RetrievalService
 
 
 WIKILINK_PATTERN = re.compile(r"\[\[([^\]|#]+)(?:#[^\]|]+)?(?:\|[^\]]+)?\]\]")
@@ -119,7 +113,7 @@ class DirectoryScanner:
         )
         self.snapshot_path = self.vault_root / ".inkdesk" / "graph" / "snapshot.json"
 
-    def scan(self, db: Session | None = None) -> GraphSnapshot:
+    def scan(self) -> GraphSnapshot:
         documents = [self._parse_document(path, source) for path, source in self._iter_markdown_files()]
         documents = [document for document in documents if document is not None]
         nodes = {document.node.id: document.node for document in documents}
@@ -164,8 +158,6 @@ class DirectoryScanner:
             edges=ordered_edges,
         )
 
-        if db is not None:
-            self._sync_retrieval_index(db, documents)
         self.write_snapshot(snapshot)
         return snapshot
 
@@ -326,41 +318,6 @@ class DirectoryScanner:
                 return resolved
         return None
 
-    def _sync_retrieval_index(self, db: Session, documents: list[ParsedDocument]) -> None:
-        workspace = db.scalar(select(Workspace).where(Workspace.slug == "inkdesk"))
-        if workspace is None:
-            now = datetime.now(UTC)
-            owner = User(
-                id="system-graph-owner",
-                username="system-graph-owner",
-                email="system-graph-owner@inkdesk.local",
-                password_hash="disabled",
-                status="SYSTEM",
-                created_at=now,
-                updated_at=now,
-            )
-            workspace = Workspace(
-                id="system-graph-workspace",
-                owner_user=owner,
-                name="Inkdesk graph cache",
-                slug="inkdesk",
-                created_at=now,
-                updated_at=now,
-            )
-            db.add(workspace)
-            db.flush()
-        retrieval = RetrievalService(db, EmbeddingService(self.settings))
-        document_ids: set[str] = set()
-        for document in documents:
-            document_ids.add(document.node.id)
-            retrieval.sync_vault_document(
-                workspace_id=workspace.id,
-                document_id=document.node.id,
-                text_content="\n".join(part for part in (document.node.label, document.node.summary, document.body) if part),
-            )
-        retrieval.remove_missing_vault_documents(workspace.id, document_ids)
-
-
 class GraphEventBus:
     def __init__(self):
         self._loop: asyncio.AbstractEventLoop | None = None
@@ -443,8 +400,7 @@ class GraphIndexRuntime:
 
     def refresh(self, reason: str = "manual") -> GraphSnapshot:
         with self._refresh_lock:
-            with session_scope() as db:
-                snapshot = self.scanner.scan(db)
+            snapshot = self.scanner.scan()
             with self._snapshot_lock:
                 changed = snapshot.version != self._snapshot.version
                 self._snapshot = snapshot
