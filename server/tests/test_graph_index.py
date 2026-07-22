@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import threading
 from datetime import UTC, datetime
 from pathlib import Path
@@ -183,15 +184,24 @@ async def test_graph_event_bus_delivers_cross_thread_update_under_ttft_budget() 
 def test_graph_sse_emits_memory_snapshot_without_waiting_for_scan(temp_app_env: Path) -> None:
     from inkdesk_server.main import create_app
 
+    wiki_root = temp_app_env / "wiki"
+    wiki_root.mkdir(parents=True)
+    (wiki_root / "core.md").write_text("# Core\n", encoding="utf-8")
+
     with TestClient(create_app()) as client:
         client.get("/api/graph")
         started = perf_counter()
-        response = client.get("/api/graph/stream?once=true")
+        response = client.get("/api/graph/stream?once=true&source=vault")
         elapsed = perf_counter() - started
+        invalid = client.get("/api/graph/stream?once=true&source=unknown")
 
     assert response.status_code == 200
     assert response.headers["content-type"].startswith("text/event-stream")
     assert response.text.startswith("event: graph.snapshot\n")
+    payload = json.loads(response.text.split("data: ", 1)[1])
+    assert payload["nodes"]
+    assert {node["source"] for node in payload["nodes"]} == {"vault"}
+    assert invalid.status_code == 400
     assert elapsed < 0.18
 
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { layoutGraphSnapshot, traceUpstreamPath } from "@/lib/graph-layout";
+import { layoutGraphSnapshot, nodeIdsForGraphReason, traceUpstreamPath } from "@/lib/graph-layout";
 import type { GraphSnapshot } from "@/lib/server-api";
 
 const snapshot: GraphSnapshot = {
@@ -61,5 +61,11 @@ describe("graph layout", () => {
 
     expect(focus.nodeIds.size).toBe(0);
     expect(focus.edgeIds.size).toBe(0);
+  });
+
+  it("maps watchdog reasons to the changed Vault node", () => {
+    expect(nodeIdsForGraphReason(snapshot, "modified:api.md")).toEqual(["vault:wiki/api.md"]);
+    expect(nodeIdsForGraphReason(snapshot, "startup")).toEqual([]);
+    expect(nodeIdsForGraphReason(snapshot, "modified:module.py")).toEqual([]);
   });
 });

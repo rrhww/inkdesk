@@ -145,8 +145,107 @@ export type GraphNodeDocument = {
   content: string;
 };
 
+export type GraphStreamStatus = "connecting" | "connected" | "offline";
+export type GraphScope = "all" | "vault" | "repo";
+
+export type GraphStreamEvent =
+  | { type: "graph.snapshot"; snapshot: GraphSnapshot }
+  | { type: "graph.updated"; reason?: string; snapshot: GraphSnapshot }
+  | { type: "node.active"; nodeId: string }
+  | { type: "node.idle"; nodeId: string };
+
+function isGraphSnapshot(value: unknown): value is GraphSnapshot {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  const snapshot = value as Partial<GraphSnapshot>;
+  return typeof snapshot.version === "string" && Array.isArray(snapshot.nodes) && Array.isArray(snapshot.edges);
+}
+
+function subscribeToGraphEvents(
+  onEvent: (event: GraphStreamEvent) => void,
+  onStatusChange: (status: GraphStreamStatus) => void,
+  scope: GraphScope = "all"
+) {
+  const apiBaseUrl = resolveApiBaseUrl();
+  if (!apiBaseUrl) {
+    onStatusChange("offline");
+    return () => undefined;
+  }
+
+  let closed = false;
+  const scopeQuery = scope === "all" ? "" : `?source=${scope}`;
+  const eventSource = new EventSource(`${apiBaseUrl}/graph/stream${scopeQuery}`);
+  onStatusChange("connecting");
+  eventSource.onopen = () => {
+    if (!closed) {
+      onStatusChange("connected");
+    }
+  };
+  eventSource.onerror = () => {
+    if (!closed) {
+      onStatusChange("offline");
+    }
+  };
+
+  const addGraphListener = (eventName: "graph.snapshot" | "graph.updated") => {
+    eventSource.addEventListener(eventName, ((rawEvent: MessageEvent<string>) => {
+      try {
+        const payload = JSON.parse(rawEvent.data) as unknown;
+        const snapshot =
+          eventName === "graph.snapshot"
+            ? payload
+            : (payload as { snapshot?: unknown }).snapshot;
+        if (!isGraphSnapshot(snapshot)) {
+          return;
+        }
+        if (eventName === "graph.snapshot") {
+          onEvent({ type: eventName, snapshot });
+          return;
+        }
+        const reason = (payload as { reason?: unknown }).reason;
+        onEvent({
+          type: eventName,
+          ...(typeof reason === "string" ? { reason } : {}),
+          snapshot
+        });
+      } catch {
+        // Ignore malformed stream items and keep the connection alive.
+      }
+    }) as EventListener);
+  };
+
+  addGraphListener("graph.snapshot");
+  addGraphListener("graph.updated");
+  for (const [eventName, type] of [
+    ["node.active", "node.active"],
+    ["node_active", "node.active"],
+    ["node.idle", "node.idle"],
+    ["node_idle", "node.idle"]
+  ] as const) {
+    eventSource.addEventListener(eventName, ((rawEvent: MessageEvent<string>) => {
+      try {
+        const payload = JSON.parse(rawEvent.data) as { nodeId?: unknown; node_id?: unknown };
+        const nodeId = payload.nodeId ?? payload.node_id;
+        if (typeof nodeId === "string") {
+          onEvent({ type, nodeId });
+        }
+      } catch {
+        // Ignore malformed stream items and keep the connection alive.
+      }
+    }) as EventListener);
+  }
+
+  return () => {
+    closed = true;
+    eventSource.close();
+  };
+}
+
 export const ServerAPI = {
-  fetchGraphTopology: () => fetchInkdeskJson<GraphSnapshot>("/graph?source=vault"),
+  fetchGraphTopology: (scope: GraphScope = "all") =>
+    fetchInkdeskJson<GraphSnapshot>(scope === "all" ? "/graph" : `/graph?source=${scope}`),
   fetchNodeDocument: (nodeId: string) =>
-    fetchInkdeskJson<GraphNodeDocument>(`/graph/document?nodeId=${encodeURIComponent(nodeId)}`)
+    fetchInkdeskJson<GraphNodeDocument>(`/graph/document?nodeId=${encodeURIComponent(nodeId)}`),
+  subscribeToGraphEvents
 };

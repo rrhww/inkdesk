@@ -1,7 +1,12 @@
+"use client";
+
+import { isValidElement } from "react";
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
 import remarkGfm from "remark-gfm";
 import "highlight.js/styles/github-dark-dimmed.css";
+
+import { MermaidDiagram } from "@/components/workbench/mermaid-diagram";
 
 type MarkdownViewerProps = {
   content: string;
@@ -41,7 +46,32 @@ export function MarkdownViewer({ content, isLoading }: MarkdownViewerProps) {
 
   return (
     <article className="markdown-viewer prose prose-sm prose-slate max-w-none prose-headings:font-label prose-headings:tracking-normal prose-headings:text-slate-900 prose-a:text-emerald-700 prose-a:underline prose-a:underline-offset-4 hover:prose-a:text-emerald-600 prose-pre:rounded-none prose-pre:border prose-pre:border-slate-800 prose-pre:bg-slate-900 prose-pre:p-0 prose-pre:text-slate-200 prose-table:font-mono prose-table:text-xs prose-th:border prose-th:border-slate-300 prose-th:bg-slate-50 prose-th:px-3 prose-th:py-2 prose-td:border prose-td:border-slate-200 prose-td:px-3 prose-td:py-2 [&_:not(pre)>code]:rounded-none [&_:not(pre)>code]:bg-emerald-50 [&_:not(pre)>code]:px-1 [&_:not(pre)>code]:py-0.5 [&_:not(pre)>code]:text-emerald-800 [&_:not(pre)>code]:before:content-none [&_:not(pre)>code]:after:content-none">
-      <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        rehypePlugins={[rehypeHighlight]}
+        components={{
+          pre({ children, ...props }) {
+            if (
+              isValidElement<{ className?: string }>(children) &&
+              children.props.className?.split(" ").includes("language-mermaid")
+            ) {
+              return children;
+            }
+            return <pre {...props}>{children}</pre>;
+          },
+          code({ className, children, ...props }) {
+            if (className?.split(" ").includes("language-mermaid")) {
+              const chart = String(children).replace(/\n$/, "");
+              return <MermaidDiagram key={chart} chart={chart} />;
+            }
+            return (
+              <code className={className} {...props}>
+                {children}
+              </code>
+            );
+          }
+        }}
+      >
         {markdown}
       </ReactMarkdown>
     </article>

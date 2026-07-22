@@ -8,6 +8,7 @@ import ReactFlow, {
   Background,
   BackgroundVariant,
   Controls,
+  ReactFlowProvider,
   type Edge,
   type EdgeChange,
   type Node,
@@ -16,9 +17,22 @@ import ReactFlow, {
 import "reactflow/dist/style.css";
 
 import { ActionNode, ConceptNode, EntityNode } from "@/components/ui/graph-nodes";
+import { GraphScopeControl } from "@/components/workbench/graph-scope-control";
 import { MarkdownViewer } from "@/components/workbench/markdown-viewer";
-import { layoutGraphSnapshot, traceUpstreamPath, type GraphNodeData } from "@/lib/graph-layout";
-import { ServerAPI, type GraphNodeDocument } from "@/lib/server-api";
+import { GraphSearch } from "@/components/workbench/graph-search";
+import {
+  layoutGraphSnapshot,
+  nodeIdsForGraphReason,
+  traceUpstreamPath,
+  type GraphNodeData
+} from "@/lib/graph-layout";
+import {
+  ServerAPI,
+  type GraphScope,
+  type GraphNodeDocument,
+  type GraphSnapshot,
+  type GraphStreamStatus
+} from "@/lib/server-api";
 
 type ReaderState =
   | { status: "idle" | "loading" }
@@ -34,16 +48,27 @@ const graphStatusLabels: Record<GraphStatus, string> = {
   error: "GRAPH SYNC OFFLINE"
 };
 
-export default function InkdeskGraphBoard() {
+const streamStatusLabels: Record<GraphStreamStatus, string> = {
+  connecting: "STREAM CONNECTING",
+  connected: "GRAPH SYNC ACTIVE",
+  offline: "STREAM OFFLINE"
+};
+
+function InkdeskGraphCanvas() {
+  const [graphScope, setGraphScope] = useState<GraphScope>("all");
   const [nodes, setNodes] = useState<Node<GraphNodeData>[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
   const [graphStatus, setGraphStatus] = useState<GraphStatus>("loading");
   const [graphVersion, setGraphVersion] = useState("loading");
   const [selectedNode, setSelectedNode] = useState<Node<GraphNodeData> | null>(null);
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
+  const [searchedNodeId, setSearchedNodeId] = useState<string | null>(null);
+  const [streamStatus, setStreamStatus] = useState<GraphStreamStatus>("connecting");
+  const [streamActiveNodeIds, setStreamActiveNodeIds] = useState<Set<string>>(() => new Set());
   const [readerState, setReaderState] = useState<ReaderState>({ status: "idle" });
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const graphRequestRef = useRef(0);
+  const pulseTimerRef = useRef<number | null>(null);
 
   const nodeTypes = useMemo(
     () => ({
@@ -54,24 +79,28 @@ export default function InkdeskGraphBoard() {
     []
   );
 
-  const focusedNodeId = hoveredNodeId ?? selectedNode?.id ?? null;
+  const focusedNodeId = hoveredNodeId ?? searchedNodeId ?? selectedNode?.id ?? null;
   const focusedPath = useMemo(() => traceUpstreamPath(focusedNodeId, edges), [edges, focusedNodeId]);
   const visibleNodes = useMemo(() => {
-    if (!focusedNodeId) {
+    if (!focusedNodeId && streamActiveNodeIds.size === 0) {
       return nodes;
     }
 
     return nodes.map((node) => ({
       ...node,
-      className: `transition-opacity duration-200 motion-reduce:transition-none ${
-        focusedPath.nodeIds.has(node.id) ? "z-10 opacity-100" : "opacity-25"
-      }`,
+      ...(focusedNodeId
+        ? {
+            className: `transition-opacity duration-200 motion-reduce:transition-none ${
+              focusedPath.nodeIds.has(node.id) ? "z-10 opacity-100" : "opacity-25"
+            }`
+          }
+        : {}),
       data: {
         ...node.data,
-        isActive: node.id === focusedNodeId
+        isActive: node.id === focusedNodeId || streamActiveNodeIds.has(node.id)
       }
     }));
-  }, [focusedNodeId, focusedPath.nodeIds, nodes]);
+  }, [focusedNodeId, focusedPath.nodeIds, nodes, streamActiveNodeIds]);
   const visibleEdges = useMemo(() => {
     if (!focusedNodeId) {
       return edges;
@@ -93,21 +122,48 @@ export default function InkdeskGraphBoard() {
     });
   }, [edges, focusedNodeId, focusedPath.edgeIds]);
 
+  const applyGraphSnapshot = useCallback((snapshot: GraphSnapshot) => {
+    const layout = layoutGraphSnapshot(snapshot);
+    setNodes(layout.nodes);
+    setEdges(layout.edges);
+    setGraphVersion(snapshot.version);
+    setGraphStatus(layout.nodes.length > 0 ? "ready" : "empty");
+    setHoveredNodeId((currentNodeId) =>
+      currentNodeId && layout.nodes.some((node) => node.id === currentNodeId) ? currentNodeId : null
+    );
+    setSelectedNode((currentNode) =>
+      currentNode ? layout.nodes.find((node) => node.id === currentNode.id) ?? null : null
+    );
+    setSearchedNodeId((currentNodeId) =>
+      currentNodeId && layout.nodes.some((node) => node.id === currentNodeId) ? currentNodeId : null
+    );
+  }, []);
+
+  const pulseNodes = useCallback((nodeIds: string[]) => {
+    if (nodeIds.length === 0) {
+      return;
+    }
+    setStreamActiveNodeIds(new Set(nodeIds));
+    if (pulseTimerRef.current !== null) {
+      window.clearTimeout(pulseTimerRef.current);
+    }
+    pulseTimerRef.current = window.setTimeout(() => {
+      setStreamActiveNodeIds(new Set());
+      pulseTimerRef.current = null;
+    }, 1800);
+  }, []);
+
   const syncGraph = useCallback(async () => {
     const requestId = graphRequestRef.current + 1;
     graphRequestRef.current = requestId;
     setGraphStatus("loading");
 
     try {
-      const snapshot = await ServerAPI.fetchGraphTopology();
+      const snapshot = await ServerAPI.fetchGraphTopology(graphScope);
       if (graphRequestRef.current !== requestId) {
         return;
       }
-      const layout = layoutGraphSnapshot(snapshot);
-      setNodes(layout.nodes);
-      setEdges(layout.edges);
-      setGraphVersion(snapshot.version);
-      setGraphStatus(layout.nodes.length > 0 ? "ready" : "empty");
+      applyGraphSnapshot(snapshot);
     } catch {
       if (graphRequestRef.current === requestId) {
         setNodes([]);
@@ -115,7 +171,7 @@ export default function InkdeskGraphBoard() {
         setGraphStatus("error");
       }
     }
-  }, []);
+  }, [applyGraphSnapshot, graphScope]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void syncGraph(), 0);
@@ -124,6 +180,56 @@ export default function InkdeskGraphBoard() {
       graphRequestRef.current += 1;
     };
   }, [syncGraph]);
+
+  useEffect(() => {
+    const unsubscribe = ServerAPI.subscribeToGraphEvents(
+      (event) => {
+        if (event.type === "node.active") {
+          pulseNodes([event.nodeId]);
+          return;
+        }
+        if (event.type === "node.idle") {
+          setStreamActiveNodeIds((current) => {
+            const next = new Set(current);
+            next.delete(event.nodeId);
+            return next;
+          });
+          return;
+        }
+
+        graphRequestRef.current += 1;
+        applyGraphSnapshot(event.snapshot);
+        if (event.type === "graph.updated") {
+          pulseNodes(nodeIdsForGraphReason(event.snapshot, event.reason));
+        }
+      },
+      setStreamStatus,
+      graphScope
+    );
+    return () => {
+      unsubscribe();
+      if (pulseTimerRef.current !== null) {
+        window.clearTimeout(pulseTimerRef.current);
+      }
+    };
+  }, [applyGraphSnapshot, graphScope, pulseNodes]);
+
+  const changeGraphScope = useCallback((nextScope: GraphScope) => {
+    if (nextScope === graphScope) {
+      return;
+    }
+    graphRequestRef.current += 1;
+    setGraphScope(nextScope);
+    setNodes([]);
+    setEdges([]);
+    setGraphStatus("loading");
+    setStreamStatus("connecting");
+    setSelectedNode(null);
+    setReaderState({ status: "idle" });
+    setHoveredNodeId(null);
+    setSearchedNodeId(null);
+    setStreamActiveNodeIds(new Set());
+  }, [graphScope]);
 
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => setNodes((currentNodes) => applyNodeChanges(changes, currentNodes)),
@@ -144,6 +250,7 @@ export default function InkdeskGraphBoard() {
     if (!node.data.documentId) {
       return;
     }
+    setSearchedNodeId(null);
     setReaderState({ status: "loading" });
     setSelectedNode(node);
   }, []);
@@ -217,11 +324,21 @@ export default function InkdeskGraphBoard() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [closeReader, selectedNode]);
 
+  const baseStatusLabel = graphStatus === "ready" ? streamStatusLabels[streamStatus] : graphStatusLabels[graphStatus];
+  const statusLabel = graphStatus === "ready" ? `${baseStatusLabel} / ${nodes.length} NODES` : baseStatusLabel;
+  const statusColor =
+    graphStatus === "error" || (graphStatus === "ready" && streamStatus === "offline")
+      ? "bg-rose-500"
+      : graphStatus === "ready" && streamStatus === "connected"
+        ? "bg-emerald-500"
+        : "bg-amber-400";
+  const statusAnimated = graphStatus !== "error" && streamStatus !== "offline";
+
   return (
     <main className="relative h-dvh w-screen overflow-hidden bg-[#F8FAFC]">
       <div className="absolute inset-0" onKeyDown={onGraphKeyDown}>
         <ReactFlow
-          key={graphVersion}
+          key={`${graphScope}:${graphVersion}`}
           aria-label="Inkdesk knowledge graph"
           nodes={visibleNodes}
           edges={visibleEdges}
@@ -230,6 +347,7 @@ export default function InkdeskGraphBoard() {
           onNodeClick={onNodeClick}
           onNodeMouseEnter={onNodeMouseEnter}
           onNodeMouseLeave={onNodeMouseLeave}
+          onPaneClick={() => setSearchedNodeId(null)}
           nodeTypes={nodeTypes}
           nodesConnectable={false}
           fitView
@@ -246,21 +364,27 @@ export default function InkdeskGraphBoard() {
         </ReactFlow>
       </div>
 
+      <GraphSearch
+        nodes={nodes}
+        disabled={graphStatus !== "ready"}
+        onNodeFocus={setSearchedNodeId}
+      />
+
+      <GraphScopeControl
+        value={graphScope}
+        disabled={graphStatus === "loading"}
+        onChange={changeGraphScope}
+      />
+
       <div className="pointer-events-none absolute left-8 top-6 z-10">
         <h1 className="text-xl font-bold tracking-tight text-slate-900">
           NEU<span className="font-light text-slate-400">WEAVE</span>
         </h1>
-        <p className="mt-1 flex items-center gap-2 font-mono text-[10px] tracking-widest text-slate-500">
+        <p aria-live="polite" className="mt-1 flex items-center gap-2 font-mono text-[10px] tracking-widest text-slate-500">
           <span
-            className={`h-1.5 w-1.5 rounded-full motion-reduce:animate-none ${
-              graphStatus === "ready"
-                ? "animate-pulse bg-emerald-500"
-                : graphStatus === "error"
-                  ? "bg-rose-500"
-                  : "bg-slate-400"
-            }`}
+            className={`h-1.5 w-1.5 rounded-full transition-colors duration-200 motion-reduce:animate-none motion-reduce:transition-none ${statusColor} ${statusAnimated ? "animate-pulse" : ""}`}
           />
-          {graphStatusLabels[graphStatus]}
+          {statusLabel}
         </p>
       </div>
 
@@ -268,18 +392,18 @@ export default function InkdeskGraphBoard() {
         <div className="pointer-events-none absolute inset-0 z-10 grid place-items-center px-6 text-center">
           {graphStatus === "loading" ? (
             <p role="status" className="font-mono text-xs tracking-widest text-slate-500">
-              SYNCING LOCAL VAULT
+              SYNCING KNOWLEDGE GRAPH
             </p>
           ) : null}
           {graphStatus === "empty" ? (
             <div>
-              <p className="font-mono text-sm font-semibold text-slate-800">VAULT GRAPH IS EMPTY</p>
-              <p className="mt-2 font-mono text-xs text-slate-500">Add Markdown links under vault/wiki and sync again.</p>
+              <p className="font-mono text-sm font-semibold text-slate-800">GRAPH SCOPE IS EMPTY</p>
+              <p className="mt-2 font-mono text-xs text-slate-500">Select another scope or add indexed Markdown.</p>
             </div>
           ) : null}
           {graphStatus === "error" ? (
             <div className="pointer-events-auto">
-              <p role="alert" className="font-mono text-sm font-semibold text-slate-800">VAULT SYNC UNAVAILABLE</p>
+              <p role="alert" className="font-mono text-sm font-semibold text-slate-800">GRAPH SYNC UNAVAILABLE</p>
               <button
                 type="button"
                 onClick={() => void syncGraph()}
@@ -353,5 +477,13 @@ export default function InkdeskGraphBoard() {
         }
       `}</style>
     </main>
+  );
+}
+
+export default function InkdeskGraphBoard() {
+  return (
+    <ReactFlowProvider>
+      <InkdeskGraphCanvas />
+    </ReactFlowProvider>
   );
 }

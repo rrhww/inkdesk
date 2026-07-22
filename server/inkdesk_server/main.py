@@ -74,9 +74,16 @@ def create_app() -> FastAPI:
             raise ResourceNotFoundError("Graph document was not found.") from error
 
     @app.get("/api/graph/stream")
-    async def graph_stream(request: Request, once: bool = False):
+    async def graph_stream(request: Request, once: bool = False, source: str | None = None):
+        if source is not None and source not in {"vault", "repo"}:
+            raise ApiError(400, "INVALID_GRAPH_SOURCE", "Graph source must be 'vault' or 'repo'.")
+
+        def stream_snapshot():
+            snapshot = graph_runtime.current()
+            return snapshot.for_source(source) if source is not None else snapshot
+
         async def events():
-            initial = graph_runtime.current().to_dict()
+            initial = stream_snapshot().to_dict()
             yield f"event: graph.snapshot\ndata: {json.dumps(initial, ensure_ascii=False)}\n\n"
             if once:
                 return
@@ -88,7 +95,11 @@ def create_app() -> FastAPI:
                     except asyncio.TimeoutError:
                         yield ": heartbeat\n\n"
                         continue
-                    yield f"event: {event['event']}\ndata: {json.dumps(event, ensure_ascii=False)}\n\n"
+                    stream_event = {
+                        **event,
+                        "snapshot": stream_snapshot().to_dict(),
+                    }
+                    yield f"event: {event['event']}\ndata: {json.dumps(stream_event, ensure_ascii=False)}\n\n"
             finally:
                 graph_runtime.events.unsubscribe(queue)
 
