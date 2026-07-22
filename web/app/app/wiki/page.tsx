@@ -9,6 +9,7 @@ import ReactFlow, {
   BackgroundVariant,
   Controls,
   ReactFlowProvider,
+  useStore,
   type Edge,
   type EdgeChange,
   type Node,
@@ -16,13 +17,16 @@ import ReactFlow, {
 } from "reactflow";
 import "reactflow/dist/style.css";
 
-import { ActionNode, ConceptNode, EntityNode } from "@/components/ui/graph-nodes";
+import { ActionNode, ConceptNode, EntityNode, ModuleGroupNode } from "@/components/ui/graph-nodes";
 import { GraphScopeControl } from "@/components/workbench/graph-scope-control";
+import { GraphViewControl, type GraphViewMode } from "@/components/workbench/graph-view-control";
 import { MarkdownViewer } from "@/components/workbench/markdown-viewer";
 import { GraphSearch } from "@/components/workbench/graph-search";
 import {
+  deriveTaskFocusGraph,
   layoutGraphSnapshot,
   nodeIdsForGraphReason,
+  toMacroGraph,
   traceUpstreamPath,
   type GraphNodeData
 } from "@/lib/graph-layout";
@@ -54,8 +58,11 @@ const streamStatusLabels: Record<GraphStreamStatus, string> = {
   offline: "STREAM OFFLINE"
 };
 
+const SEMANTIC_ZOOM_THRESHOLD = 0.4;
+
 function InkdeskGraphCanvas() {
   const [graphScope, setGraphScope] = useState<GraphScope>("all");
+  const [graphView, setGraphView] = useState<GraphViewMode>("global");
   const [nodes, setNodes] = useState<Node<GraphNodeData>[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
   const [graphStatus, setGraphStatus] = useState<GraphStatus>("loading");
@@ -65,48 +72,75 @@ function InkdeskGraphCanvas() {
   const [searchedNodeId, setSearchedNodeId] = useState<string | null>(null);
   const [streamStatus, setStreamStatus] = useState<GraphStreamStatus>("connecting");
   const [streamActiveNodeIds, setStreamActiveNodeIds] = useState<Set<string>>(() => new Set());
+  const [taskFocusRootId, setTaskFocusRootId] = useState<string | null>(null);
   const [readerState, setReaderState] = useState<ReaderState>({ status: "idle" });
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const graphRequestRef = useRef(0);
   const pulseTimerRef = useRef<number | null>(null);
+  const zoom = useStore((state) => state.transform[2]);
 
   const nodeTypes = useMemo(
     () => ({
       concept: ConceptNode,
       entity: EntityNode,
-      action: ActionNode
+      action: ActionNode,
+      module: ModuleGroupNode
     }),
     []
   );
 
-  const focusedNodeId = hoveredNodeId ?? searchedNodeId ?? selectedNode?.id ?? null;
-  const focusedPath = useMemo(() => traceUpstreamPath(focusedNodeId, edges), [edges, focusedNodeId]);
-  const visibleNodes = useMemo(() => {
-    if (!focusedNodeId && streamActiveNodeIds.size === 0) {
-      return nodes;
+  const taskRootId = useMemo(() => {
+    const candidates = [
+      taskFocusRootId,
+      selectedNode?.data.kind === "solution" ? selectedNode.id : null,
+      nodes.find((node) => node.data.kind === "solution")?.id ?? null
+    ];
+    return candidates.find((nodeId) => nodeId && nodes.some((node) => node.id === nodeId && node.data.kind === "solution")) ?? null;
+  }, [nodes, selectedNode, taskFocusRootId]);
+  const viewGraph = useMemo(() => {
+    if (graphView === "macro") {
+      return toMacroGraph(nodes, edges);
     }
-
-    return nodes.map((node) => ({
+    if (graphView === "task") {
+      return deriveTaskFocusGraph(nodes, edges, taskRootId);
+    }
+    return { nodes, edges };
+  }, [edges, graphView, nodes, taskRootId]);
+  const focusedNodeId = hoveredNodeId ?? searchedNodeId ?? selectedNode?.id ?? null;
+  const interactionFocusedNodeId = viewGraph.nodes.some((node) => node.id === focusedNodeId) ? focusedNodeId : null;
+  const focusedPath = useMemo(
+    () => traceUpstreamPath(interactionFocusedNodeId, viewGraph.edges),
+    [interactionFocusedNodeId, viewGraph.edges]
+  );
+  const visibleNodes = useMemo(() => {
+    return viewGraph.nodes.map((node) => {
+      const dimmed = interactionFocusedNodeId && !focusedPath.nodeIds.has(node.id);
+      const hiddenAtDistance = zoom < SEMANTIC_ZOOM_THRESHOLD && Boolean(node.parentId);
+      return {
       ...node,
-      ...(focusedNodeId
-        ? {
-            className: `transition-opacity duration-200 motion-reduce:transition-none ${
-              focusedPath.nodeIds.has(node.id) ? "z-10 opacity-100" : "opacity-25"
-            }`
-          }
-        : {}),
+      className: [
+        node.className,
+        "transition-opacity duration-200 motion-reduce:transition-none",
+        hiddenAtDistance ? "pointer-events-none opacity-0" : "",
+        dimmed ? "opacity-25" : interactionFocusedNodeId ? "z-10 opacity-100" : ""
+      ]
+        .filter(Boolean)
+        .join(" "),
       data: {
         ...node.data,
-        isActive: node.id === focusedNodeId || streamActiveNodeIds.has(node.id)
+        isActive: node.id === interactionFocusedNodeId || streamActiveNodeIds.has(node.id)
       }
-    }));
-  }, [focusedNodeId, focusedPath.nodeIds, nodes, streamActiveNodeIds]);
+      };
+    });
+  }, [focusedPath.nodeIds, interactionFocusedNodeId, streamActiveNodeIds, viewGraph.nodes, zoom]);
   const visibleEdges = useMemo(() => {
-    if (!focusedNodeId) {
-      return edges;
+    if (zoom < SEMANTIC_ZOOM_THRESHOLD && graphView !== "macro") {
+      return [];
     }
-
-    return edges.map((edge) => {
+    if (!interactionFocusedNodeId) {
+      return viewGraph.edges;
+    }
+    return viewGraph.edges.map((edge) => {
       const isFocused = focusedPath.edgeIds.has(edge.id);
       return {
         ...edge,
@@ -120,7 +154,7 @@ function InkdeskGraphCanvas() {
         }
       };
     });
-  }, [edges, focusedNodeId, focusedPath.edgeIds]);
+  }, [focusedPath.edgeIds, graphView, interactionFocusedNodeId, viewGraph.edges, zoom]);
 
   const applyGraphSnapshot = useCallback((snapshot: GraphSnapshot) => {
     const layout = layoutGraphSnapshot(snapshot);
@@ -137,6 +171,11 @@ function InkdeskGraphCanvas() {
     setSearchedNodeId((currentNodeId) =>
       currentNodeId && layout.nodes.some((node) => node.id === currentNodeId) ? currentNodeId : null
     );
+    setTaskFocusRootId((currentNodeId) =>
+      currentNodeId && layout.nodes.some((node) => node.id === currentNodeId && node.data.kind === "solution")
+        ? currentNodeId
+        : null
+    );
   }, []);
 
   const pulseNodes = useCallback((nodeIds: string[]) => {
@@ -150,7 +189,7 @@ function InkdeskGraphCanvas() {
     pulseTimerRef.current = window.setTimeout(() => {
       setStreamActiveNodeIds(new Set());
       pulseTimerRef.current = null;
-    }, 1800);
+    }, 3000);
   }, []);
 
   const syncGraph = useCallback(async () => {
@@ -186,6 +225,7 @@ function InkdeskGraphCanvas() {
       (event) => {
         if (event.type === "node.active") {
           pulseNodes([event.nodeId]);
+          setTaskFocusRootId(event.nodeId);
           return;
         }
         if (event.type === "node.idle") {
@@ -229,7 +269,17 @@ function InkdeskGraphCanvas() {
     setHoveredNodeId(null);
     setSearchedNodeId(null);
     setStreamActiveNodeIds(new Set());
+    setTaskFocusRootId(null);
   }, [graphScope]);
+
+  const changeGraphView = useCallback((nextView: GraphViewMode) => {
+    if (nextView === graphView) {
+      return;
+    }
+    setGraphView(nextView);
+    setHoveredNodeId(null);
+    setSearchedNodeId(null);
+  }, [graphView]);
 
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => setNodes((currentNodes) => applyNodeChanges(changes, currentNodes)),
@@ -251,6 +301,9 @@ function InkdeskGraphCanvas() {
       return;
     }
     setSearchedNodeId(null);
+    if (node.data.kind === "solution") {
+      setTaskFocusRootId(node.id);
+    }
     setReaderState({ status: "loading" });
     setSelectedNode(node);
   }, []);
@@ -325,7 +378,8 @@ function InkdeskGraphCanvas() {
   }, [closeReader, selectedNode]);
 
   const baseStatusLabel = graphStatus === "ready" ? streamStatusLabels[streamStatus] : graphStatusLabels[graphStatus];
-  const statusLabel = graphStatus === "ready" ? `${baseStatusLabel} / ${nodes.length} NODES` : baseStatusLabel;
+  const sourceNodeCount = nodes.filter((node) => node.type !== "module").length;
+  const statusLabel = graphStatus === "ready" ? `${baseStatusLabel} / ${sourceNodeCount} NODES` : baseStatusLabel;
   const statusColor =
     graphStatus === "error" || (graphStatus === "ready" && streamStatus === "offline")
       ? "bg-rose-500"
@@ -338,7 +392,7 @@ function InkdeskGraphCanvas() {
     <main className="relative h-dvh w-screen overflow-hidden bg-[#F8FAFC]">
       <div className="absolute inset-0" onKeyDown={onGraphKeyDown}>
         <ReactFlow
-          key={`${graphScope}:${graphVersion}`}
+          key={`${graphScope}:${graphView}:${graphVersion}`}
           aria-label="Inkdesk knowledge graph"
           nodes={visibleNodes}
           edges={visibleEdges}
@@ -365,7 +419,7 @@ function InkdeskGraphCanvas() {
       </div>
 
       <GraphSearch
-        nodes={nodes}
+        nodes={viewGraph.nodes}
         disabled={graphStatus !== "ready"}
         onNodeFocus={setSearchedNodeId}
       />
@@ -375,6 +429,8 @@ function InkdeskGraphCanvas() {
         disabled={graphStatus === "loading"}
         onChange={changeGraphScope}
       />
+
+      <GraphViewControl value={graphView} disabled={graphStatus !== "ready"} onChange={changeGraphView} />
 
       <div className="pointer-events-none absolute left-8 top-6 z-10">
         <h1 className="text-xl font-bold tracking-tight text-slate-900">

@@ -202,3 +202,41 @@ test("applies Watchdog graph updates without reloading the page", async ({ page 
   await expect(page.getByText("SSE Live Probe", { exact: true })).toHaveCount(0, { timeout: 30_000 });
   await expect(nodes).toHaveCount(baselineNodeCount);
 });
+
+test("groups code nodes and reduces graph noise through view modes and semantic zoom", async ({ page }, testInfo) => {
+  test.setTimeout(90_000);
+  await page.goto("/app/wiki");
+  await expect(page.getByText(/^GRAPH SYNC ACTIVE \/ \d+ NODES$/)).toBeVisible({ timeout: 60_000 });
+
+  const viewControl = page.getByRole("group", { name: "Graph view" });
+  const global = page.getByRole("button", { name: "Global graph" });
+  const task = page.getByRole("button", { name: "Task focus graph" });
+  const macro = page.getByRole("button", { name: "Macro graph" });
+  const moduleNodes = page.locator(".react-flow__node-module");
+  const graphNodes = page.locator(".react-flow__node");
+
+  await expect(viewControl).toBeVisible();
+  await expect(global).toHaveAttribute("aria-pressed", "true");
+  await expect.poll(() => moduleNodes.count()).toBeGreaterThan(0);
+  const globalNodeCount = await graphNodes.count();
+
+  await macro.click();
+  await expect(macro).toHaveAttribute("aria-pressed", "true");
+  await expect.poll(() => graphNodes.count()).toBeLessThan(globalNodeCount);
+  await expect.poll(() => page.locator(".react-flow__edge").count()).toBeGreaterThan(0);
+  await page.screenshot({ path: testInfo.outputPath("wiki-macro-graph.png"), fullPage: true });
+
+  await task.click();
+  await expect(task).toHaveAttribute("aria-pressed", "true");
+  await expect.poll(() => page.locator(".react-flow__node").count()).toBeGreaterThan(0);
+
+  await global.click();
+  await expect(graphNodes).toHaveCount(globalNodeCount);
+  for (let index = 0; index < 10; index += 1) {
+    await page.locator(".react-flow__controls-zoomin").click();
+  }
+  await expect.poll(() => page.locator(".react-flow__edge").count()).toBeGreaterThan(0);
+  await page.locator(".react-flow__controls-fitview").click();
+  await expect(page.locator(".react-flow__edge")).toHaveCount(0);
+  await page.screenshot({ path: testInfo.outputPath("wiki-semantic-zoom.png"), fullPage: true });
+});

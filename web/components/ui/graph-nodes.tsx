@@ -24,6 +24,10 @@ type ActionNodeData = {
   isActive?: boolean;
 };
 
+type ModuleGroupNodeData = {
+  label: string;
+};
+
 const HANDLE_OFFSETS = ["16.667%", "33.333%", "50%", "66.667%", "83.333%"] as const;
 
 function GraphHandles() {
@@ -153,6 +157,19 @@ export const ActionNode: ComponentType<NodeProps<ActionNodeData>> = ({ data }) =
           aria-hidden="true"
         />
         <span className="text-xs font-bold tracking-wide text-emerald-800">{data.label}</span>
+      </div>
+    </div>
+  );
+};
+
+export const ModuleGroupNode: ComponentType<NodeProps<ModuleGroupNodeData>> = ({ data }) => {
+  return (
+    <div className="relative h-full w-full border-2 border-dashed border-slate-300 bg-slate-100/40">
+      <div className="absolute -top-3 left-4 bg-[#F8FAFC] px-2">
+        <span className="flex items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-widest text-slate-500">
+          <Database className="h-3 w-3" aria-hidden="true" strokeWidth={1.5} />
+          {data.label}
+        </span>
       </div>
     </div>
   );
