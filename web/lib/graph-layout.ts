@@ -73,6 +73,27 @@ const NODE_DIMENSIONS: Record<GraphNodeType, { width: number; height: number }> 
   action: { width: 280, height: 48 }
 };
 
+export function graphNodeDimensions(type: string | undefined) {
+  return type === "concept" || type === "entity" || type === "action"
+    ? NODE_DIMENSIONS[type]
+    : NODE_DIMENSIONS.action;
+}
+
+export function nodeIdsForGraphReason(snapshot: GraphSnapshot, reason?: string) {
+  const separator = reason?.indexOf(":") ?? -1;
+  if (separator < 0) {
+    return [];
+  }
+  const changedPath = reason?.slice(separator + 1).trim().replaceAll("\\", "/") ?? "";
+  const fileName = changedPath.split("/").at(-1)?.toLowerCase();
+  if (!fileName?.endsWith(".md")) {
+    return [];
+  }
+  return snapshot.nodes
+    .filter((node) => node.path.replaceAll("\\", "/").split("/").at(-1)?.toLowerCase() === fileName)
+    .map((node) => node.id);
+}
+
 function nodeType(node: GraphSnapshotNode): GraphNodeType {
   if (node.kind === "class") {
     return "entity";
@@ -136,7 +157,7 @@ export function layoutGraphSnapshot(snapshot: GraphSnapshot): {
   const nodeIds = new Set(snapshot.nodes.map((node) => node.id));
   const validEdges = snapshot.edges.filter((edge) => nodeIds.has(edge.source) && nodeIds.has(edge.target));
   for (const node of snapshot.nodes) {
-    graph.setNode(node.id, { ...NODE_DIMENSIONS[nodeType(node)] });
+    graph.setNode(node.id, { ...graphNodeDimensions(nodeType(node)) });
   }
   for (const edge of validEdges) {
     graph.setEdge(edge.source, edge.target);
@@ -151,7 +172,7 @@ export function layoutGraphSnapshot(snapshot: GraphSnapshot): {
   return {
     nodes: snapshot.nodes.map((node) => {
       const type = nodeTypes.get(node.id) ?? "concept";
-      const dimensions = NODE_DIMENSIONS[type];
+      const dimensions = graphNodeDimensions(type);
       const position = graph.node(node.id);
       return {
         id: node.id,
