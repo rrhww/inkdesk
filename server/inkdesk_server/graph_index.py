@@ -9,7 +9,7 @@ from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
 from hashlib import sha256
 from pathlib import Path
-from typing import Any
+from typing import Any, Mapping
 
 import yaml
 from watchdog.events import FileSystemEvent, FileSystemEventHandler
@@ -343,6 +343,12 @@ class GraphEventBus:
             return
         event = {"event": "graph.updated", "reason": reason, "snapshot": snapshot.to_dict()}
         loop.call_soon_threadsafe(self._fanout, event)
+
+    def publish_runtime(self, event_type: str, data: Mapping[str, Any]) -> None:
+        loop = self._loop
+        if loop is None or loop.is_closed():
+            return
+        loop.call_soon_threadsafe(self._fanout, {"event": event_type, **dict(data)})
 
     def _fanout(self, event: dict[str, Any]) -> None:
         with self._lock:

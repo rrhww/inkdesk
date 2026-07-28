@@ -45,9 +45,15 @@ class DualQueueSsePipeline:
 
 
 class EngineRuntime:
-    def __init__(self, settings: Settings, graph_snapshot: Callable[[], GraphSnapshot]):
+    def __init__(
+        self,
+        settings: Settings,
+        graph_snapshot: Callable[[], GraphSnapshot],
+        runtime_event_sink: Callable[[str, Mapping[str, Any]], None] | None = None,
+    ):
         self.settings = settings
         self.graph_snapshot = graph_snapshot
+        self.runtime_event_sink = runtime_event_sink
         self._thread_pool = ThreadPoolExecutor(max_workers=16, thread_name_prefix="inkdesk-agent")
         provider = settings.resolved_agent_provider
         self._provider = provider
@@ -91,8 +97,29 @@ class EngineRuntime:
         try:
             tasks = self._build_tasks(request)
             scheduler = KahnDagScheduler(max_concurrency=request.maxConcurrency)
+            graph_node_ids = [node.id for node in self.graph_snapshot().nodes if node.status != "missing"]
+            active_nodes = (
+                {
+                    task.id: graph_node_ids[index % len(graph_node_ids)]
+                    for index, task in enumerate(tasks)
+                }
+                if graph_node_ids
+                else {}
+            )
 
             async def on_event(event: DagExecutionEvent) -> None:
+                active_node_id = active_nodes.get(event.task_id or "")
+                if self.runtime_event_sink is not None and active_node_id is not None:
+                    if event.type == "task.started":
+                        self.runtime_event_sink(
+                            "node.active",
+                            {"nodeId": active_node_id, "taskId": event.task_id},
+                        )
+                    elif event.type in {"task.completed", "task.failed"}:
+                        self.runtime_event_sink(
+                            "node.idle",
+                            {"nodeId": active_node_id, "taskId": event.task_id},
+                        )
                 await queue.put(
                     PipelineItem(
                         event.type,

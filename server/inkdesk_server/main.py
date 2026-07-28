@@ -18,7 +18,11 @@ from inkdesk_server.security import ApiError, ResourceNotFoundError
 def create_app() -> FastAPI:
     settings = get_settings()
     graph_runtime = GraphIndexRuntime(settings)
-    engine_runtime = EngineRuntime(settings, graph_runtime.current)
+    engine_runtime = EngineRuntime(
+        settings,
+        graph_runtime.current,
+        graph_runtime.events.publish_runtime,
+    )
 
     @asynccontextmanager
     async def lifespan(_: FastAPI):
@@ -36,7 +40,7 @@ def create_app() -> FastAPI:
     app = FastAPI(title="Inkdesk Graph Engine", version="0.1.0", lifespan=lifespan)
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["http://localhost:3000"],
+        allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
         allow_credentials=True,
         allow_methods=["GET", "POST"],
         allow_headers=["*"],
@@ -71,6 +75,10 @@ def create_app() -> FastAPI:
         except (FileNotFoundError, UnicodeDecodeError) as error:
             raise ResourceNotFoundError("Graph document was not found.") from error
 
+    @app.get("/api/doc/{node_id:path}")
+    def graph_document_by_id(node_id: str):
+        return graph_document(nodeId=node_id)
+
     @app.get("/api/graph/stream")
     async def graph_stream(request: Request, once: bool = False, source: str | None = None):
         if source is not None and source not in {"vault", "repo"}:
@@ -98,6 +106,42 @@ def create_app() -> FastAPI:
                         "snapshot": stream_snapshot().to_dict(),
                     }
                     yield f"event: {event['event']}\ndata: {json.dumps(stream_event, ensure_ascii=False)}\n\n"
+            finally:
+                graph_runtime.events.unsubscribe(queue)
+
+        return StreamingResponse(
+            events(),
+            media_type="text/event-stream",
+            headers={"Cache-Control": "no-cache, no-transform", "Connection": "keep-alive", "X-Accel-Buffering": "no"},
+        )
+
+    @app.get("/api/events")
+    async def vault_events(request: Request, once: bool = False):
+        async def events():
+            initial = {
+                "type": "graph.snapshot",
+                "snapshot": graph_runtime.current().to_dict(),
+            }
+            yield f"data: {json.dumps(initial, ensure_ascii=False)}\n\n"
+            if once:
+                return
+            queue = graph_runtime.events.subscribe()
+            try:
+                while not await request.is_disconnected():
+                    try:
+                        event = await asyncio.wait_for(
+                            queue.get(),
+                            timeout=settings.graph_sse_heartbeat_seconds,
+                        )
+                    except asyncio.TimeoutError:
+                        yield ": heartbeat\n\n"
+                        continue
+                    event_type = str(event.get("event") or "graph.updated")
+                    payload = {
+                        "type": event_type,
+                        **{key: value for key, value in event.items() if key != "event"},
+                    }
+                    yield f"data: {json.dumps(payload, ensure_ascii=False)}\n\n"
             finally:
                 graph_runtime.events.unsubscribe(queue)
 
