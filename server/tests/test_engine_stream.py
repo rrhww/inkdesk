@@ -7,13 +7,34 @@ from fastapi.testclient import TestClient
 
 from inkdesk_server.core.config import get_settings
 from inkdesk_server.engine import EngineRuntime
-from inkdesk_server.graph_index import GraphSnapshot
+from inkdesk_server.graph_index import GraphNode, GraphSnapshot
 from inkdesk_server.schemas import EngineCommandRequest, EngineTaskRequest
 
 
 @pytest.mark.asyncio
 async def test_engine_stream_opens_before_execution_and_uses_two_ordered_queues(temp_app_env) -> None:
-    runtime = EngineRuntime(get_settings(), GraphSnapshot.empty)
+    runtime_events: list[tuple[str, dict[str, object]]] = []
+    snapshot = GraphSnapshot(
+        version="v1",
+        generated_at="2026-07-29T00:00:00+00:00",
+        nodes=(
+            GraphNode(
+                id="vault:wiki/core.md",
+                label="Core",
+                kind="concept",
+                path="wiki/core.md",
+                source="vault",
+                status="stable",
+                summary="",
+            ),
+        ),
+        edges=(),
+    )
+    runtime = EngineRuntime(
+        get_settings(),
+        lambda: snapshot,
+        lambda event_type, data: runtime_events.append((event_type, dict(data))),
+    )
     request = EngineCommandRequest(
         command="analyze the repository",
         tasks=[
@@ -40,6 +61,9 @@ async def test_engine_stream_opens_before_execution_and_uses_two_ordered_queues(
     assert sequences == list(range(1, len(sequences) + 1))
     result = next(item for item in items if item.event == "result")
     assert result.data["completedOrder"][-1] == "merge"
+    assert any(event_type == "node.active" for event_type, _ in runtime_events)
+    assert any(event_type == "node.idle" for event_type, _ in runtime_events)
+    assert {data["nodeId"] for _, data in runtime_events} == {"vault:wiki/core.md"}
 
 
 def test_engine_sse_endpoint_streams_default_parallel_plan_without_job_tables(temp_app_env) -> None:
