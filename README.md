@@ -9,6 +9,7 @@ Inkdesk 是一个本地优先的研发知识图谱工作台。它扫描 Vault �
 - 图谱降噪：模块分组、GLOBAL / TASK / MACRO 视图与语义缩放。
 - 文档阅读：侧滑 Markdown 阅读器、代码高亮和 Mermaid 安全渲染。
 - DAG 引擎：纯内存 Kahn/BFS 调度和 SSE 流式结果，不依赖任务表或数据库。
+- 技术方案 Skill：从 Markdown PRD 并发完成需求、知识库、代码仓和安全分析，生成合规方案并原子写入 Vault。
 
 ## 架构
 
@@ -44,14 +45,29 @@ npm run dev
 
 打开 `http://localhost:3000/app/wiki`。前端默认代理到 `http://localhost:8080`，也可通过 `INKDESK_API_BASE_URL` 覆盖。
 
-## Docker
+## Docker 快速启动
 
 ```powershell
-Copy-Item infra/.env.example infra/.env
-docker compose --env-file infra/.env -f infra/docker-compose.local-docker.yml up -d --build
+docker compose -f infra/docker-compose.local-docker.yml up -d --build
 ```
 
-Docker 组合只包含 Web 和 FastAPI 服务；Markdown Vault 使用具名卷，仓库以只读方式挂载给图谱扫描器。
+容器健康后执行官方演示：
+
+```powershell
+docker compose -f infra/docker-compose.local-docker.yml exec local-server inkdesk run tech-solution --prd /app/repository/examples/mock-interview-prd.md
+```
+
+打开 `http://localhost:3000/app/wiki`，可以观察来源 PRD 节点运行脉冲、新技术方案节点、依赖边和侧栏 Mermaid 时序图。默认 `deterministic` 模式用于无密钥演示；配置 `INKDESK_AGENT_RUNTIME=provider`（兼容旧值 `langgraph`）和对应 Provider 密钥后使用真实模型，调用失败不会降级到本地输出。
+
+Docker 组合只包含 Web 和 FastAPI 服务；镜像内置 `inkdesk` CLI 与官方 Skills，Markdown Vault 使用具名卷，仓库以只读方式挂载，生成目录保持可写。
+
+本地运行 CLI：
+
+```powershell
+inkdesk run tech-solution --prd examples/mock-interview-prd.md
+```
+
+旧版 `--target` 暂时作为 `--prd` 的弃用别名保留。
 
 ## 验证
 
@@ -75,6 +91,11 @@ npm run e2e
 - `GET /api/graph/stream?source=vault|repo`
 - `GET /api/engine/health`
 - `POST /api/engine/stream`
+- `POST /api/skills/{skill_id}/stream`
+
+## v0.1.0 范围
+
+本版本交付 Observer、Indexer 和 `tech-solution` Engine 闭环。MCP、完整 `tech-review → coding → test` 执行链和源码 AST 图谱进入后续里程碑。
 
 ## 仓库结构
 

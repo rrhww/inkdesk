@@ -16,6 +16,7 @@ def temp_app_env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[Pa
         pass
 
     vault_root = tmp_path / "vault"
+    vault_root.mkdir()
     monkeypatch.setenv("INKDESK_VAULT_ROOT", str(vault_root))
     monkeypatch.setenv("INKDESK_AGENT_RUNTIME", "deterministic")
     monkeypatch.setenv("INKDESK_AGENT_PROVIDER_PROFILE", "openai")

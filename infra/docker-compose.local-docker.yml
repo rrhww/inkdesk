@@ -13,6 +13,7 @@ services:
       INKDESK_ENV: ${INKDESK_ENV:-local}
       INKDESK_VAULT_ROOT: /app/inkdesk-vault
       INKDESK_REPO_ROOT: /app/repository
+      INKDESK_SKILLS_ROOT: /app/skills
       INKDESK_ENABLE_FILE_WATCHER: ${INKDESK_ENABLE_FILE_WATCHER:-true}
       INKDESK_GRAPH_SSE_HEARTBEAT_SECONDS: ${INKDESK_GRAPH_SSE_HEARTBEAT_SECONDS:-15}
       INKDESK_AGENT_RUNTIME: ${INKDESK_AGENT_RUNTIME:-deterministic}
@@ -35,11 +36,12 @@ services:
       dockerfile: ../infra/docker/local-web.Dockerfile
       args:
         NEXT_PUBLIC_API_BASE_URL: http://localhost:${INKDESK_SERVER_PORT:-8080}
+        INKDESK_API_BASE_URL: http://local-server:8080
     container_name: inkdesk-local-web
     restart: unless-stopped
     depends_on:
       local-server:
-        condition: service_started
+        condition: service_healthy
     environment:
       INKDESK_API_BASE_URL: http://local-server:8080
       NEXT_PUBLIC_API_BASE_URL: http://localhost:${INKDESK_SERVER_PORT:-8080}

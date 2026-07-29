@@ -3,7 +3,9 @@ FROM node:24-bookworm-slim
 WORKDIR /app
 
 ARG NEXT_PUBLIC_API_BASE_URL=http://localhost:8080
+ARG INKDESK_API_BASE_URL=http://localhost:8080
 ENV NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL}
+ENV INKDESK_API_BASE_URL=${INKDESK_API_BASE_URL}
 
 COPY package.json package-lock.json ./
 RUN npm config set registry https://registry.npmmirror.com/ \

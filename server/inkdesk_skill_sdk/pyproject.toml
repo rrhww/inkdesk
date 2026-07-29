@@ -19,7 +19,11 @@ dev = [
 ]
 
 [project.scripts]
+inkdesk = "inkdesk_skill_sdk.cli:main"
 inkdesk-skill = "inkdesk_skill_sdk.cli:main"
 
-[tool.setuptools.packages.find]
-include = ["inkdesk_skill_sdk*"]
+[tool.setuptools]
+packages = ["inkdesk_skill_sdk"]
+
+[tool.setuptools.package-dir]
+inkdesk_skill_sdk = "."

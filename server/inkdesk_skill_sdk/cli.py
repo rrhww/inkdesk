@@ -13,6 +13,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import sys
 from pathlib import Path
 from time import perf_counter
@@ -196,7 +197,16 @@ def _iter_sse_events(lines):
 
 
 def cmd_run(args: argparse.Namespace) -> int:
-    command = " ".join(args.prompt).strip()
+    prompt = list(getattr(args, "prompt", []))
+    prd_arg = getattr(args, "prd", None)
+    target_arg = getattr(args, "target", None)
+    if prd_arg or target_arg or (prompt and prompt[0] == "tech-solution"):
+        return _cmd_run_skill(args, prompt, prd_arg, target_arg)
+
+    command = " ".join(prompt).strip()
+    if not command:
+        print("Error: a command or Skill id is required", file=sys.stderr)
+        return 2
     payload: dict = {"command": command}
     if args.plan:
         try:
@@ -247,6 +257,124 @@ def cmd_run(args: argparse.Namespace) -> int:
     return 1 if failed else 0
 
 
+def _cmd_run_skill(
+    args: argparse.Namespace,
+    prompt: list[str],
+    prd_arg: str | None,
+    target_arg: str | None,
+) -> int:
+    skill_id = prompt[0] if prompt else "tech-solution"
+    if skill_id != "tech-solution":
+        print(f"Error: unsupported Skill: {skill_id}", file=sys.stderr)
+        return 2
+    if len(prompt) > 1:
+        print("Error: tech-solution accepts the PRD through --prd", file=sys.stderr)
+        return 2
+    if prd_arg and target_arg:
+        print("Error: use either --prd or --target, not both", file=sys.stderr)
+        return 2
+    source_arg = prd_arg or target_arg
+    if not source_arg:
+        print("Error: tech-solution requires --prd <markdown>", file=sys.stderr)
+        return 2
+    if target_arg:
+        print("Warning: --target is deprecated; use --prd instead.", file=sys.stderr)
+
+    try:
+        source_path, requirement, source_title = _read_prd(source_arg)
+    except ValueError as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        return 2
+
+    payload = {
+        "inputs": {
+            "requirement": requirement,
+            "sourcePath": str(source_path),
+            "sourceTitle": source_title,
+        },
+        "maxConcurrency": 4,
+    }
+    server_url = args.server.rstrip("/")
+    started = perf_counter()
+    first_visible_at: float | None = None
+    failed = False
+    artifact_path: str | None = None
+    try:
+        with httpx.Client(timeout=None) as client:
+            with client.stream(
+                "POST",
+                f"{server_url}/api/skills/{skill_id}/stream",
+                json=payload,
+            ) as response:
+                try:
+                    response.raise_for_status()
+                except httpx.HTTPStatusError:
+                    message = _http_error_message(response)
+                    print(f"Error: {message}", file=sys.stderr)
+                    return 1
+                for event, data in _iter_sse_events(response.iter_lines()):
+                    if first_visible_at is None:
+                        first_visible_at = perf_counter()
+                    if event == "artifact.written":
+                        artifact_path = str(data.get("path") or data.get("relativePath") or "") or None
+                    elif event == "result":
+                        artifact_path = str(data.get("artifactPath") or artifact_path or "") or None
+                    elif event == "stream.error":
+                        failed = True
+                        code = str(data.get("code") or "STREAM_ERROR")
+                        message = str(data.get("message") or data.get("error") or "Skill execution failed")
+                        print(f"Error [{code}]: {message}", file=sys.stderr)
+    except (httpx.HTTPError, OSError) as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        return 1
+
+    if args.show_ttft and first_visible_at is not None:
+        print(f"TTFT {(first_visible_at - started) * 1000:.1f} ms", file=sys.stderr)
+    if failed:
+        return 1
+    if not artifact_path:
+        print("Error: the Skill stream ended without an artifact", file=sys.stderr)
+        return 1
+    print(f"Generated: {artifact_path}")
+    return 0
+
+
+def _read_prd(value: str) -> tuple[Path, str, str]:
+    path = Path(value).expanduser().resolve()
+    if not path.exists():
+        raise ValueError(f"PRD does not exist: {path}")
+    if not path.is_file():
+        raise ValueError(f"PRD is not a file: {path}")
+    if path.suffix.casefold() != ".md":
+        raise ValueError("PRD must be a Markdown (.md) file")
+    size = path.stat().st_size
+    if size == 0:
+        raise ValueError("PRD cannot be empty")
+    if size > 2 * 1024 * 1024:
+        raise ValueError("PRD exceeds the 2 MiB limit")
+    try:
+        content = path.read_text(encoding="utf-8")
+    except UnicodeDecodeError as exc:
+        raise ValueError("PRD must be valid UTF-8") from exc
+    if not content.strip():
+        raise ValueError("PRD cannot contain only whitespace")
+    heading = re.search(r"^#\s+(.+?)\s*$", content, re.MULTILINE)
+    title = heading.group(1).strip() if heading else path.stem.replace("-", " ").strip()
+    return path, content, title
+
+
+def _http_error_message(response) -> str:
+    try:
+        payload = response.json()
+    except (ValueError, AttributeError):
+        return f"server returned HTTP {response.status_code}"
+    code = payload.get("code") if isinstance(payload, dict) else None
+    message = payload.get("message") if isinstance(payload, dict) else None
+    if code and message:
+        return f"[{code}] {message}"
+    return str(message or f"server returned HTTP {response.status_code}")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         prog="inkdesk-skill",
@@ -278,8 +406,10 @@ def main() -> int:
     p_chk.add_argument("--root", help="Skills directory root")
 
     # run
-    p_run = sub.add_parser("run", help="Execute an in-memory DAG through the streaming engine")
-    p_run.add_argument("prompt", nargs="+", help="Command sent to the agent DAG")
+    p_run = sub.add_parser("run", help="Execute a Skill or an in-memory DAG")
+    p_run.add_argument("prompt", nargs="*", help="Skill id or legacy command sent to the agent DAG")
+    p_run.add_argument("--prd", help="UTF-8 Markdown PRD for tech-solution")
+    p_run.add_argument("--target", help="Deprecated alias for --prd")
     p_run.add_argument("--plan", help="Optional JSON DAG plan")
     p_run.add_argument(
         "--server",
