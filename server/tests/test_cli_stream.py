@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 from argparse import Namespace
+from pathlib import Path
+
+import pytest
 
 from inkdesk_skill_sdk import cli
 
@@ -36,6 +39,22 @@ class FakeClient:
         assert method == "POST"
         assert url == "http://server/api/engine/stream"
         assert json["command"] == "inspect repository"
+        return FakeResponse(self.lines)
+
+
+class SkillFakeClient:
+    def __init__(self, lines, captured, **_kwargs):
+        self.lines = lines
+        self.captured = captured
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_args):
+        return False
+
+    def stream(self, method, url, json):
+        self.captured.update({"method": method, "url": url, "json": json})
         return FakeResponse(self.lines)
 
 
@@ -91,3 +110,112 @@ def test_cli_run_streams_tokens_and_reports_ttft(monkeypatch, capsys) -> None:
     assert exit_code == 0
     assert captured.out == "[kb] hello world\n"
     assert captured.err.startswith("TTFT ")
+
+
+def test_cli_run_tech_solution_validates_prd_and_prints_artifact(monkeypatch, capsys, tmp_path: Path) -> None:
+    prd = tmp_path / "mock-interview-prd.md"
+    prd.write_text("# Mock Interview\n\nBuild an interview workflow.\n", encoding="utf-8")
+    captured_request = {}
+    lines = [
+        "event: stream.open",
+        'data: {"sequence":1}',
+        "",
+        "event: artifact.written",
+        'data: {"sequence":2,"path":"/vault/wiki/generated/mock-interview-prd-tech-solution.md"}',
+        "",
+        "event: result",
+        'data: {"sequence":3,"artifactPath":"/vault/wiki/generated/mock-interview-prd-tech-solution.md"}',
+        "",
+        "event: stream.end",
+        'data: {"sequence":4}',
+        "",
+    ]
+    monkeypatch.setattr(
+        cli.httpx,
+        "Client",
+        lambda **kwargs: SkillFakeClient(lines, captured_request, **kwargs),
+    )
+
+    exit_code = cli.cmd_run(
+        Namespace(
+            prompt=["tech-solution"],
+            prd=str(prd),
+            target=None,
+            plan=None,
+            server="http://server",
+            show_ttft=False,
+        )
+    )
+
+    captured = capsys.readouterr()
+    assert exit_code == 0
+    assert captured.out == "Generated: /vault/wiki/generated/mock-interview-prd-tech-solution.md\n"
+    assert captured_request["url"] == "http://server/api/skills/tech-solution/stream"
+    assert captured_request["json"] == {
+        "inputs": {
+            "requirement": "# Mock Interview\n\nBuild an interview workflow.\n",
+            "sourcePath": str(prd.resolve()),
+            "sourceTitle": "Mock Interview",
+        },
+        "maxConcurrency": 4,
+    }
+
+
+def test_cli_target_alias_warns_and_stream_error_is_nonzero(monkeypatch, capsys, tmp_path: Path) -> None:
+    prd = tmp_path / "prd.md"
+    prd.write_text("# PRD\n", encoding="utf-8")
+    lines = [
+        "event: stream.error",
+        'data: {"code":"PROVIDER_ERROR","message":"Provider request failed."}',
+        "",
+        "event: stream.end",
+        'data: {"sequence":2}',
+        "",
+    ]
+    monkeypatch.setattr(
+        cli.httpx,
+        "Client",
+        lambda **kwargs: SkillFakeClient(lines, {}, **kwargs),
+    )
+
+    exit_code = cli.cmd_run(
+        Namespace(
+            prompt=["tech-solution"],
+            prd=None,
+            target=str(prd),
+            plan=None,
+            server="http://server",
+            show_ttft=False,
+        )
+    )
+
+    captured = capsys.readouterr()
+    assert exit_code == 1
+    assert "--target is deprecated" in captured.err
+    assert "Error [PROVIDER_ERROR]" in captured.err
+
+
+@pytest.mark.parametrize(
+    ("name", "content", "expected"),
+    [
+        ("empty.md", b"", "cannot be empty"),
+        ("wrong.txt", b"hello", "must be a Markdown"),
+        ("bad.md", b"\xff\xfe", "valid UTF-8"),
+    ],
+)
+def test_cli_rejects_invalid_prd_files(tmp_path: Path, name: str, content: bytes, expected: str) -> None:
+    path = tmp_path / name
+    path.write_bytes(content)
+
+    with pytest.raises(ValueError, match=expected):
+        cli._read_prd(str(path))
+
+
+def test_cli_rejects_missing_and_oversized_prd(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="does not exist"):
+        cli._read_prd(str(tmp_path / "missing.md"))
+
+    oversized = tmp_path / "large.md"
+    oversized.write_bytes(b"a" * (2 * 1024 * 1024 + 1))
+    with pytest.raises(ValueError, match="2 MiB"):
+        cli._read_prd(str(oversized))

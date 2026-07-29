@@ -26,6 +26,10 @@ class Settings(BaseSettings):
         default=Path(__file__).resolve().parents[2] / "vault",
         alias="INKDESK_VAULT_ROOT",
     )
+    skills_root: Path = Field(
+        default=Path(__file__).resolve().parents[2] / "vault" / "skills",
+        alias="INKDESK_SKILLS_ROOT",
+    )
     repo_root: str | None = Field(default=None, alias="INKDESK_REPO_ROOT")
 
     agent_runtime: str = Field(default="deterministic", alias="INKDESK_AGENT_RUNTIME")

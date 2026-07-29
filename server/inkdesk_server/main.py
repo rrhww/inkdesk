@@ -5,14 +5,16 @@ import json
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 
 from inkdesk_server.core.config import get_settings
 from inkdesk_server.engine import EngineRuntime
 from inkdesk_server.graph_index import GraphIndexRuntime
-from inkdesk_server.schemas import ApiErrorResponse, EngineCommandRequest
+from inkdesk_server.schemas import ApiErrorResponse, EngineCommandRequest, SkillRunRequest
 from inkdesk_server.security import ApiError, ResourceNotFoundError
+from inkdesk_server.tech_solution import SkillExecutionError, TechSolutionRuntime
 
 
 def create_app() -> FastAPI:
@@ -21,6 +23,12 @@ def create_app() -> FastAPI:
     engine_runtime = EngineRuntime(
         settings,
         graph_runtime.current,
+        graph_runtime.events.publish_runtime,
+    )
+    skill_runtime = TechSolutionRuntime(
+        settings,
+        graph_runtime.current,
+        graph_runtime.refresh,
         graph_runtime.events.publish_runtime,
     )
 
@@ -35,6 +43,7 @@ def create_app() -> FastAPI:
             yield
         finally:
             await engine_runtime.close()
+            await skill_runtime.close()
             graph_runtime.stop()
 
     app = FastAPI(title="Inkdesk Graph Engine", version="0.1.0", lifespan=lifespan)
@@ -51,6 +60,17 @@ def create_app() -> FastAPI:
         return JSONResponse(
             status_code=exception.status_code,
             content=ApiErrorResponse(code=exception.code, message=exception.message).model_dump(),
+        )
+
+    @app.exception_handler(RequestValidationError)
+    async def handle_request_validation_error(_, exception: RequestValidationError):
+        first = exception.errors()[0] if exception.errors() else {}
+        location = ".".join(str(part) for part in first.get("loc", ()) if part != "body")
+        detail = str(first.get("msg") or "Request validation failed.")
+        message = f"{location}: {detail}" if location else detail
+        return JSONResponse(
+            status_code=422,
+            content=ApiErrorResponse(code="INVALID_REQUEST", message=message).model_dump(),
         )
 
     @app.get("/health")
@@ -159,6 +179,28 @@ def create_app() -> FastAPI:
     async def engine_stream(command: EngineCommandRequest):
         async def events():
             async for item in engine_runtime.stream(command):
+                yield f"event: {item.event}\ndata: {json.dumps(dict(item.data), ensure_ascii=False)}\n\n"
+
+        return StreamingResponse(
+            events(),
+            media_type="text/event-stream",
+            headers={"Cache-Control": "no-cache, no-transform", "Connection": "keep-alive", "X-Accel-Buffering": "no"},
+        )
+
+    @app.post("/api/skills/{skill_id}/stream")
+    async def skill_stream(skill_id: str, command: SkillRunRequest):
+        try:
+            skill_runtime.preflight(skill_id, command)
+        except SkillExecutionError as exc:
+            status_code = {
+                "SKILL_NOT_FOUND": 404,
+                "SKILL_INACTIVE": 409,
+                "PROVIDER_NOT_CONFIGURED": 503,
+            }.get(exc.code, 400)
+            raise ApiError(status_code, exc.code, exc.message) from exc
+
+        async def events():
+            async for item in skill_runtime.stream(command):
                 yield f"event: {item.event}\ndata: {json.dumps(dict(item.data), ensure_ascii=False)}\n\n"
 
         return StreamingResponse(

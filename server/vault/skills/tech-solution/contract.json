@@ -2,7 +2,7 @@
   "schemaVersion": "1.0",
   "id": "tech-solution",
   "version": "0.1.0",
-  "status": "draft",
+  "status": "active",
   "category": "engineering",
   "kind": "producer",
   "summary": "[engineering/producer] 从需求描述、KB 上下文和代码仓状态生成可评审技术方案",
@@ -20,14 +20,14 @@
       "description": "需要确认 vault 已初始化"
     },
     {
-      "name": "dev_run",
-      "description": "需要当前 Dev Run 状态和阶段信息"
+      "name": "repository",
+      "description": "读取受限的 Git 跟踪文件作为实现上下文"
     }
   ],
   "outputs": [
     {
       "type": "solution_doc",
-      "location": "runs/<run_id>/tech-solution.md",
+      "location": "wiki/generated/<prd-stem>-tech-solution.md",
       "needsReview": true
     }
   ],
@@ -54,12 +54,14 @@
     }
   ],
   "capabilities": [
-    "read_vault"
+    "read_vault",
+    "read_repository",
+    "write_proposal"
   ],
   "writePolicy": {
-    "canonicalWiki": "denied",
-    "runArtifacts": "allowed",
-    "codeRepository": "delegated"
+    "canonicalWiki": "proposal-only",
+    "runArtifacts": "denied",
+    "codeRepository": "denied"
   },
   "verification": [
     {

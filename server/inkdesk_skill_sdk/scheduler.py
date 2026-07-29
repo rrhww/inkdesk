@@ -148,8 +148,12 @@ class KahnDagScheduler:
                         if isinstance(value, DagTaskResult)
                         else DagTaskResult(task_id=task_id, output=str(value), duration_ms=duration_ms)
                     )
-                except BaseException as exc:
-                    failure = exc
+                except asyncio.CancelledError:
+                    ready.task_done()
+                    raise
+                except Exception as exc:
+                    if failure is None:
+                        failure = exc
                     await emit("task.failed", task_id, {"error": str(exc)})
                     all_done.set()
                     ready.task_done()

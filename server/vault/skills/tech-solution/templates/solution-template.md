@@ -1,6 +1,16 @@
+---
+title: "[需求标题] 技术方案"
+type: tech-solution
+status: generated
+generatedBy: inkdesk
+source: "[需求相对路径]"
+sourceTitle: "[需求标题]"
+---
 # 技术方案文档
 
 > 由 tech-solution 按方案模板生成。
+
+来源需求：[[需求相对路径|需求标题]]
 
 ## 1. 方案概述
 
@@ -17,12 +27,15 @@
 ## 3. 方案设计
 
 ### 3.1 架构概览
-[文字描述整体架构，必要时用 ASCII 图]
+[文字描述整体架构]
 
-```
-输入 → [组件 A] → [组件 B] → 输出
-          ↓
-      [存储/外部服务]
+```mermaid
+sequenceDiagram
+  participant Input
+  participant Runtime
+  participant Output
+  Input->>Runtime: 提交需求
+  Runtime-->>Output: 生成方案
 ```
 
 ### 3.2 模块职责
