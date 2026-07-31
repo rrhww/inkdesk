@@ -113,7 +113,8 @@ test("turns a PRD into a live technical-solution graph node", async ({ page }, t
     await expect(
       reader.getByRole("article").getByRole("heading", { name: "智能模拟面试系统 PRD 技术方案", level: 1 })
     ).toBeVisible();
-    await expect(reader.getByRole("img", { name: "Mermaid architecture diagram" }).locator("svg")).toBeVisible({
+    const renderedDiagrams = reader.getByRole("img", { name: "Mermaid architecture diagram" }).locator("svg");
+    await expect(renderedDiagrams.first()).toBeVisible({
       timeout: 30_000
     });
     await page.screenshot({ path: testInfo.outputPath("mvp-tech-solution-closure.png"), fullPage: true });

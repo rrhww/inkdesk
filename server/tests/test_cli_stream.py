@@ -219,3 +219,110 @@ def test_cli_rejects_missing_and_oversized_prd(tmp_path: Path) -> None:
     oversized.write_bytes(b"a" * (2 * 1024 * 1024 + 1))
     with pytest.raises(ValueError, match="2 MiB"):
         cli._read_prd(str(oversized))
+
+
+def test_cli_harness_audit_creates_run_and_consumes_persisted_events(monkeypatch, capsys) -> None:
+    captured: dict = {}
+    lines = [
+        "id: 1",
+        "event: stage.started",
+        'data: {"sequence":1,"type":"stage.started","data":{"stageId":"preflight"}}',
+        "",
+        "id: 2",
+        "event: executor.tool.requested",
+        'data: {"sequence":2,"type":"executor.tool.requested","data":{"tool":"Bash"}}',
+        "",
+        "id: 3",
+        "event: artifact.written",
+        'data: {"sequence":3,"type":"artifact.written","data":{"kind":"report","path":"[USER_HOME]/vault/wiki/generated/repo-harness-audit.md","relativePath":"wiki/generated/repo-harness-audit.md"}}',
+        "",
+        "id: 4",
+        "event: stream.end",
+        'data: {"sequence":4,"type":"stream.end","data":{"status":"succeeded"}}',
+        "",
+    ]
+
+    class CreateResponse:
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return {"runId": "run-abc", "eventsUrl": "/api/runs/run-abc/events"}
+
+    class HarnessClient:
+        def __init__(self, **_kwargs):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        def post(self, url, json):
+            captured.update({"url": url, "json": json})
+            return CreateResponse()
+
+        def stream(self, method, url):
+            assert method == "GET"
+            assert url == "http://server/api/runs/run-abc/events"
+            return FakeResponse(lines)
+
+    monkeypatch.setattr(cli.httpx, "Client", HarnessClient)
+    exit_code = cli.cmd_run(
+        Namespace(
+            prompt=["harness-audit"],
+            prd=None,
+            target=None,
+            plan=None,
+            server="http://server",
+            show_ttft=False,
+            executor="claude",
+            depth="quick",
+            repo=None,
+        )
+    )
+    output = capsys.readouterr()
+    assert exit_code == 0
+    assert "Run: run-abc" in output.out
+    assert "[preflight] running" in output.out
+    assert "Approval required for Bash" in output.out
+    assert "Generated: wiki/generated/repo-harness-audit.md" in output.out
+    assert "[USER_HOME]" not in output.out
+    assert captured["json"]["executor"] == "claude"
+
+
+def test_cli_live_executor_probe(monkeypatch, capsys) -> None:
+    class ProbeResponse:
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return {
+                "available": True,
+                "capabilities": ["agent-loop", "tool-use"],
+                "toolLoopVerified": True,
+                "structuredOutputVerified": True,
+            }
+
+    class ProbeClient:
+        def __init__(self, **_kwargs):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        def request(self, method, url):
+            assert method == "POST"
+            assert url == "http://server/api/executors/claude/probe"
+            return ProbeResponse()
+
+    monkeypatch.setattr(cli.httpx, "Client", ProbeClient)
+    result = cli.cmd_executor(Namespace(executor_name="claude", live=True, server="http://server"))
+    output = capsys.readouterr().out
+    assert result == 0
+    assert "Tool loop verified: true" in output
+    assert "Structured output verified: true" in output

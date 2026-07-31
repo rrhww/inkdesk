@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
+import tempfile
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -31,6 +32,10 @@ class Settings(BaseSettings):
         alias="INKDESK_SKILLS_ROOT",
     )
     repo_root: str | None = Field(default=None, alias="INKDESK_REPO_ROOT")
+    harness_work_root: Path = Field(
+        default=Path(tempfile.gettempdir()) / "inkdesk-harness",
+        alias="INKDESK_HARNESS_WORK_ROOT",
+    )
 
     agent_runtime: str = Field(default="deterministic", alias="INKDESK_AGENT_RUNTIME")
     agent_provider_profile: str = Field(default="openai", alias="INKDESK_AGENT_PROVIDER_PROFILE")

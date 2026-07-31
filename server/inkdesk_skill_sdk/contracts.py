@@ -180,7 +180,7 @@ def generate_contract_json_schema() -> dict[str, Any]:
 DIR_NAME_RE = r"^[a-z0-9]([a-z0-9-]*[a-z0-9])?$"
 DIR_NAME_MAX_LEN = 63
 
-REQUIRED_FILES = ["SKILL.md", "contract.json"]
-REQUIRED_DIRS = ["agents"]
-ALLOWED_OPTIONAL_DIRS = ["references", "prompts", "templates", "scripts", "assets"]
-AGENTS_REQUIRED_FILES = ["openai.yaml"]
+REQUIRED_FILES = ["SKILL.md"]
+REQUIRED_DIRS: list[str] = []
+ALLOWED_OPTIONAL_DIRS = ["agents", "references", "prompts", "templates", "scripts", "assets"]
+AGENTS_REQUIRED_FILES: list[str] = []

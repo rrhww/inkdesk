@@ -6,6 +6,12 @@ ARG NO_PROXY
 
 WORKDIR /app
 
+# Harness worktree leases and startup cleanup use the Git CLI.
+RUN sed -i 's|http://deb.debian.org|https://deb.debian.org|g' /etc/apt/sources.list.d/debian.sources \
+    && apt-get -o Acquire::Retries=5 update \
+    && apt-get install -y --no-install-recommends git ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY server/pyproject.toml ./
 COPY server/inkdesk_skill_sdk ./inkdesk_skill_sdk
 COPY server/inkdesk_server ./inkdesk_server

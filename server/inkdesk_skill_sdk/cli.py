@@ -200,6 +200,8 @@ def cmd_run(args: argparse.Namespace) -> int:
     prompt = list(getattr(args, "prompt", []))
     prd_arg = getattr(args, "prd", None)
     target_arg = getattr(args, "target", None)
+    if prompt and prompt[0] == "harness-audit":
+        return _cmd_run_harness(args, prompt)
     if prd_arg or target_arg or (prompt and prompt[0] == "tech-solution"):
         return _cmd_run_skill(args, prompt, prd_arg, target_arg)
 
@@ -255,6 +257,111 @@ def cmd_run(args: argparse.Namespace) -> int:
     if args.show_ttft and first_visible_at is not None:
         print(f"TTFT {(first_visible_at - started) * 1000:.1f} ms", file=sys.stderr)
     return 1 if failed else 0
+
+
+def _cmd_run_harness(args: argparse.Namespace, prompt: list[str]) -> int:
+    if len(prompt) > 1:
+        print("Error: harness-audit does not accept positional arguments", file=sys.stderr)
+        return 2
+    repo_arg = getattr(args, "repo", None)
+    repo_path: Path | None = None
+    if repo_arg:
+        repo_path = Path(repo_arg).expanduser().resolve()
+        if not repo_path.is_dir() or not (repo_path / ".git").exists():
+            print(f"Error: --repo must identify a Git repository: {repo_path}", file=sys.stderr)
+            return 2
+    payload = {
+        "capabilityId": "harness-audit",
+        "inputs": {
+            "target": "repository",
+            "depth": getattr(args, "depth", "quick"),
+            **({"repoPath": str(repo_path)} if repo_path else {}),
+        },
+        "executor": getattr(args, "executor", "claude"),
+    }
+    server_url = args.server.rstrip("/")
+    started = perf_counter()
+    first_visible_at: float | None = None
+    report_path: str | None = None
+    failed = False
+    try:
+        with httpx.Client(timeout=None) as client:
+            response = client.post(f"{server_url}/api/runs", json=payload)
+            try:
+                response.raise_for_status()
+            except httpx.HTTPStatusError:
+                print(f"Error: {_http_error_message(response)}", file=sys.stderr)
+                return 1
+            created = response.json()
+            run_id = str(created["runId"])
+            events_url = str(created.get("eventsUrl") or f"/api/runs/{run_id}/events")
+            if events_url.startswith("/"):
+                events_url = server_url + events_url
+            print(f"Run: {run_id}")
+            with client.stream("GET", events_url) as stream:
+                stream.raise_for_status()
+                for event, envelope in _iter_sse_events(stream.iter_lines()):
+                    if first_visible_at is None:
+                        first_visible_at = perf_counter()
+                    data = envelope.get("data", envelope) if isinstance(envelope, dict) else {}
+                    if event == "stage.started":
+                        print(f"[{data.get('stageId', 'stage')}] running")
+                    elif event == "executor.tool.requested":
+                        web_url = os.environ.get("INKDESK_WEB_URL", "http://127.0.0.1:3000").rstrip("/")
+                        print(
+                            f"Approval required for {data.get('tool', 'tool')}: "
+                            f"{web_url}/app/runs/{run_id}"
+                        )
+                    elif event == "finding.created":
+                        print(f"Finding {data.get('id')}: {data.get('title')}")
+                    elif event == "artifact.written" and data.get("kind") == "report":
+                        report_path = str(data.get("relativePath") or data.get("path") or "") or None
+                    elif event == "run.failed":
+                        failed = True
+                        print(
+                            f"Error [{data.get('code', 'RUN_FAILED')}]: {data.get('message', 'Audit failed')}",
+                            file=sys.stderr,
+                        )
+                    elif event == "run.cancelled":
+                        failed = True
+                        print("Error: audit run was cancelled", file=sys.stderr)
+    except (httpx.HTTPError, OSError, ValueError, KeyError) as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        return 1
+    if args.show_ttft and first_visible_at is not None:
+        print(f"TTFT {(first_visible_at - started) * 1000:.1f} ms", file=sys.stderr)
+    if failed:
+        return 1
+    if report_path:
+        print(f"Generated: {report_path}")
+    return 0
+
+
+def cmd_executor(args: argparse.Namespace) -> int:
+    server_url = args.server.rstrip("/")
+    suffix = "/probe" if args.live else ""
+    method = "POST" if args.live else "GET"
+    try:
+        with httpx.Client(timeout=None) as client:
+            response = client.request(method, f"{server_url}/api/executors/{args.executor_name}{suffix}")
+            try:
+                response.raise_for_status()
+            except httpx.HTTPStatusError:
+                print(f"Error: {_http_error_message(response)}", file=sys.stderr)
+                return 1
+            value = response.json()
+    except (httpx.HTTPError, OSError, ValueError) as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        return 1
+    capabilities = ", ".join(value.get("capabilities") or [])
+    print(f"Executor: {args.executor_name}")
+    print(f"Available: {str(bool(value.get('available'))).lower()}")
+    if capabilities:
+        print(f"Capabilities: {capabilities}")
+    if args.live:
+        print(f"Tool loop verified: {str(bool(value.get('toolLoopVerified'))).lower()}")
+        print(f"Structured output verified: {str(bool(value.get('structuredOutputVerified'))).lower()}")
+    return 0
 
 
 def _cmd_run_skill(
@@ -377,7 +484,6 @@ def _http_error_message(response) -> str:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        prog="inkdesk-skill",
         description="Inkdesk Skill SDK CLI",
     )
     sub = parser.add_subparsers(dest="command")
@@ -410,6 +516,9 @@ def main() -> int:
     p_run.add_argument("prompt", nargs="*", help="Skill id or legacy command sent to the agent DAG")
     p_run.add_argument("--prd", help="UTF-8 Markdown PRD for tech-solution")
     p_run.add_argument("--target", help="Deprecated alias for --prd")
+    p_run.add_argument("--executor", default="claude", choices=["claude", "codex", "deterministic"], help="Executor for harness capabilities")
+    p_run.add_argument("--depth", default="quick", choices=["quick", "normal"], help="Evidence collection depth")
+    p_run.add_argument("--repo", help="Repository path; must match the server configuration")
     p_run.add_argument("--plan", help="Optional JSON DAG plan")
     p_run.add_argument(
         "--server",
@@ -417,6 +526,15 @@ def main() -> int:
         help="Inkdesk server base URL",
     )
     p_run.add_argument("--show-ttft", action="store_true", help="Print time to first SSE event")
+
+    p_executor = sub.add_parser("executor", help="Inspect or live-probe an Agent Executor")
+    p_executor.add_argument("executor_name", choices=["claude", "codex"])
+    p_executor.add_argument("--live", action="store_true", help="Run a paid tool-loop capability probe")
+    p_executor.add_argument(
+        "--server",
+        default=os.environ.get("INKDESK_SERVER_URL", "http://127.0.0.1:8080"),
+        help="Inkdesk server base URL",
+    )
 
     args = parser.parse_args()
 
@@ -434,6 +552,8 @@ def main() -> int:
         return cmd_check(args)
     elif args.command == "run":
         return cmd_run(args)
+    elif args.command == "executor":
+        return cmd_executor(args)
     return 0
 
 

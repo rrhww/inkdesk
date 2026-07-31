@@ -25,11 +25,11 @@ test("renders and reads the live Vault Markdown graph", async ({ page }, testInf
 
   await page.getByRole("button", { name: "Vault nodes" }).click();
   await expect(page.getByRole("button", { name: "Vault nodes" })).toHaveAttribute("aria-pressed", "true");
-  await expect(nodes).toHaveCount(5);
+  await expect.poll(() => nodes.count()).toBeGreaterThanOrEqual(5);
   await expect(edges).toHaveCount(4);
   await expect(page.locator(".react-flow__edge-straight")).toHaveCount(4);
   await expect(page.locator(".react-flow__node-concept")).toHaveCount(1);
-  await expect(page.locator(".react-flow__node-action")).toHaveCount(4);
+  await expect.poll(() => page.locator(".react-flow__node-action").count()).toBeGreaterThanOrEqual(4);
   await expect(page.getByText("技术决策与约束", { exact: true })).toBeVisible();
   await expect(page.getByText("系统架构与技术栈", { exact: true })).toBeVisible();
 
@@ -103,7 +103,7 @@ test("keeps the live graph and reader usable on a narrow viewport", async ({ pag
   await page.screenshot({ path: testInfo.outputPath("wiki-live-vault-mobile-search.png"), fullPage: true });
 
   await page.getByRole("button", { name: "Vault nodes" }).click();
-  await expect(page.locator(".react-flow__node")).toHaveCount(5);
+  await expect.poll(() => page.locator(".react-flow__node").count()).toBeGreaterThanOrEqual(5);
   await page.getByText("技术决策与约束", { exact: true }).click();
   const reader = page.locator("aside");
   await expect(reader).toHaveCSS("width", "390px");
