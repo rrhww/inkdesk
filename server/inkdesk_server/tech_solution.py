@@ -16,8 +16,9 @@ import yaml
 from inkdesk_server.core.config import Settings
 from inkdesk_server.engine import DualQueueSsePipeline, PipelineItem
 from inkdesk_server.graph_index import GraphSnapshot
+from inkdesk_server.harness.models import WorkflowStage, WorkflowStageResult
+from inkdesk_server.harness.scheduler import WorkflowScheduler
 from inkdesk_server.schemas import SkillRunRequest
-from inkdesk_skill_sdk.scheduler import DagTask, DagTaskResult, KahnDagScheduler
 
 
 logger = logging.getLogger(__name__)
@@ -166,22 +167,23 @@ class TechSolutionRuntime:
 
         try:
             tasks = self._build_tasks()
-            scheduler = KahnDagScheduler(max_concurrency=request.maxConcurrency)
+            scheduler = WorkflowScheduler(max_concurrency=request.maxConcurrency)
 
             async def on_event(event) -> None:
-                if event.type in {"task.started", "task.completed", "task.failed"}:
+                legacy_event_type = event.type.replace("stage.", "task.").replace("workflow.", "dag.")
+                if legacy_event_type in {"task.started", "task.completed", "task.failed"}:
                     await queue.put(
                         PipelineItem(
-                            event.type,
+                            legacy_event_type,
                             {
-                                "taskId": event.task_id,
+                                "taskId": event.stage_id,
                                 "timestamp": event.timestamp,
                                 **dict(event.data),
                             },
                         )
                     )
 
-            async def runner(task: DagTask, dependencies: Mapping[str, DagTaskResult]) -> str:
+            async def runner(task: WorkflowStage, dependencies: Mapping[str, WorkflowStageResult]) -> str:
                 output_parts: list[str] = []
                 async for token in self._task_tokens(
                     task,
@@ -267,15 +269,15 @@ class TechSolutionRuntime:
                 self.runtime_event_sink("node.idle", {"nodeId": source_node_id, "skillId": "tech-solution"})
             await queue.put(None)
 
-    def _build_tasks(self) -> tuple[DagTask, ...]:
+    def _build_tasks(self) -> tuple[WorkflowStage, ...]:
         investigations = (
-            DagTask("requirement-analysis", kind="requirement", prompt="Analyze scope and acceptance criteria."),
-            DagTask("knowledge-analysis", kind="knowledge", prompt="Find relevant Vault knowledge and constraints."),
-            DagTask("repository-analysis", kind="repository", prompt="Inspect relevant tracked repository files."),
-            DagTask("security-analysis", kind="security", prompt="Identify security and governance risks."),
+            WorkflowStage("requirement-analysis", kind="requirement", prompt="Analyze scope and acceptance criteria."),
+            WorkflowStage("knowledge-analysis", kind="knowledge", prompt="Find relevant Vault knowledge and constraints."),
+            WorkflowStage("repository-analysis", kind="repository", prompt="Inspect relevant tracked repository files."),
+            WorkflowStage("security-analysis", kind="security", prompt="Identify security and governance risks."),
         )
         return investigations + (
-            DagTask(
+            WorkflowStage(
                 "synthesis",
                 dependencies=tuple(task.id for task in investigations),
                 kind="synthesis",
@@ -285,9 +287,9 @@ class TechSolutionRuntime:
 
     async def _task_tokens(
         self,
-        task: DagTask,
+        task: WorkflowStage,
         request: SkillRunRequest,
-        dependencies: Mapping[str, DagTaskResult],
+        dependencies: Mapping[str, WorkflowStageResult],
         source_reference: str,
     ) -> AsyncIterator[str]:
         context = ""
@@ -315,9 +317,9 @@ class TechSolutionRuntime:
 
     def _provider_prompt(
         self,
-        task: DagTask,
+        task: WorkflowStage,
         request: SkillRunRequest,
-        dependencies: Mapping[str, DagTaskResult],
+        dependencies: Mapping[str, WorkflowStageResult],
         source_reference: str,
         context: str,
     ) -> str:
@@ -395,9 +397,9 @@ class TechSolutionRuntime:
 
     def _deterministic_output(
         self,
-        task: DagTask,
+        task: WorkflowStage,
         request: SkillRunRequest,
-        dependencies: Mapping[str, DagTaskResult],
+        dependencies: Mapping[str, WorkflowStageResult],
         source_reference: str,
         context: str,
     ) -> str:
@@ -414,7 +416,7 @@ class TechSolutionRuntime:
     def _deterministic_document(
         self,
         request: SkillRunRequest,
-        dependencies: Mapping[str, DagTaskResult],
+        dependencies: Mapping[str, WorkflowStageResult],
         source_reference: str,
     ) -> str:
         title = f"{request.inputs.sourceTitle} 技术方案"

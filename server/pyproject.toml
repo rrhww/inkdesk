@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "inkdesk-server"
-version = "0.1.0"
+version = "0.2.0"
 description = "Inkdesk Python main backend"
 requires-python = ">=3.12"
 dependencies = [
@@ -19,6 +19,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+claude = [
+  "claude-agent-sdk>=0.2.114,<0.3"
+]
 dev = [
   "pytest>=8.3,<9.0",
   "pytest-asyncio>=0.24,<1.0"
@@ -26,6 +29,9 @@ dev = [
 
 [tool.setuptools.packages.find]
 include = ["inkdesk_server*"]
+
+[tool.setuptools.package-data]
+"inkdesk_server.harness.vendor" = ["*.md", "LICENSE.*", "profiles/*.md"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

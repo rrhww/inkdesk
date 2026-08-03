@@ -27,6 +27,7 @@ from inkdesk_skill_sdk.contracts import (
     Contract,
     OpenAIAgentYaml,
 )
+from inkdesk_skill_sdk.capabilities import CapabilityManifest, parse_skill_frontmatter
 
 PACKAGE_NAME_RE = re.compile(DIR_NAME_RE)
 
@@ -207,7 +208,7 @@ def validate_structural(package_root: Path) -> list[Finding]:
             )
         )
 
-    # Required files
+    # Agent Skills require only SKILL.md.
     for req_file in REQUIRED_FILES:
         if not (package_root / req_file).is_file():
             findings.append(
@@ -231,19 +232,15 @@ def validate_structural(package_root: Path) -> list[Finding]:
                 )
             )
 
-    # Required files in agents/
-    agents_dir = package_root / "agents"
-    if agents_dir.is_dir():
-        for req_agent_file in AGENTS_REQUIRED_FILES:
-            if not (agents_dir / req_agent_file).is_file():
-                findings.append(
-                    Finding(
-                        code="STRUCT_MISSING_AGENT_FILE",
-                        path=f"{dir_name}/agents/{req_agent_file}",
-                        message=f"Required agent file {req_agent_file!r} is missing",
-                        severity=Severity.ERROR,
-                    )
-                )
+    if (package_root / "inkdesk.yaml").is_file() and (package_root / "contract.json").is_file():
+        findings.append(
+            Finding(
+                code="STRUCT_MULTIPLE_MANIFESTS",
+                path=dir_name,
+                message="Skill package cannot contain both inkdesk.yaml and contract.json",
+                severity=Severity.ERROR,
+            )
+        )
 
     # Only allowed optional directories
     if package_root.is_dir():
@@ -291,14 +288,18 @@ def validate_semantic(package_root: Path) -> list[Finding]:
         else:
             skill_frontmatter_name = fm.get("name")
             skill_frontmatter_desc = fm.get("description")
-            extra = [k for k in fm if k not in ("name", "description")]
+            extra = [
+                k
+                for k in fm
+                if k not in ("name", "description", "license", "compatibility", "metadata", "allowed-tools")
+            ]
             if extra:
                 skill_extra_frontmatter = extra
                 findings.append(
                     Finding(
                         code="SEMANTIC_EXTRA_FRONTMATTER",
                         path=f"{dir_name}/SKILL.md",
-                        message=f"Extra frontmatter fields: {extra}; only name/description allowed",
+                        message=f"Unsupported Agent Skills frontmatter fields: {extra}",
                         severity=Severity.ERROR,
                     )
                 )
@@ -325,7 +326,22 @@ def validate_semantic(package_root: Path) -> list[Finding]:
         if parts is not None:
             skill_body = parts[1]
 
-    # --- Parse contract.json ---
+    # --- Parse execution manifest (new capability or legacy contract) ---
+    capability_raw = _read_text(package_root, "inkdesk.yaml")
+    capability: CapabilityManifest | None = None
+    if capability_raw is not None:
+        try:
+            capability = CapabilityManifest.model_validate(yaml.safe_load(capability_raw))
+        except Exception as e:
+            findings.append(
+                Finding(
+                    code="SEMANTIC_CAPABILITY_PARSE",
+                    path=f"{dir_name}/inkdesk.yaml",
+                    message=f"Capability validation failed: {e}",
+                    severity=Severity.ERROR,
+                )
+            )
+
     contract_raw = _read_text(package_root, "contract.json")
     contract: Contract | None = None
     contract_parse_error: str | None = None
@@ -354,15 +370,6 @@ def validate_semantic(package_root: Path) -> list[Finding]:
                     severity=Severity.ERROR,
                 )
             )
-    else:
-        findings.append(
-            Finding(
-                code="SEMANTIC_MISSING_CONTRACT",
-                path=f"{dir_name}/contract.json",
-                message="contract.json is missing",
-                severity=Severity.ERROR,
-            )
-        )
 
     # --- Parse agents/openai.yaml ---
     openai_raw = _read_text(package_root, "agents/openai.yaml")
@@ -384,42 +391,51 @@ def validate_semantic(package_root: Path) -> list[Finding]:
                 )
             )
 
-    if contract is None:
-        return findings  # can't do cross-file checks without contract
+    if contract is None and capability is None:
+        return findings
 
     # --- Three-way name consistency ---
     names: dict[str, str] = {}
     names["dir"] = dir_name
-    names["contract.id"] = contract.id
+    if contract is not None:
+        names["contract.id"] = contract.id
+    elif capability is not None:
+        names["inkdesk.yaml id"] = capability.id
     if skill_frontmatter_name:
         names["SKILL.md name"] = skill_frontmatter_name
 
-    canonical = contract.id
+    canonical = contract.id if contract is not None else capability.id
     for src, val in names.items():
         if val != canonical:
             findings.append(
                 Finding(
                     code="SEMANTIC_NAME_MISMATCH",
-                    path=f"{dir_name}/SKILL.md" if "SKILL" in src else f"{dir_name}/contract.json",
-                    message=f"Name mismatch: {src}={val!r} != contract.id={canonical!r}",
+                    path=(
+                        f"{dir_name}/SKILL.md"
+                        if "SKILL" in src
+                        else f"{dir_name}/contract.json" if contract is not None else f"{dir_name}/inkdesk.yaml"
+                    ),
+                    message=f"Name mismatch: {src}={val!r} != manifest id={canonical!r}",
                     severity=Severity.ERROR,
                 )
             )
 
     # --- Version: valid SemVer ---
-    if not _is_semver(contract.version):
+    version = contract.version if contract is not None else capability.version
+    if not _is_semver(version):
         findings.append(
             Finding(
                 code="SEMANTIC_BAD_SEMVER",
-                path=f"{dir_name}/contract.json",
-                message=f"Invalid SemVer version: {contract.version!r}",
+                path=f"{dir_name}/contract.json" if contract is not None else f"{dir_name}/inkdesk.yaml",
+                message=f"Invalid SemVer version: {version!r}",
                 severity=Severity.ERROR,
             )
         )
 
     # --- Description quality ---
     if skill_frontmatter_desc:
-        if _is_duplicate_text(skill_frontmatter_desc, contract.summary):
+        summary = contract.summary if contract is not None else skill_frontmatter_desc
+        if _is_duplicate_text(skill_frontmatter_desc, summary):
             pass  # description and summary can naturally overlap
         if _is_duplicate_text(skill_frontmatter_name or "", skill_frontmatter_desc):
             findings.append(
@@ -430,6 +446,9 @@ def validate_semantic(package_root: Path) -> list[Finding]:
                     severity=Severity.WARNING,
                 )
             )
+
+    if contract is None:
+        return findings
 
     # --- inputs referenced in hardGates ---
     input_names = {i.name for i in contract.inputs}
@@ -605,7 +624,7 @@ def validate_safety(package_root: Path) -> list[Finding]:
 # ——— frontmatter parsing ———
 
 
-def _split_frontmatter(text: str) -> tuple[dict[str, str], str] | None:
+def _split_frontmatter(text: str) -> tuple[dict[str, object], str] | None:
     """Split SKILL.md into (frontmatter_dict, body) or None if no frontmatter."""
     lines = text.splitlines()
     if not lines or lines[0].strip() != "---":
@@ -625,10 +644,10 @@ def _split_frontmatter(text: str) -> tuple[dict[str, str], str] | None:
         return None
     if not isinstance(fm, dict):
         return None
-    return {str(k): str(v) for k, v in fm.items()}, body
+    return {str(k): v for k, v in fm.items()}, body
 
 
-def _parse_frontmatter(text: str) -> dict[str, str] | None:
+def _parse_frontmatter(text: str) -> dict[str, object] | None:
     """Parse frontmatter from a SKILL.md text; returns dict or None."""
     parts = _split_frontmatter(text)
     if parts is None:

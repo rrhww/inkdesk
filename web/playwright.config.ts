@@ -33,6 +33,7 @@ const webPort = Number(process.env.INKDESK_E2E_WEB_PORT ?? 3301);
 export default defineConfig({
   testDir: "./tests/e2e",
   timeout: 30_000,
+  workers: 1,
   use: {
     baseURL: `http://localhost:${webPort}`,
     trace: "on-first-retry",

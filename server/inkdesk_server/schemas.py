@@ -39,3 +39,26 @@ class SkillRunRequest(BaseModel):
 
     inputs: SkillRunInputs
     maxConcurrency: int = Field(default=4, ge=1, le=4)
+
+
+class HarnessRunInputs(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    target: str = "repository"
+    depth: str = "quick"
+    repoPath: str | None = None
+
+
+class HarnessRunRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    capabilityId: str
+    inputs: HarnessRunInputs = Field(default_factory=HarnessRunInputs)
+    executor: str = "claude"
+
+
+class PermissionDecisionRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    decision: str = Field(pattern=r"^(allow_once|deny)$")
+    reason: str | None = Field(default=None, max_length=500)

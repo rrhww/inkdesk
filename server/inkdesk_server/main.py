@@ -3,8 +3,9 @@ from __future__ import annotations
 import asyncio
 import json
 from contextlib import asynccontextmanager
+from pathlib import Path
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
@@ -12,7 +13,18 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from inkdesk_server.core.config import get_settings
 from inkdesk_server.engine import EngineRuntime
 from inkdesk_server.graph_index import GraphIndexRuntime
-from inkdesk_server.schemas import ApiErrorResponse, EngineCommandRequest, SkillRunRequest
+from inkdesk_server.harness.audit import HarnessAuditError, HarnessAuditRuntime, TERMINAL_STATUSES
+from inkdesk_server.harness.executor import ExecutorError
+from inkdesk_server.harness.models import PermissionStatus
+from inkdesk_server.harness.permissions import PermissionError
+from inkdesk_server.harness.run_store import RunNotFoundError
+from inkdesk_server.schemas import (
+    ApiErrorResponse,
+    EngineCommandRequest,
+    HarnessRunRequest,
+    PermissionDecisionRequest,
+    SkillRunRequest,
+)
 from inkdesk_server.security import ApiError, ResourceNotFoundError
 from inkdesk_server.tech_solution import SkillExecutionError, TechSolutionRuntime
 
@@ -31,6 +43,13 @@ def create_app() -> FastAPI:
         graph_runtime.refresh,
         graph_runtime.events.publish_runtime,
     )
+    repo_root = settings.repo_root or str(Path(__file__).resolve().parents[2])
+    harness_runtime = HarnessAuditRuntime(
+        vault_root=settings.vault_root,
+        repo_root=Path(repo_root),
+        graph_refresh=graph_runtime.refresh,
+        work_root=settings.harness_work_root,
+    )
 
     @asynccontextmanager
     async def lifespan(_: FastAPI):
@@ -44,9 +63,10 @@ def create_app() -> FastAPI:
         finally:
             await engine_runtime.close()
             await skill_runtime.close()
+            await harness_runtime.close()
             graph_runtime.stop()
 
-    app = FastAPI(title="Inkdesk Graph Engine", version="0.1.0", lifespan=lifespan)
+    app = FastAPI(title="Inkdesk Graph Engine", version="0.2.0", lifespan=lifespan)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
@@ -202,6 +222,138 @@ def create_app() -> FastAPI:
         async def events():
             async for item in skill_runtime.stream(command):
                 yield f"event: {item.event}\ndata: {json.dumps(dict(item.data), ensure_ascii=False)}\n\n"
+
+        return StreamingResponse(
+            events(),
+            media_type="text/event-stream",
+            headers={"Cache-Control": "no-cache, no-transform", "Connection": "keep-alive", "X-Accel-Buffering": "no"},
+        )
+
+    @app.post("/api/runs", status_code=202)
+    async def create_run(command: HarnessRunRequest, response: Response):
+        try:
+            run = await harness_runtime.create_run(
+                command.capabilityId,
+                command.inputs.model_dump(),
+                command.executor,
+            )
+        except HarnessAuditError as exc:
+            status = 404 if exc.code == "CAPABILITY_NOT_FOUND" else 400
+            raise ApiError(status, exc.code, exc.message) from exc
+        except ExecutorError as exc:
+            raise ApiError(503, exc.code, exc.message) from exc
+        response.headers["Location"] = f"/api/runs/{run.id}"
+        return {
+            "runId": run.id,
+            "statusUrl": f"/api/runs/{run.id}",
+            "eventsUrl": f"/api/runs/{run.id}/events",
+        }
+
+    @app.get("/api/runs/{run_id}")
+    def get_run(run_id: str):
+        try:
+            record = harness_runtime.store.get_run(run_id)
+            payload = record.model_dump(mode="json")
+            payload["evidence"] = harness_runtime.store.read_json(run_id, "evidence.json")
+            payload["findings"] = harness_runtime.store.read_json(run_id, "findings.json")
+            return payload
+        except (RunNotFoundError, ValueError) as exc:
+            raise ResourceNotFoundError("Harness run was not found.") from exc
+
+    @app.get("/api/runs/{run_id}/report")
+    def get_run_report(run_id: str):
+        try:
+            content = harness_runtime.store.read_text(run_id, "report.md")
+        except (RunNotFoundError, ValueError) as exc:
+            raise ResourceNotFoundError("Harness run was not found.") from exc
+        if content is None:
+            raise ResourceNotFoundError("Harness report is not available yet.")
+        return {"runId": run_id, "content": content}
+
+    @app.post("/api/runs/{run_id}/cancel")
+    async def cancel_run(run_id: str):
+        try:
+            return (await harness_runtime.cancel(run_id)).model_dump(mode="json")
+        except (RunNotFoundError, ValueError) as exc:
+            raise ResourceNotFoundError("Harness run was not found.") from exc
+
+    @app.get("/api/runs/{run_id}/permissions")
+    def get_run_permissions(run_id: str, status: str | None = None):
+        try:
+            parsed = PermissionStatus(status) if status else None
+            return [item.model_dump(mode="json") for item in harness_runtime.list_permissions(run_id, parsed)]
+        except ValueError as exc:
+            raise ApiError(400, "INVALID_PERMISSION_STATUS", "Unknown permission status.") from exc
+        except RunNotFoundError as exc:
+            raise ResourceNotFoundError("Harness run was not found.") from exc
+
+    @app.post("/api/runs/{run_id}/permissions/{permission_id}/decision")
+    async def decide_run_permission(run_id: str, permission_id: str, command: PermissionDecisionRequest):
+        try:
+            result = await harness_runtime.decide_permission(
+                run_id,
+                permission_id,
+                allow=command.decision == "allow_once",
+                reason=command.reason,
+            )
+            return result.model_dump(mode="json")
+        except RunNotFoundError as exc:
+            raise ResourceNotFoundError("Harness run was not found.") from exc
+        except PermissionError as exc:
+            status_code = 404 if exc.code == "PERMISSION_NOT_FOUND" else 409
+            raise ApiError(status_code, exc.code, exc.message) from exc
+
+    @app.get("/api/executors/{executor_name}")
+    async def get_executor(executor_name: str):
+        try:
+            return await harness_runtime.executors.probe(executor_name)
+        except ExecutorError as exc:
+            raise ApiError(503, exc.code, exc.message) from exc
+
+    @app.post("/api/executors/{executor_name}/probe")
+    async def probe_executor(executor_name: str):
+        try:
+            return await harness_runtime.executors.probe(executor_name, live=True, force=True)
+        except ExecutorError as exc:
+            raise ApiError(503, exc.code, exc.message) from exc
+
+    @app.get("/api/runs/{run_id}/events")
+    async def run_events(run_id: str, request: Request):
+        raw_last_id = request.headers.get("last-event-id", "0")
+        try:
+            last_id = max(0, int(raw_last_id))
+            harness_runtime.store.get_run(run_id)
+        except (ValueError, RunNotFoundError) as exc:
+            if isinstance(exc, ValueError) and not str(exc).startswith("Invalid run id"):
+                raise ApiError(400, "INVALID_EVENT_ID", "Last-Event-ID must be an integer.") from exc
+            raise ResourceNotFoundError("Harness run was not found.") from exc
+
+        async def events():
+            cursor = last_id
+            queue = harness_runtime.store.subscribe(run_id)
+            try:
+                while True:
+                    for event in harness_runtime.store.read_events(run_id, after=cursor):
+                        cursor = event.sequence
+                        yield (
+                            f"id: {event.sequence}\n"
+                            f"event: {event.type}\n"
+                            f"data: {event.model_dump_json()}\n\n"
+                        )
+                    record = harness_runtime.store.get_run(run_id)
+                    if record.status in TERMINAL_STATUSES and not harness_runtime.store.read_events(run_id, after=cursor):
+                        return
+                    if await request.is_disconnected():
+                        return
+                    try:
+                        queued = await asyncio.wait_for(queue.get(), timeout=settings.graph_sse_heartbeat_seconds)
+                    except asyncio.TimeoutError:
+                        yield ": heartbeat\n\n"
+                        continue
+                    if queued.sequence <= cursor:
+                        continue
+            finally:
+                harness_runtime.store.unsubscribe(run_id, queue)
 
         return StreamingResponse(
             events(),

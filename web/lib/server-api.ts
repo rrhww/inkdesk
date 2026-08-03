@@ -154,6 +154,79 @@ export type GraphStreamEvent =
   | { type: "node.active"; nodeId: string }
   | { type: "node.idle"; nodeId: string };
 
+export type StageStatus =
+  | "pending"
+  | "ready"
+  | "running"
+  | "succeeded"
+  | "failed"
+  | "blocked"
+  | "skipped"
+  | "cancelled";
+
+export type HarnessFinding = {
+  id: string;
+  dimension: string;
+  severity: "low" | "medium" | "high" | "critical";
+  confidence: "low" | "medium" | "high";
+  title: string;
+  consequence: string;
+  causeChain: string;
+  owner: string;
+  evidence: string[];
+  expectedArtifact: string;
+  repairScope: string;
+  verifiers: string[];
+  status: string;
+};
+
+export type HarnessRun = {
+  id: string;
+  capabilityId: string;
+  executor: string;
+  inputs: { target: string; depth: string; repoPath?: string };
+  status: string;
+  sourceHead: string;
+  sourceDirty?: boolean;
+  createdAt: string;
+  updatedAt: string;
+  stageStates: Record<string, StageStatus>;
+  reportPath?: string | null;
+  error?: { code: string; message: string } | null;
+  sessionSummaries?: Array<Record<string, unknown>>;
+  evidence?: {
+    sessionEvidenceStatus: string;
+    envelopes: Record<string, { status: string; summaryFacts: string[]; evidence: unknown[] }>;
+  } | null;
+  findings?: {
+    dimensionScores: Record<string, number>;
+    findings: HarnessFinding[];
+    supportTrack: string;
+  } | null;
+};
+
+export type HarnessPermission = {
+  id: string;
+  runId: string;
+  stageId: string;
+  sessionId: string;
+  toolUseId: string;
+  tool: string;
+  inputPreview: Record<string, unknown>;
+  status: "pending" | "allowed" | "denied" | "expired" | "cancelled";
+  createdAt: string;
+  expiresAt: string;
+  resolvedAt?: string | null;
+  reason?: string | null;
+};
+
+export type HarnessRunEvent = {
+  sequence: number;
+  type: string;
+  timestamp: string;
+  data: Record<string, unknown>;
+};
+
 function isGraphSnapshot(value: unknown): value is GraphSnapshot {
   if (!value || typeof value !== "object") {
     return false;
@@ -242,10 +315,87 @@ function subscribeToGraphEvents(
   };
 }
 
+function subscribeToRunEvents(
+  runId: string,
+  onEvent: (event: HarnessRunEvent) => void,
+  onStatusChange: (status: GraphStreamStatus) => void
+) {
+  const apiBaseUrl = resolveApiBaseUrl();
+  if (!apiBaseUrl) {
+    onStatusChange("offline");
+    return () => undefined;
+  }
+  let closed = false;
+  const eventSource = new EventSource(`${apiBaseUrl}/runs/${encodeURIComponent(runId)}/events`);
+  onStatusChange("connecting");
+  eventSource.onopen = () => !closed && onStatusChange("connected");
+  eventSource.onerror = () => !closed && onStatusChange("offline");
+  const names = [
+    "run.opened",
+    "stage.started",
+    "stage.succeeded",
+    "stage.failed",
+    "executor.session.started",
+    "executor.session.completed",
+    "executor.delta",
+    "executor.probe.started",
+    "executor.probe.completed",
+    "executor.tool.requested",
+    "executor.tool.approved",
+    "executor.tool.started",
+    "executor.tool.completed",
+    "executor.tool.failed",
+    "executor.tool_denied",
+    "workspace.prepared",
+    "workspace.released",
+    "finding.created",
+    "artifact.validated",
+    "artifact.written",
+    "run.succeeded",
+    "run.failed",
+    "run.cancelled",
+    "run.stale",
+    "stream.end"
+  ];
+  for (const name of names) {
+    eventSource.addEventListener(name, ((rawEvent: MessageEvent<string>) => {
+      try {
+        const value = JSON.parse(rawEvent.data) as HarnessRunEvent;
+        if (typeof value.sequence === "number" && value.type === name) {
+          onEvent(value);
+          if (name === "stream.end") {
+            closed = true;
+            eventSource.close();
+            onStatusChange("connected");
+          }
+        }
+      } catch {
+        // Persisted stream continues after malformed client input.
+      }
+    }) as EventListener);
+  }
+  return () => {
+    closed = true;
+    eventSource.close();
+  };
+}
+
 export const ServerAPI = {
   fetchGraphTopology: (scope: GraphScope = "all") =>
     fetchInkdeskJson<GraphSnapshot>(scope === "all" ? "/graph" : `/graph?source=${scope}`),
   fetchNodeDocument: (nodeId: string) =>
     fetchInkdeskJson<GraphNodeDocument>(`/graph/document?nodeId=${encodeURIComponent(nodeId)}`),
-  subscribeToGraphEvents
+  fetchHarnessRun: (runId: string) => fetchInkdeskJson<HarnessRun>(`/runs/${encodeURIComponent(runId)}`),
+  fetchHarnessReport: (runId: string) =>
+    fetchInkdeskJson<{ runId: string; content: string }>(`/runs/${encodeURIComponent(runId)}/report`),
+  cancelHarnessRun: (runId: string) => postInkdeskJson<HarnessRun>(`/runs/${encodeURIComponent(runId)}/cancel`, {}),
+  fetchHarnessPermissions: (runId: string) =>
+    fetchInkdeskJson<HarnessPermission[]>(`/runs/${encodeURIComponent(runId)}/permissions?status=pending`),
+  decideHarnessPermission: (runId: string, permissionId: string, decision: "allow_once" | "deny") =>
+    postInkdeskJson<HarnessPermission>(
+      `/runs/${encodeURIComponent(runId)}/permissions/${encodeURIComponent(permissionId)}/decision`,
+      { decision }
+    ),
+  subscribeToGraphEvents,
+  subscribeToRunEvents
 };

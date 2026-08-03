@@ -11,8 +11,13 @@ import httpx
 
 from inkdesk_server.core.config import Settings
 from inkdesk_server.graph_index import GraphSnapshot
+from inkdesk_server.harness.models import (
+    WorkflowExecutionEvent,
+    WorkflowStage,
+    WorkflowStageResult,
+)
+from inkdesk_server.harness.scheduler import WorkflowScheduler
 from inkdesk_server.schemas import EngineCommandRequest
-from inkdesk_skill_sdk.scheduler import DagExecutionEvent, DagTask, DagTaskResult, KahnDagScheduler
 
 
 logger = logging.getLogger(__name__)
@@ -96,7 +101,7 @@ class EngineRuntime:
         await queue.put(PipelineItem("stream.open", {"command": request.command}))
         try:
             tasks = self._build_tasks(request)
-            scheduler = KahnDagScheduler(max_concurrency=request.maxConcurrency)
+            scheduler = WorkflowScheduler(max_concurrency=request.maxConcurrency)
             graph_node_ids = [node.id for node in self.graph_snapshot().nodes if node.status != "missing"]
             active_nodes = (
                 {
@@ -107,31 +112,32 @@ class EngineRuntime:
                 else {}
             )
 
-            async def on_event(event: DagExecutionEvent) -> None:
-                active_node_id = active_nodes.get(event.task_id or "")
+            async def on_event(event: WorkflowExecutionEvent) -> None:
+                legacy_event_type = event.type.replace("stage.", "task.").replace("workflow.", "dag.")
+                active_node_id = active_nodes.get(event.stage_id or "")
                 if self.runtime_event_sink is not None and active_node_id is not None:
-                    if event.type == "task.started":
+                    if legacy_event_type == "task.started":
                         self.runtime_event_sink(
                             "node.active",
-                            {"nodeId": active_node_id, "taskId": event.task_id},
+                            {"nodeId": active_node_id, "taskId": event.stage_id},
                         )
-                    elif event.type in {"task.completed", "task.failed"}:
+                    elif legacy_event_type in {"task.completed", "task.failed"}:
                         self.runtime_event_sink(
                             "node.idle",
-                            {"nodeId": active_node_id, "taskId": event.task_id},
+                            {"nodeId": active_node_id, "taskId": event.stage_id},
                         )
                 await queue.put(
                     PipelineItem(
-                        event.type,
+                        legacy_event_type,
                         {
-                            "taskId": event.task_id,
+                            "taskId": event.stage_id,
                             "timestamp": event.timestamp,
                             **dict(event.data),
                         },
                     )
                 )
 
-            async def runner(task: DagTask, dependencies: Mapping[str, DagTaskResult]):
+            async def runner(task: WorkflowStage, dependencies: Mapping[str, WorkflowStageResult]):
                 output_parts: list[str] = []
                 async for token in self._tokens(task, request.command, dependencies):
                     output_parts.append(token)
@@ -155,10 +161,10 @@ class EngineRuntime:
         finally:
             await queue.put(None)
 
-    def _build_tasks(self, request: EngineCommandRequest) -> tuple[DagTask, ...]:
+    def _build_tasks(self, request: EngineCommandRequest) -> tuple[WorkflowStage, ...]:
         if request.tasks:
             return tuple(
-                DagTask(
+                WorkflowStage(
                     id=task.id,
                     dependencies=tuple(task.dependencies),
                     kind=task.kind,
@@ -168,10 +174,10 @@ class EngineRuntime:
                 for task in request.tasks
             )
         return (
-            DagTask("kb-match", kind="kb_match", prompt="Match the command to the local knowledge graph."),
-            DagTask("repo-analysis", kind="repo_analysis", prompt="Inspect the repository implications."),
-            DagTask("security-investigation", kind="security", prompt="Identify security and governance risks."),
-            DagTask(
+            WorkflowStage("kb-match", kind="kb_match", prompt="Match the command to the local knowledge graph."),
+            WorkflowStage("repo-analysis", kind="repo_analysis", prompt="Inspect the repository implications."),
+            WorkflowStage("security-investigation", kind="security", prompt="Identify security and governance risks."),
+            WorkflowStage(
                 "synthesis",
                 dependencies=("kb-match", "repo-analysis", "security-investigation"),
                 kind="synthesis",
@@ -181,9 +187,9 @@ class EngineRuntime:
 
     async def _tokens(
         self,
-        task: DagTask,
+        task: WorkflowStage,
         command: str,
-        dependencies: Mapping[str, DagTaskResult],
+        dependencies: Mapping[str, WorkflowStageResult],
     ) -> AsyncIterator[str]:
         if self._provider.api_key and self.settings.agent_runtime != "deterministic":
             try:
@@ -207,9 +213,9 @@ class EngineRuntime:
 
     async def _provider_tokens(
         self,
-        task: DagTask,
+        task: WorkflowStage,
         command: str,
-        dependencies: Mapping[str, DagTaskResult],
+        dependencies: Mapping[str, WorkflowStageResult],
     ) -> AsyncIterator[str]:
         dependency_context = "\n".join(
             f"[{task_id}] {result.output}" for task_id, result in dependencies.items()
@@ -252,9 +258,9 @@ class EngineRuntime:
 
     def _local_output(
         self,
-        task: DagTask,
+        task: WorkflowStage,
         command: str,
-        dependencies: Mapping[str, DagTaskResult],
+        dependencies: Mapping[str, WorkflowStageResult],
     ) -> str:
         if task.kind == "kb_match":
             snapshot = self.graph_snapshot()

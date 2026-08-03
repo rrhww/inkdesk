@@ -13,7 +13,13 @@ from typing import Any
 
 import yaml
 
-from inkdesk_skill_sdk.contracts import REQUIRED_FILES, Contract, SkillStatus
+from inkdesk_skill_sdk.capabilities import (
+    CapabilityManifest,
+    PackageFormat,
+    load_skill_package,
+    parse_skill_frontmatter,
+)
+from inkdesk_skill_sdk.contracts import Contract, SkillStatus
 from inkdesk_skill_sdk.validation import (
     ValidationResult,
     validate_safety,
@@ -35,6 +41,9 @@ class SkillMetadata:
     kind: str
     summary: str
     validation_result: ValidationResult | None
+    package_format: PackageFormat = PackageFormat.LEGACY_CONTRACT
+    executable: bool = True
+    capability: CapabilityManifest | None = None
 
 
 class SkillRegistry:
@@ -47,7 +56,7 @@ class SkillRegistry:
         self._roots.append(Path(root).resolve())
 
     def discover(self) -> list[Path]:
-        """Find all directories that look like Skill packages (have SKILL.md + contract.json)."""
+        """Find all direct child directories containing an Agent Skills SKILL.md."""
         packages: list[Path] = []
         seen: set[str] = set()
 
@@ -62,8 +71,7 @@ class SkillRegistry:
                 rp = str(entry.resolve())
                 if rp in seen:
                     continue
-                # Check if it has the required files
-                if all((entry / f).is_file() for f in REQUIRED_FILES):
+                if (entry / "SKILL.md").is_file():
                     packages.append(entry)
                     seen.add(rp)
 
@@ -73,10 +81,6 @@ class SkillRegistry:
         """Parse one package and return metadata, or None if unparseable."""
         package_path = package_path.resolve()
         name = package_path.name
-
-        contract = self._load_contract(package_path)
-        if contract is None:
-            return None
 
         # Run validation
         try:
@@ -93,16 +97,75 @@ class SkillRegistry:
         except Exception:
             result = None
 
+        try:
+            package = load_skill_package(package_path, warn_legacy=False)
+        except Exception:
+            return self._invalid_metadata(package_path, result)
+
         return SkillMetadata(
             name=name,
             path=str(package_path),
-            contract_id=contract.id,
-            version=contract.version,
-            status=contract.status,
-            category=contract.category.value,
-            kind=contract.kind.value,
-            summary=contract.summary,
+            contract_id=package.frontmatter.name,
+            version=package.capability.version if package.capability else "0.0.0",
+            status=package.capability.status if package.capability else SkillStatus.DRAFT,
+            category=(
+                package.legacy_contract.category.value
+                if package.legacy_contract
+                else "capability" if package.executable else "external"
+            ),
+            kind=(
+                package.legacy_contract.kind.value
+                if package.legacy_contract
+                else "workflow" if package.executable else "instruction"
+            ),
+            summary=package.frontmatter.description,
             validation_result=result,
+            package_format=package.package_format,
+            executable=package.executable,
+            capability=package.capability,
+        )
+
+    @staticmethod
+    def _invalid_metadata(
+        package_path: Path,
+        validation_result: ValidationResult | None,
+    ) -> SkillMetadata | None:
+        try:
+            frontmatter = parse_skill_frontmatter(package_path / "SKILL.md")
+        except Exception:
+            return None
+
+        contract: Contract | None = None
+        capability: CapabilityManifest | None = None
+        try:
+            if (package_path / "contract.json").is_file():
+                contract = Contract.model_validate(
+                    json.loads((package_path / "contract.json").read_text(encoding="utf-8"))
+                )
+            elif (package_path / "inkdesk.yaml").is_file():
+                capability = CapabilityManifest.model_validate(
+                    yaml.safe_load((package_path / "inkdesk.yaml").read_text(encoding="utf-8"))
+                )
+        except Exception:
+            pass
+
+        return SkillMetadata(
+            name=package_path.name,
+            path=str(package_path),
+            contract_id=contract.id if contract else capability.id if capability else frontmatter.name,
+            version=contract.version if contract else capability.version if capability else "0.0.0",
+            status=contract.status if contract else capability.status if capability else SkillStatus.DRAFT,
+            category=contract.category.value if contract else "capability" if capability else "external",
+            kind=contract.kind.value if contract else "workflow" if capability else "instruction",
+            summary=contract.summary if contract else frontmatter.description,
+            validation_result=validation_result,
+            package_format=(
+                PackageFormat.LEGACY_CONTRACT
+                if contract
+                else PackageFormat.CAPABILITY if capability else PackageFormat.AGENT_SKILL
+            ),
+            executable=contract is not None or capability is not None,
+            capability=capability,
         )
 
     def resolve_all(self) -> list[SkillMetadata]:
@@ -142,18 +205,9 @@ class SkillRegistry:
                     "kind": m.kind,
                     "summary": m.summary,
                     "valid": m.validation_result.passed if m.validation_result else False,
+                    "format": m.package_format.value,
+                    "executable": m.executable,
                 }
                 for m in all_meta
             ],
         }
-
-    @staticmethod
-    def _load_contract(package_path: Path) -> Contract | None:
-        contract_path = package_path / "contract.json"
-        if not contract_path.is_file():
-            return None
-        try:
-            data = json.loads(contract_path.read_text(encoding="utf-8"))
-            return Contract.model_validate(data)
-        except Exception:
-            return None
