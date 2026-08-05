@@ -5,11 +5,11 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Inkdesk",
-  description: "单人私有、Dev Run-first 的 AI 研发自动化控制台",
+  description: "面向研发人员的可信知识看板与上下文工作台",
   metadataBase: new URL("https://inkdesk.local"),
   openGraph: {
     title: "Inkdesk",
-    description: "一个把 Dev Run 任务驱动、raw 导入、ingest 编译和 wiki 沉淀整合进同一研发控制台的私有系统。",
+    description: "围绕项目主题呈现当前理解、关键决策、来源和知识缺口。",
     type: "website"
   }
 };

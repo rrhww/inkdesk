@@ -15,8 +15,6 @@ READ_PATHS = [
     "/api/raw",
     "/api/ingest",
     "/api/wiki",
-    "/api/runs",
-    "/api/compile/queue",
 ]
 
 
@@ -27,20 +25,7 @@ def verify_read_paths(database_url: str, vault_root: Path) -> dict[str, Any]:
     os.environ["INKDESK_ENABLE_LOCAL_SEED"] = "false"
     os.environ["INKDESK_ENABLE_WEB_ASSIST"] = "false"
 
-    from inkdesk_server import compile_worker
     from inkdesk_server.research import ResearchWorkspaceService
-
-    class NoopCompileWorker:
-        def start(self) -> None:
-            return None
-
-        def stop(self) -> None:
-            return None
-
-        def enqueue(self, _task_id: str) -> None:
-            return None
-
-    compile_worker.get_compile_worker = lambda _settings: NoopCompileWorker()  # type: ignore[assignment]
     ResearchWorkspaceService.bootstrap_seed_data = lambda _service: None
     ResearchWorkspaceService.ensure_research_seed_state = lambda _service: None
     from fastapi.testclient import TestClient

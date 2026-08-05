@@ -498,7 +498,7 @@ export const researchAskHistoryFixture: ResearchAskHistoryEntry[] = [
   {
     id: "ask-topic-001",
     title: "这个主题当前最稳定的理解是什么？",
-    href: "/app/ask?q=%E8%BF%99%E4%B8%AA%E4%B8%BB%E9%A2%98%E5%BD%93%E5%89%8D%E6%9C%80%E7%A8%B3%E5%AE%9A%E7%9A%84%E7%90%86%E8%A7%A3%E6%98%AF%E4%BB%80%E4%B9%88%EF%BC%9F&topicId=topic-001",
+    href: "/app/wiki/topic-001",
     topicTitle: "Inkdesk repositioning",
     preview: "当前最稳定的理解是 wiki 是新的核心对象。",
     updatedAt: "2026-05-03T03:00:00Z"
@@ -521,7 +521,7 @@ export const workspaceAskBriefingFixture: ResearchAskBriefing = {
     {
       title: "ingest 队列有 3 条待审阅提案",
       detail: "这些 AI 编译结果还没有被人工确认，wiki 的长期记忆仍未更新。",
-      href: "/app/ingest"
+      href: "/app/wiki"
     },
     {
       title: "有 1 条 claim 缺少直接证据",
@@ -531,12 +531,12 @@ export const workspaceAskBriefingFixture: ResearchAskBriefing = {
     {
       title: "有 1 条常用 claim 需要重审",
       detail: "这条 claim 最近仍被 Ask 使用，但验证时间过旧或证据仍偏弱，最好先进入 ingest 做一轮复核。",
-      href: "/app/ingest"
+      href: "/app/wiki"
     },
     {
       title: "有 2 条 claim 彼此冲突",
       detail: "同一主题里已经出现方向相反的 claim，继续推进前最好先进入 ingest 统一裁决。",
-      href: "/app/ingest"
+      href: "/app/wiki"
     }
   ],
   nextActions: [
@@ -550,7 +550,7 @@ export const workspaceAskBriefingFixture: ResearchAskBriefing = {
       kind: "OPEN_INGEST",
       label: "打开审阅队列",
       description: "先处理最靠前的提案，再继续扩展知识层。",
-      href: "/app/ingest"
+      href: "/app/wiki"
     },
     {
       kind: "OPEN_RAW",
@@ -575,7 +575,7 @@ export const workspaceAskBriefingFixture: ResearchAskBriefing = {
       type: "REVIEW_BACKLOG",
       title: "ingest 队列有 3 条待审阅提案",
       summary: "这些 AI 编译结果还没有被接受或忽略，wiki 的长期记忆仍未更新。",
-      href: "/app/ingest"
+      href: "/app/wiki"
     },
     {
       type: "UNSUPPORTED_CLAIM",
@@ -587,13 +587,13 @@ export const workspaceAskBriefingFixture: ResearchAskBriefing = {
       type: "STALE_CLAIM",
       title: "有 1 条常用 claim 需要重审",
       summary: "这条高频 claim 最近仍被 Ask 使用，但验证时间过旧或证据仍偏弱。",
-      href: "/app/ingest"
+      href: "/app/wiki"
     },
     {
       type: "CONFLICTING_CLAIM",
       title: "有 2 条 claim 彼此冲突",
       summary: "同一主题里出现了方向相反的 claim，建议先回到 ingest 做一轮统一裁决。",
-      href: "/app/ingest"
+      href: "/app/wiki"
     }
   ],
   generatedAt: "2026-05-11T09:00:00Z"
@@ -620,12 +620,12 @@ export const askTurnAskBriefingFixture: ResearchAskBriefing = {
     {
       title: "有 1 条常用 claim 需要重审",
       detail: "这条 claim 最近仍被 Ask 使用，但验证时间过旧或证据仍偏弱，下一步更适合先送进 ingest 复核。",
-      href: "/app/ingest"
+      href: "/app/wiki"
     },
     {
       title: "有 2 条 claim 彼此冲突",
       detail: "同一主题里已经出现方向相反的 claim，继续沉淀前最好先统一裁决。",
-      href: "/app/ingest"
+      href: "/app/wiki"
     }
   ],
   nextActions: [
@@ -645,13 +645,13 @@ export const askTurnAskBriefingFixture: ResearchAskBriefing = {
       kind: "OPEN_INGEST",
       label: "发起 claim 重审",
       description: "这些高频 claim 需要回到 ingest 做一轮复核，避免继续带着旧判断推进。",
-      href: "/app/ingest"
+      href: "/app/wiki"
     },
     {
       kind: "OPEN_INGEST",
       label: "处理 claim 冲突",
       description: "回到 ingest 统一裁决互相打架的 claim，避免继续带着冲突理解推进。",
-      href: "/app/ingest"
+      href: "/app/wiki"
     }
   ],
   suggestedQuestions: ["如果继续联网补料，最需要验证哪条外部论据？"],
@@ -672,13 +672,13 @@ export const askTurnAskBriefingFixture: ResearchAskBriefing = {
       type: "STALE_CLAIM",
       title: "有 1 条常用 claim 需要重审",
       summary: "这条高频 claim 最近仍被 Ask 使用，但验证时间过旧或证据仍偏弱。",
-      href: "/app/ingest"
+      href: "/app/wiki"
     },
     {
       type: "CONFLICTING_CLAIM",
       title: "有 2 条 claim 彼此冲突",
       summary: "同一主题里出现了方向相反的 claim，建议先回到 ingest 做一轮统一裁决。",
-      href: "/app/ingest"
+      href: "/app/wiki"
     }
   ],
   generatedAt: "2026-05-11T09:05:00Z"
@@ -687,7 +687,6 @@ export const askTurnAskBriefingFixture: ResearchAskBriefing = {
 export function getResearchTopicDetailFixture(id: string) {
   return researchTopicDetailsFixture.find((topic) => topic.id === id);
 }
-
 export function answerResearchQuestionFixture(request: ResearchAskRequest): ResearchAskResponse {
   const topic = request.topicId ? getResearchTopicDetailFixture(request.topicId) : undefined;
   const mode = request.mode === "vault_plus_web" ? "vault_plus_web" : "vault";

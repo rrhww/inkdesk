@@ -16,9 +16,6 @@ body {
 
 body {
   @apply bg-ink-bg text-ink-text font-label;
-  background:
-    radial-gradient(circle at top left, rgba(107, 216, 203, 0.08), transparent 26%),
-    linear-gradient(180deg, #fbfcfc 0%, #f4f6f6 100%);
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
 }
@@ -36,7 +33,7 @@ textarea {
 }
 
 .paper-card {
-  @apply rounded-[28px] bg-white shadow-paper;
+  @apply rounded-lg border border-ink-line bg-white shadow-none;
 }
 
 .hide-scrollbar {

@@ -1,24 +1,20 @@
 # Inkdesk
 
-Inkdesk 是一个面向研发团队的 AI 能力编译与运行平台。它把代码、文档、历史任务、测试和运行证据沉淀为可审阅、可版本化、可评测的知识与工作流，让同类研发任务能够在下一次更快、更可靠地完成。
-
-它不是通用聊天工具、笔记软件、IDE 或编码 Agent 的替代品。Inkdesk 提供的是控制面：准备受边界约束的上下文、编排阶段、保存产物与证据、执行审阅门禁；Claude Code、Codex 等外部 Agent 可作为可替换执行器接入。
+Inkdesk 是一个面向研发知识的轻量观测与治理中枢。它以只读拓扑呈现知识节点、来源、证据覆盖和风险信号，并通过 Vault 与 MCP 接收外部工具产生的结果。
 
 ## 当前能力
 
 当前版本已提供单实例、无需登录的本地工作区，核心闭环如下：
 
 ```text
-原始材料 -> 知识编译 -> 审阅提案 -> Canonical Wiki
-    ^                                  |
-    |                                  v
-沉淀 <---- Context Ask <---- Dev Run / 研发任务
+外部 CLI / Agent -> Vault 文件 -> 检索索引 -> Wiki 拓扑
+                         \-> Ask 文件快照
 ```
 
-- **Dev Run**：创建并追踪 PRD、缺陷或改造任务；使用阶段轨道推进任务，保存产物、证据与决策。
-- **Knowledge Compiler**：导入文本、网页或 PDF，生成可接受或拒绝的知识提案，并写回 Vault。
-- **Context Ask**：为当前任务查询带来源的上下文，识别知识缺口和下一步动作，并将有价值的结果沉淀回审阅队列。
-- **Wiki 与证据治理**：浏览长期知识、来源、Claim 状态、冲突与待解决问题。
+- **Wiki 拓扑与证据治理**：浏览长期知识、来源、Claim 状态、冲突与待解决问题。
+- **只读监控卡片**：前端不承载编辑、提交、编译或阶段状态机。
+- **文件快照**：Ask 的线程、检索和判断快照写入 Vault，不再扩张关系型数据库表。
+- **MCP CLI 接口**：提供 `search`、`deposit` 和 `health_check` 三个精简工具。
 - **Skill Workbench**：浏览和查看可复用研发动作的契约与门禁。
 - **Compile / Health**：查看编译流水线和知识库健康状态。
 - **本地基线与恢复工具**：保存关键行为契约、数据指纹和恢复演练证据，防止后续迭代破坏已有闭环。
@@ -41,8 +37,8 @@ Next.js Web
   |  /api proxy and server actions
   v
 FastAPI service
-  |-- PostgreSQL + pgvector: 索引、队列、运行状态与派生视图
-  |-- Vault Markdown: 长期知识和能力文件
+  |-- PostgreSQL + pgvector: 权限元数据与检索索引
+  |-- Vault Markdown / JSON: 长期知识、能力文件与 Ask 快照
   |-- LLM providers / external executors
   `-- local compiler, review and evaluation services
 ```
@@ -53,14 +49,11 @@ FastAPI service
 
 | 路径 | 用途 |
 | --- | --- |
-| `/app` | Dev Run 工作台 |
-| `/app/runs/[id]` | 单个任务的阶段、产物与行动 |
-| `/app/ask` | Context Ask 与沉淀 |
-| `/app/raw` | 原始材料 |
-| `/app/ingest` | 知识提案审阅 |
-| `/app/wiki` | Wiki 浏览与来源追溯 |
+| `/app` | 重定向到 Wiki 拓扑 |
+| `/app/wiki` | 知识拓扑监控 |
+| `/app/wiki/[id]` | Wiki 节点只读详情 |
+| `/app/raw` | 来源只读快照 |
 | `/app/skills` | Skill Workbench |
-| `/app/compile` | 知识编译流水线 |
 | `/app/health` | 知识库健康检查 |
 
 ## 技术栈

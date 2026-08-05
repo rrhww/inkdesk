@@ -1,539 +1,227 @@
 from __future__ import annotations
 
-from datetime import datetime
+from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class ApiErrorResponse(BaseModel):
     code: str
     message: str
 
-class VaultStatusResponse(BaseModel):
-    initialized: bool
-    vaultType: str | None = None
-    sharedDirsExist: bool
 
+class EngineTaskRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
 
-class VaultInitializeRequest(BaseModel):
-    vaultType: str
-
-
-class CreateSourceRequest(BaseModel):
-    kind: str = "TEXT"
-    title: str | None = None
-    locator: str | None = None
-    excerpt: str | None = None
-    body: str | None = None
-
-
-class WebRawImportRequest(BaseModel):
-    url: str
-    title: str | None = None
-
-
-class SourceResponse(BaseModel):
     id: str
-    kind: str
-    status: str
+    dependencies: list[str] = Field(default_factory=list)
+    kind: str = "agent"
+    prompt: str = ""
+    metadata: dict = Field(default_factory=dict)
+
+
+class EngineCommandRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    command: str
+    tasks: list[EngineTaskRequest] = Field(default_factory=list)
+    maxConcurrency: int = Field(default=8, ge=1, le=32)
+
+
+TASK_ORIGINS = {
+    "realtime_requirement",
+    "knowledge_signal",
+    "execution_finding",
+    "manual",
+}
+TASK_STATUSES = {"backlog", "ready", "doing", "review", "blocked", "done"}
+CONTEXT_STATUSES = {"pending", "searching", "ready", "gap", "failed"}
+
+
+class TaskCreateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    title: str = Field(min_length=1, max_length=240)
+    goal: str = Field(min_length=1, max_length=10000)
+    originType: Literal["realtime_requirement", "knowledge_signal", "execution_finding", "manual"]
+    originRef: str | None = Field(default=None, max_length=2000)
+    priority: str = Field(default="medium", max_length=32)
+    risk: str = Field(default="medium", max_length=32)
+    knowledgeTopicIds: list[str] = Field(default_factory=list, max_length=100)
+
+    @model_validator(mode="after")
+    def validate_knowledge_origin(self):
+        if self.originType == "knowledge_signal" and (
+            not self.originRef or not self.knowledgeTopicIds
+        ):
+            raise ValueError(
+                "Knowledge-signal tasks require originRef and at least one knowledgeTopicId."
+            )
+        return self
+
+
+class TaskTransitionRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    status: Literal["backlog", "ready", "doing", "review", "blocked", "done"]
+    ifVersion: int = Field(ge=1)
+
+
+class TaskSummary(BaseModel):
+    id: str
     title: str
-    locator: str | None = None
-    excerpt: str
-    legacyNoteId: str | None = None
-    vaultPath: str | None = None
+    goal: str
+    status: str
+    originType: str
+    originRef: str | None = None
+    priority: str
+    risk: str
+    contextStatus: str
+    knowledgeTopicIds: list[str] = Field(default_factory=list)
+    version: int
+    createdAt: str
+    updatedAt: str
+
+
+class TaskDetail(TaskSummary):
+    contextPack: dict | None = None
+    knowledgeGap: dict | None = None
+
+
+class TaskListResponse(BaseModel):
+    tasks: list[TaskSummary]
+
+
+class KnowledgeSignal(BaseModel):
+    id: str
+    type: str
+    severity: str
+    title: str
+    detail: str
+    sourcePath: str | None = None
+
+
+class KnowledgeSource(BaseModel):
+    id: str
+    documentId: str
+    title: str
+    path: str
+    source: str
+    kind: str
+    summary: str
+    updatedAt: str
+    href: str | None = None
+    locator: dict[str, str | int] | None = None
+    excerpt: str = ""
     contentHash: str | None = None
-    updatedAt: datetime
+    sourceCoverage: Literal["supported", "partial", "none", "unknown"] = "unknown"
+    provenanceStatus: Literal["supported", "partial", "unsupported", "unknown"] = "unknown"
 
 
-class ReviewDecisionResponse(BaseModel):
-    reviewId: str
-    status: str
-    topicId: str | None = None
-
-
-class ProposalTopicDecisionResponse(BaseModel):
-    decision: str
-    targetTopicId: str | None = None
-    targetTopicTitle: str | None = None
-    proposedTopicTitle: str | None = None
-
-
-class ProposalClaimResponse(BaseModel):
-    statement: str
-    citationLabel: str
-    sourceId: str | None = None
-    citationChunkIds: list[str] = Field(default_factory=list)
-    supportingChunkIds: list[str] = Field(default_factory=list)
-    evidenceCount: int = 0
-    provenanceStatus: str = "unsupported"
-    lastVerifiedAt: datetime | None = None
-    usageCount: int = 0
-    lastUsedAt: datetime | None = None
-    needsReview: bool = False
-    hasConflict: bool = False
-
-
-class ProposalEvidenceResponse(BaseModel):
-    sourceId: str
-    sourceTitle: str
-    sourceVaultPath: str | None = None
-    locator: str | None = None
-    excerpt: str
-    chunkId: str | None = None
-    entityType: str | None = None
-    entityId: str | None = None
-    topicId: str | None = None
-
-
-class ProposalPayloadResponse(BaseModel):
-    topicDecision: ProposalTopicDecisionResponse
-    summaryChanges: list[str]
-    claims: list[ProposalClaimResponse]
-    conflicts: list[str]
-    openQuestions: list[str]
-    explanation: str
-    evidence: list[ProposalEvidenceResponse]
-
-
-class ReviewItemResponse(BaseModel):
+class KnowledgeRelatedTopic(BaseModel):
     id: str
+    title: str
     kind: str
-    proposalKind: str
-    status: str
-    title: str
-    summary: str
-    sourceId: str | None = None
-    sourceTitle: str | None = None
-    targetTopicId: str | None = None
-    targetTopicTitle: str | None = None
-    proposedTopicTitle: str | None = None
-    proposedUnderstanding: str | None = None
-    proposedOpenQuestions: str | None = None
-    proposedClaim: str | None = None
-    proposedVaultPath: str | None = None
-    sourceVaultPath: str | None = None
-    proposalPayload: ProposalPayloadResponse
-    createdAt: datetime
 
 
-class TopicSummaryResponse(BaseModel):
+class KnowledgeTopicSummary(BaseModel):
     id: str
     title: str
     summary: str
+    kind: str
+    path: str
+    source: str
+    status: str
+    updatedAt: str
     sourceCount: int
     openQuestionCount: int
-    unsupportedClaimCount: int = 0
-    staleClaimCount: int = 0
-    conflictingClaimCount: int = 0
+    signalCount: int
+    signals: list[KnowledgeSignal]
+    healthSignals: list[KnowledgeSignal]
     vaultPath: str | None = None
-    updatedAt: datetime
+    sourceCoverage: Literal["supported", "partial", "none", "unknown"] = "unknown"
+    provenanceStatus: Literal["supported", "partial", "unsupported", "unknown"] = "unknown"
 
 
-class TopicSourceLinkResponse(BaseModel):
-    sourceId: str
+class KnowledgeTopicStats(BaseModel):
+    topicCount: int
+    sourceCount: int
+    signalCount: int
+    attentionCount: int
+
+
+class KnowledgeTopicList(BaseModel):
+    topics: list[KnowledgeTopicSummary]
+    stats: KnowledgeTopicStats
+
+
+class KnowledgeSearchResponse(BaseModel):
+    query: str
+    results: list[KnowledgeTopicSummary]
+
+
+class KnowledgeSourcesResponse(BaseModel):
+    topicId: str
+    sources: list[KnowledgeSource]
+
+
+class KnowledgeBriefing(BaseModel):
+    topicId: str
     title: str
+    summary: str
     kind: str
-    locator: str | None = None
-    vaultPath: str | None = None
-    legacyNoteId: str | None = None
-
-
-class TopicClaimResponse(BaseModel):
-    id: str
-    statement: str
-    sourceId: str | None = None
-    citationLabel: str
-    evidenceCount: int = 0
-    provenanceStatus: str = "unsupported"
-    lastVerifiedAt: datetime | None = None
-    usageCount: int = 0
-    lastUsedAt: datetime | None = None
-    needsReview: bool = False
-    hasConflict: bool = False
-
-
-class TopicThreadEntryResponse(BaseModel):
-    id: str
-    role: str
-    content: str
-    sourceId: str | None = None
-    createdAt: datetime
-
-
-class TopicDetailResponse(BaseModel):
-    id: str
-    title: str
-    summary: str
-    vaultPath: str | None = None
-    contentHash: str | None = None
-    currentUnderstanding: list[str]
-    openQuestions: list[str]
-    sources: list[TopicSourceLinkResponse]
-    keyClaims: list[TopicClaimResponse]
-    thread: list[TopicThreadEntryResponse]
-    updatedAt: datetime
-
-
-class ResearchDashboardSummary(BaseModel):
-    activeTopics: int
-    pendingReviews: int
-    inboxSources: int
-    totalSources: int
-
-
-class ResearchHealthSignalResponse(BaseModel):
-    type: str
-    severity: str
-    title: str
-    summary: str
-    relatedId: str | None = None
-    relatedTitle: str | None = None
-
-
-class ResearchDashboardHealthResponse(BaseModel):
-    rawBacklogCount: int
-    reviewBacklogCount: int
+    path: str
+    source: str
+    status: str
+    sourceCount: int
     openQuestionCount: int
-    knowledgeGapCount: int
-    writebackCandidateCount: int
-    unsupportedClaimCount: int = 0
-    staleClaimCount: int = 0
-    conflictingClaimCount: int = 0
-    signals: list[ResearchHealthSignalResponse]
+    signalCount: int
+    currentUnderstanding: list[str]
+    keyDecisions: list[str]
+    openQuestions: list[str]
+    sources: list[KnowledgeSource]
+    codePaths: list[str]
+    relatedTopics: list[KnowledgeRelatedTopic]
+    signals: list[KnowledgeSignal]
+    healthSignals: list[KnowledgeSignal]
+    documentId: str
+    updatedAt: str
+    confidence: float = Field(ge=0.0, le=1.0)
+    sourceCoverage: Literal["supported", "partial", "none", "unknown"] = "unknown"
+    provenanceStatus: Literal["supported", "partial", "unsupported", "unknown"] = "unknown"
 
 
-class ResearchDashboardResponse(BaseModel):
-    summary: ResearchDashboardSummary
-    health: ResearchDashboardHealthResponse
-    focusTopic: TopicSummaryResponse | None
-    recentSources: list[SourceResponse]
-    pendingReviews: list[ReviewItemResponse]
-    suggestedQuestions: list[str]
+class KnowledgeDocument(BaseModel):
+    """A controlled, read-only document payload for topic/source provenance links."""
 
-
-class AskRequest(BaseModel):
-    topicId: str | None = None
-    question: str
-    mode: str | None = "vault"
-    continueFromAskTurnId: str | None = None
-    runId: str | None = None
-
-
-class AskCitationResponse(BaseModel):
-    id: str
-    entityType: str
-    entityId: str
-    sourceId: str | None = None
-    topicId: str | None = None
+    documentId: str
     title: str
-    locator: str | None = None
-    vaultPath: str | None = None
-    snippet: str
-    chunkId: str
-
-
-class AskWebSourceResponse(BaseModel):
-    url: str
-    title: str
-    excerpt: str
-    reasonUsed: str
-
-
-class AskBriefingGapResponse(BaseModel):
-    title: str
-    detail: str
-    href: str
-
-
-class AskBriefingActionResponse(BaseModel):
-    kind: str
-    label: str
-    description: str
-    href: str
-
-
-class AskBriefingSignalResponse(BaseModel):
-    type: str
-    title: str
-    summary: str
-    href: str
-
-
-class AskBriefingResponse(BaseModel):
-    scope: str
-    topicId: str | None = None
-    topicTitle: str | None = None
-    askTurnId: str | None = None
-    summary: str
-    confidence: float
-    knowledgeGaps: list[AskBriefingGapResponse]
-    nextActions: list[AskBriefingActionResponse]
-    suggestedQuestions: list[str]
-    supportingSignals: list[AskBriefingSignalResponse]
-    generatedAt: datetime
-
-
-class AskResponse(BaseModel):
-    id: str
-    topicId: str | None = None
-    parentAskTurnId: str | None = None
-    threadRootAskTurnId: str
-    lineageAskTurnIds: list[str]
-    question: str
-    answer: str
-    confidence: float
-    retrievalMode: str
-    usedChunkIds: list[str]
-    followUpQuestions: list[str]
-    knowledgeGaps: list[str]
-    usedWikiIds: list[str]
-    usedSourceIds: list[str]
-    usedWebSources: list[AskWebSourceResponse]
-    contextAskTurnIds: list[str]
-    canWriteback: bool
-    citations: list[AskCitationResponse]
-    createdAt: datetime
-
-
-class AskThreadResponse(BaseModel):
-    rootAskTurnId: str
-    currentAskTurnId: str
-    topicId: str | None = None
-    turns: list[AskResponse]
-
-
-class CreateDevRunRequest(BaseModel):
-    type: str
-    title: str
-    goal: str
-    repoContext: str | None = None
-
-
-class StageInfo(BaseModel):
-    name: str
-    status: str
-
-
-class RunEventResponse(BaseModel):
-    id: str
-    eventType: str
-    stage: str | None = None
-    payload: dict
-    createdAt: datetime
-
-
-class DevRunResponse(BaseModel):
-    id: str
-    workspaceId: str
-    type: str
-    title: str
-    goal: str
-    repoContext: str | None = None
-    status: str
-    currentStage: str
-    stageStatus: str
-    stages: list[StageInfo]
-    events: list[RunEventResponse]
-    createdAt: datetime
-    updatedAt: datetime | None = None
-    completedAt: datetime | None = None
-    cancelledAt: datetime | None = None
-
-
-class DevRunSummaryResponse(BaseModel):
-    id: str
-    type: str
-    title: str
-    status: str
-    currentStage: str
-    stageStatus: str
-    createdAt: datetime
-
-
-class AddRunEventRequest(BaseModel):
-    stage: str | None = None
-    eventType: str
-    payload: dict = Field(default_factory=dict)
-
-
-class AdvanceRunRequest(BaseModel):
-    action: str  # "approve" | "complete"
-
-
-class PermissionRespondRequest(BaseModel):
-    request_id: str
-    allow: bool
-    reason: str | None = None
-
-
-class DepositRequest(BaseModel):
     source: str
-    runId: str | None = None
-    askTurnId: str | None = None
-    stage: str | None = None
-    payload: dict = Field(default_factory=dict)
+    path: str
+    content: str
+    contentHash: str
 
 
-class DepositResponse(BaseModel):
-    reviewId: str
-    status: str
-    source: str
-    isNew: bool = True
+class KnowledgeSignalActionRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    action: Literal["acknowledge", "resolve", "dismiss", "reopen"]
+    ifVersion: int = Field(ge=1)
+    note: str | None = Field(default=None, max_length=2000)
 
 
-class HealthFinding(BaseModel):
-    type: str
-    severity: str
-    page: str
-    detail: str
-    ruleId: str | None = None
-    evidence: dict | None = None
-    fingerprint: str | None = None
+class KnowledgeReviewCreateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    signalId: str | None = None
+    topicId: str
+    action: str = Field(min_length=1, max_length=64)
+    proposal: dict = Field(default_factory=dict)
+    note: str | None = Field(default=None, max_length=2000)
 
 
-class HealthSummary(BaseModel):
-    totalPages: int
-    brokenLinkCount: int = 0
-    orphanPageCount: int = 0
-    missingFrontmatterCount: int = 0
-    missingSourceCount: int = 0
+class KnowledgeReviewDecisionRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
 
-
-class HealthCategoryCounts(BaseModel):
-    error: int = 0
-    warning: int = 0
-    info: int = 0
-
-
-class HealthResponse(BaseModel):
-    summary: HealthSummary
-    findings: list[HealthFinding]
-    ruleVersion: str | None = None
-    healthScore: float | None = None
-    gateStatus: str | None = None  # PASSED | FAILED
-    categoryCounts: HealthCategoryCounts | None = None
-    notApplicable: bool = False
-
-
-# ── Health History ──
-
-
-class HealthDiff(BaseModel):
-    newCount: int = 0
-    continuedCount: int = 0
-    resolvedCount: int = 0
-
-
-class HealthRunManifest(BaseModel):
-    healthRunId: str
-    vaultType: str | None = None
-    ruleVersion: str
-    evaluatedAt: str
-    durationMs: int | None = None
-    healthScore: float | None = None
-    gateStatus: str  # PASSED | FAILED
-    categoryCounts: HealthCategoryCounts
-    totalPages: int
-    findingCount: int
-    findings: list[HealthFinding]
-
-
-class HealthRunSummary(BaseModel):
-    healthRunId: str
-    evaluatedAt: str
-    healthScore: float | None = None
-    gateStatus: str
-    totalPages: int
-    findingCount: int
-    diff: HealthDiff | None = None
-
-
-class HealthTrendResponse(BaseModel):
-    current: HealthRunSummary | None = None
-    recent: list[HealthRunSummary] = []
-    currentFindings: list[HealthFinding] | None = None
-
-
-# ── Evaluation ──
-
-
-class GoldenTaskCandidate(BaseModel):
-    id: str
-    title: str
-    description: str
-    inputs: dict
-    taskType: str  # PRD | BUG | REFACTOR | CONTEXT_ASK | KNOWLEDGE_DEPOSIT
-    expectedEvidence: list[str]
-    allowedBehaviors: list[str]
-    forbiddenBehaviors: list[str]
-    source: str  # e.g. real dev run id, ask turn id
-    status: str  # candidate | active | retired
-    rubricId: str | None = None
-    createdAt: str | None = None
-
-
-class GoldenTasksSet(BaseModel):
-    schemaVersion: str
-    tasks: list[GoldenTaskCandidate]
-
-
-class RubricDimension(BaseModel):
-    name: str
-    description: str
-    maxScore: int
-    passThreshold: int
-    reviewNotes: str | None = None
-
-
-class EvalRubric(BaseModel):
-    id: str
-    schemaVersion: str
-    dimensions: list[RubricDimension]
-    passCondition: str
-    createdAt: str | None = None
-
-
-class EvalRunManifest(BaseModel):
-    evalRunId: str
-    schemaVersion: str
-    taskIds: list[str]
-    rubricIds: list[str]
-    vaultCommitHash: str | None = None
-    ruleVersion: str
-    gateStatusAtStart: str
-    healthRunId: str | None = None
-    createdAt: str
-    status: str  # created | failed
-    outputDir: str  # relative path within evals/runs/
-
-
-# ── 编译任务 ──
-
-class CompileStepResponse(BaseModel):
-    id: str
-    stepName: str
-    sortOrder: int
-    status: str
-    errorMessage: str | None = None
-    startedAt: datetime | None = None
-    completedAt: datetime | None = None
-
-
-class CompileTaskResponse(BaseModel):
-    id: str
-    sourceId: str | None = None
-    status: str
-    errorMessage: str | None = None
-    createdAt: datetime
-    startedAt: datetime | None = None
-    completedAt: datetime | None = None
-    steps: list[CompileStepResponse] = Field(default_factory=list)
-
-
-class CompileTaskSummaryResponse(BaseModel):
-    id: str
-    sourceId: str | None = None
-    sourceTitle: str | None = None
-    status: str
-    createdAt: datetime
-    completedAt: datetime | None = None
+    decision: Literal["accepted", "rejected", "cancelled"]
+    note: str | None = Field(default=None, max_length=2000)

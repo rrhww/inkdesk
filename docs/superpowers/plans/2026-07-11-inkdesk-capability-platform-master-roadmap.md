@@ -25,6 +25,8 @@
 
 本文覆盖当前仓库的渐进式重构与后续功能建设，不授权一次性重写，也不授权跳过阶段门禁提前建设高自治能力。
 
+Codex 内优先的宿主、执行器与长期演进映射见 [`2026-08-04-inkdesk-codex-integrated-long-term-roadmap.md`](./2026-08-04-inkdesk-codex-integrated-long-term-roadmap.md)。该文件当前是补充演进视图；只有 Windows/CDP Spike 通过并正式修订本路线后，才改变 P0 的权威执行顺序。
+
 ## 2. 总目标
 
 使用现有代码作为可迁移资产，把 Inkdesk 逐步演进为：

@@ -1,17 +1,14 @@
-import type { ReactNode } from "react";
+import React from 'react';
 
-import { AppChrome } from "@/components/app-chrome";
-import { getDevRuns, getResearchDashboard } from "@/lib/research";
-
-export default async function AppLayout({ children }: { children: ReactNode }) {
-  const [snapshot, devRuns] = await Promise.all([
-    getResearchDashboard(),
-    getDevRuns(),
-  ]);
-
+export default function AppLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
-    <AppChrome snapshot={snapshot} devRuns={devRuns}>
+    // 强制全屏无滚动条，透明纯净底色
+    <div className="w-screen h-screen overflow-hidden bg-[#F8FAFC]">
       {children}
-    </AppChrome>
+    </div>
   );
 }

@@ -11,8 +11,13 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import json
+import os
 import sys
 from pathlib import Path
+from time import perf_counter
+
+import httpx
 
 from inkdesk_skill_sdk.contracts import SkillCategory, SkillKind
 from inkdesk_skill_sdk.graph import build_graph, validate_graph
@@ -160,9 +165,142 @@ def cmd_check(args: argparse.Namespace) -> int:
         return 0
 
 
+def _iter_sse_events(lines):
+    event_name = "message"
+    data_lines: list[str] = []
+    for line in lines:
+        if line == "":
+            if data_lines:
+                raw_data = "\n".join(data_lines)
+                try:
+                    data = json.loads(raw_data)
+                except json.JSONDecodeError:
+                    data = {"raw": raw_data}
+                yield event_name, data
+            event_name = "message"
+            data_lines = []
+            continue
+        if line.startswith(":"):
+            continue
+        if line.startswith("event:"):
+            event_name = line[6:].strip()
+        elif line.startswith("data:"):
+            data_lines.append(line[5:].strip())
+    if data_lines:
+        raw_data = "\n".join(data_lines)
+        try:
+            data = json.loads(raw_data)
+        except json.JSONDecodeError:
+            data = {"raw": raw_data}
+        yield event_name, data
+
+
+def cmd_run(args: argparse.Namespace) -> int:
+    command = " ".join(args.prompt).strip()
+    target_path: Path | None = None
+    solution_path: Path | None = None
+    target_arg = getattr(args, "target", None)
+    if target_arg:
+        target_path = Path(target_arg).resolve()
+        try:
+            if not target_path.is_file():
+                raise FileNotFoundError(target_path)
+            if target_path.stat().st_size > 1_000_000:
+                raise ValueError("target document exceeds the 1 MB CLI limit")
+            target_content = target_path.read_text(encoding="utf-8")
+        except (OSError, UnicodeError, ValueError) as exc:
+            print(f"Error: unable to read target document: {exc}", file=sys.stderr)
+            return 1
+
+        solution_path = target_path.with_name(f"{target_path.stem}-tech-solution.md")
+        solution_path.write_text(
+            "---\nkind: solution\nstatus: active\nsource: engine\n---\n\n"
+            f"# {target_path.stem} Tech Solution\n\n"
+            f"Source: [{target_path.name}]({target_path.name})\n\n"
+            "DAG execution is in progress.\n",
+            encoding="utf-8",
+        )
+        command = (
+            f"Skill: {command}\n"
+            f"Target: {target_path}\n\n"
+            "Read the following product requirements and produce an implementation-ready technical solution.\n\n"
+            f"{target_content}"
+        )
+
+    payload: dict = {"command": command}
+    if args.plan:
+        try:
+            plan = json.loads(Path(args.plan).read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            print(f"Error: invalid DAG plan: {exc}", file=sys.stderr)
+            return 1
+        if isinstance(plan, list):
+            payload["tasks"] = plan
+        elif isinstance(plan, dict):
+            payload.update({key: value for key, value in plan.items() if key in {"tasks", "maxConcurrency"}})
+        else:
+            print("Error: DAG plan must be an object or task array", file=sys.stderr)
+            return 1
+
+    server_url = args.server.rstrip("/")
+    started = perf_counter()
+    first_visible_at: float | None = None
+    current_task: str | None = None
+    result_outputs: dict[str, str] = {}
+    failed = False
+    try:
+        with httpx.Client(timeout=None) as client:
+            with client.stream("POST", f"{server_url}/api/engine/stream", json=payload) as response:
+                response.raise_for_status()
+                for event, data in _iter_sse_events(response.iter_lines()):
+                    if first_visible_at is None:
+                        first_visible_at = perf_counter()
+                    if event == "token":
+                        task_id = str(data.get("taskId") or "agent")
+                        if task_id != current_task:
+                            if current_task is not None:
+                                sys.stdout.write("\n")
+                            sys.stdout.write(f"[{task_id}] ")
+                            current_task = task_id
+                        sys.stdout.write(str(data.get("token") or ""))
+                        sys.stdout.flush()
+                    elif event == "stream.error":
+                        failed = True
+                        print(f"\nError: {data.get('error', 'stream failed')}", file=sys.stderr)
+                    elif event == "result":
+                        outputs = data.get("outputs")
+                        if isinstance(outputs, dict):
+                            result_outputs = {
+                                str(task_id): str(output)
+                                for task_id, output in outputs.items()
+                            }
+    except (httpx.HTTPError, OSError) as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        return 1
+
+    if current_task is not None:
+        sys.stdout.write("\n")
+    if args.show_ttft and first_visible_at is not None:
+        print(f"TTFT {(first_visible_at - started) * 1000:.1f} ms", file=sys.stderr)
+    if not failed and target_path is not None and solution_path is not None:
+        sections = "\n\n".join(
+            f"## {task_id}\n\n{output}"
+            for task_id, output in result_outputs.items()
+        ) or "## Result\n\nThe DAG completed without a textual result."
+        solution_path.write_text(
+            "---\nkind: solution\nstatus: ready\nsource: engine\n---\n\n"
+            f"# {target_path.stem} Tech Solution\n\n"
+            f"Source: [{target_path.name}]({target_path.name})\n\n"
+            f"{sections}\n",
+            encoding="utf-8",
+        )
+        print(f"Generated solution: {solution_path}", file=sys.stderr)
+    return 1 if failed else 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
-        prog="inkdesk-skill",
+        prog=Path(sys.argv[0]).name,
         description="Inkdesk Skill SDK CLI",
     )
     sub = parser.add_subparsers(dest="command")
@@ -190,6 +328,18 @@ def main() -> int:
     p_chk.add_argument("name", help="Skill name to check")
     p_chk.add_argument("--root", help="Skills directory root")
 
+    # run
+    p_run = sub.add_parser("run", help="Execute an in-memory DAG through the streaming engine")
+    p_run.add_argument("prompt", nargs="+", help="Command sent to the agent DAG")
+    p_run.add_argument("--target", help="Markdown requirement document read by the agent DAG")
+    p_run.add_argument("--plan", help="Optional JSON DAG plan")
+    p_run.add_argument(
+        "--server",
+        default=os.environ.get("INKDESK_SERVER_URL", "http://127.0.0.1:8000"),
+        help="Inkdesk server base URL",
+    )
+    p_run.add_argument("--show-ttft", action="store_true", help="Print time to first SSE event")
+
     args = parser.parse_args()
 
     if not args.command:
@@ -204,6 +354,8 @@ def main() -> int:
         return cmd_graph(args)
     elif args.command == "check":
         return cmd_check(args)
+    elif args.command == "run":
+        return cmd_run(args)
     return 0
 
 

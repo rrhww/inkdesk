@@ -18,22 +18,8 @@ def capture_representative_records() -> dict[str, Any]:
     with tempfile.TemporaryDirectory(prefix="inkdesk-f01-records-") as temporary_directory:
         root = Path(temporary_directory)
         _configure_isolated_app(root)
-        from inkdesk_server import compile_worker
-
-        class NoopCompileWorker:
-            def start(self) -> None:
-                return None
-
-            def stop(self) -> None:
-                return None
-
-            def enqueue(self, _task_id: str) -> None:
-                return None
-
-        original_worker_factory = compile_worker.get_compile_worker
         original_bootstrap = _install_minimal_workspace_bootstrap()
         try:
-            compile_worker.get_compile_worker = lambda _settings: NoopCompileWorker()  # type: ignore[assignment]
             from inkdesk_server.main import create_app
 
             with TestClient(create_app(), cookies={"inkdesk_owner_session": "owner"}) as client:
@@ -46,8 +32,6 @@ def capture_representative_records() -> dict[str, Any]:
                     "body": "Synthetic source body for F01 contract capture.",
                 })
                 source.raise_for_status()
-                compile_task = client.post(f"/api/raw/{source.json()['id']}/compile")
-                compile_task.raise_for_status()
                 ask = client.post("/api/ask", json={"question": "What does the synthetic F01 source establish?", "mode": "vault"})
                 ask.raise_for_status()
                 deposit = client.post("/api/deposits", json={
@@ -58,36 +42,14 @@ def capture_representative_records() -> dict[str, Any]:
                 deposit.raise_for_status()
                 review = client.post(f"/api/ingest/{deposit.json()['reviewId']}/accept")
                 review.raise_for_status()
-                run = client.post("/api/runs", json={
-                    "type": "PRD",
-                    "title": "F01 synthetic Dev Run",
-                    "goal": "Capture a representative completed Dev Run.",
-                    "repoContext": "inkdesk",
-                })
-                run.raise_for_status()
-                run_id = run.json()["id"]
-                for stage in ("context", "solution", "review", "coding", "testing", "deposit"):
-                    client.post(f"/api/runs/{run_id}/events", json={
-                        "stage": stage,
-                        "eventType": "stage_output",
-                        "payload": {"summary": f"Synthetic {stage} output."},
-                    }).raise_for_status()
-                    if stage != "deposit":
-                        client.post(f"/api/runs/{run_id}/advance", json={"action": "approve"}).raise_for_status()
-                client.post(f"/api/runs/{run_id}/advance", json={"action": "complete"}).raise_for_status()
-                queue = client.get("/api/compile/queue")
-                queue.raise_for_status()
                 records = {
                     "sources": client.get("/api/raw").json(),
                     "reviews": client.get("/api/ingest").json(),
                     "topics": client.get("/api/wiki").json(),
                     "ask": ask.json(),
                     "deposit": deposit.json(),
-                    "run": client.get(f"/api/runs/{run_id}").json(),
-                    "compileQueue": queue.json(),
                 }
         finally:
-            compile_worker.get_compile_worker = original_worker_factory
             _restore_workspace_bootstrap(original_bootstrap)
             _dispose_isolated_app()
     return normalize_representative_records(records)
