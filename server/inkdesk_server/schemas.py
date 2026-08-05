@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+<<<<<<< HEAD
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
+=======
+from pydantic import BaseModel, ConfigDict, Field
+>>>>>>> origin/main
 
 
 class ApiErrorResponse(BaseModel):
@@ -18,6 +22,7 @@ class EngineTaskRequest(BaseModel):
     kind: str = "agent"
     prompt: str = ""
     metadata: dict = Field(default_factory=dict)
+<<<<<<< HEAD
 
 
 class EngineCommandRequest(BaseModel):
@@ -141,8 +146,49 @@ class KnowledgeTopicSummary(BaseModel):
     vaultPath: str | None = None
     sourceCoverage: Literal["supported", "partial", "none", "unknown"] = "unknown"
     provenanceStatus: Literal["supported", "partial", "unsupported", "unknown"] = "unknown"
+=======
 
 
+class EngineCommandRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    command: str
+    tasks: list[EngineTaskRequest] = Field(default_factory=list)
+    maxConcurrency: int = Field(default=8, ge=1, le=32)
+
+
+class SkillRunInputs(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    requirement: str = Field(min_length=1)
+    sourcePath: str = Field(min_length=1)
+    sourceTitle: str = Field(min_length=1)
+
+
+class SkillRunRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    inputs: SkillRunInputs
+    maxConcurrency: int = Field(default=4, ge=1, le=4)
+
+
+class HarnessRunInputs(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    target: str = "repository"
+    depth: str = "quick"
+    repoPath: str | None = None
+
+
+class HarnessRunRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+>>>>>>> origin/main
+
+    capabilityId: str
+    inputs: HarnessRunInputs = Field(default_factory=HarnessRunInputs)
+    executor: str = "claude"
+
+<<<<<<< HEAD
 class KnowledgeTopicStats(BaseModel):
     topicCount: int
     sourceCount: int
@@ -225,3 +271,11 @@ class KnowledgeReviewDecisionRequest(BaseModel):
 
     decision: Literal["accepted", "rejected", "cancelled"]
     note: str | None = Field(default=None, max_length=2000)
+=======
+
+class PermissionDecisionRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    decision: str = Field(pattern=r"^(allow_once|deny)$")
+    reason: str | None = Field(default=None, max_length=500)
+>>>>>>> origin/main

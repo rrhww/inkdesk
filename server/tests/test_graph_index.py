@@ -103,9 +103,34 @@ def test_graph_api_filters_vault_nodes_and_reads_snapshot_documents(temp_app_env
         assert document.json()["sourcePath"] == "wiki/core.md"
         assert "Links to [[api-contract]]" in document.json()["content"]
 
+<<<<<<< HEAD
         unknown = client.get("/api/graph/document", params={"nodeId": "vault:../secret.md"})
         assert unknown.status_code == 404
 
+=======
+        document_alias = client.get(f"/api/doc/{core_node['id']}")
+        assert document_alias.status_code == 200
+        assert document_alias.json() == document.json()
+
+        unknown = client.get("/api/graph/document", params={"nodeId": "vault:../secret.md"})
+        assert unknown.status_code == 404
+
+        events = client.get("/api/events?once=true")
+        assert events.status_code == 200
+        event_payload = json.loads(events.text.removeprefix("data: ").strip())
+        assert event_payload["type"] == "graph.snapshot"
+        assert event_payload["snapshot"]["nodes"]
+
+        cors = client.options(
+            "/api/graph",
+            headers={
+                "Origin": "http://127.0.0.1:3000",
+                "Access-Control-Request-Method": "GET",
+            },
+        )
+        assert cors.headers["access-control-allow-origin"] == "http://127.0.0.1:3000"
+
+>>>>>>> origin/main
 
 def test_graph_api_starts_without_a_database(temp_app_env: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("INKDESK_DB_URL", "postgresql+psycopg://unavailable.invalid/inkdesk")
@@ -138,6 +163,18 @@ async def test_graph_event_bus_delivers_cross_thread_update_under_ttft_budget() 
     assert perf_counter() - started < 0.18
     assert event["event"] == "graph.updated"
     assert event["snapshot"]["version"] == "v1"
+<<<<<<< HEAD
+=======
+
+    runtime_publisher = threading.Thread(
+        target=bus.publish_runtime,
+        args=("node.active", {"nodeId": "vault:wiki/core.md"}),
+    )
+    runtime_publisher.start()
+    runtime_publisher.join()
+    runtime_event = await asyncio.wait_for(queue.get(), timeout=0.18)
+    assert runtime_event == {"event": "node.active", "nodeId": "vault:wiki/core.md"}
+>>>>>>> origin/main
     bus.unsubscribe(queue)
 
 

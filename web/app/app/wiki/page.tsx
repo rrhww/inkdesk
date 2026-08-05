@@ -2,8 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { RotateCw, X } from "lucide-react";
+<<<<<<< HEAD
 import {
   ReactFlow,
+=======
+import ReactFlow, {
+>>>>>>> origin/main
   applyEdgeChanges,
   applyNodeChanges,
   Background,
@@ -15,15 +19,23 @@ import {
   type EdgeChange,
   type Node,
   type NodeChange
+<<<<<<< HEAD
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
+=======
+} from "reactflow";
+import "reactflow/dist/style.css";
+>>>>>>> origin/main
 
 import { ActionNode, ConceptNode, EntityNode, ModuleGroupNode } from "@/components/ui/graph-nodes";
 import { GraphScopeControl } from "@/components/workbench/graph-scope-control";
 import { GraphViewControl, type GraphViewMode } from "@/components/workbench/graph-view-control";
 import { MarkdownViewer } from "@/components/workbench/markdown-viewer";
 import { GraphSearch } from "@/components/workbench/graph-search";
+<<<<<<< HEAD
 import { KnowledgeBoard } from "@/components/workbench/knowledge-board";
+=======
+>>>>>>> origin/main
 import {
   deriveTaskFocusGraph,
   layoutGraphSnapshot,
@@ -291,14 +303,22 @@ function InkdeskGraphCanvas() {
   }, [graphView]);
 
   const onNodesChange = useCallback(
+<<<<<<< HEAD
     (changes: NodeChange<Node<GraphNodeData>>[]) =>
       setNodes((currentNodes) => applyNodeChanges(changes, currentNodes)),
+=======
+    (changes: NodeChange[]) => setNodes((currentNodes) => applyNodeChanges(changes, currentNodes)),
+>>>>>>> origin/main
     []
   );
 
   const onEdgesChange = useCallback(
+<<<<<<< HEAD
     (changes: EdgeChange<Edge>[]) =>
       setEdges((currentEdges) => applyEdgeChanges(changes, currentEdges)),
+=======
+    (changes: EdgeChange[]) => setEdges((currentEdges) => applyEdgeChanges(changes, currentEdges)),
+>>>>>>> origin/main
     []
   );
 
@@ -544,6 +564,17 @@ function InkdeskGraphCanvas() {
         }
       `}</style>
     </main>
+<<<<<<< HEAD
+=======
+  );
+}
+
+export default function InkdeskGraphBoard() {
+  return (
+    <ReactFlowProvider>
+      <InkdeskGraphCanvas />
+    </ReactFlowProvider>
+>>>>>>> origin/main
   );
 }
 

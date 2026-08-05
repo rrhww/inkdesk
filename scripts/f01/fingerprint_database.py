@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+from collections.abc import Iterable
 from typing import Any
 
 from psycopg import connect
@@ -14,9 +15,10 @@ from psycopg.sql import Identifier, SQL
 from baseline_contracts import canonical_sha256, fingerprint_table_rows
 
 
-def fingerprint_database(database_url: str) -> dict[str, Any]:
+def fingerprint_database(database_url: str, *, exclude_tables: Iterable[str] = ()) -> dict[str, Any]:
     if not database_url or not database_url.strip():
         raise ValueError("An explicit PostgreSQL database URL is required")
+    excluded_tables = set(exclude_tables)
     connection_url = database_url.replace("postgresql+psycopg://", "postgresql://", 1)
     tables: list[dict[str, Any]] = []
     with connect(connection_url, row_factory=dict_row) as connection:
@@ -31,6 +33,8 @@ def fingerprint_database(database_url: str) -> dict[str, Any]:
             )
             for row in cursor.fetchall():
                 table_name = row["table_name"]
+                if table_name in excluded_tables:
+                    continue
                 primary_key = _primary_key(cursor, table_name)
                 if not primary_key:
                     raise ValueError(f"table {table_name} has no primary key; F01 will not silently skip it")
@@ -60,8 +64,9 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--database-url", required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--exclude-table", action="append", default=[])
     arguments = parser.parse_args(argv)
-    fingerprint = fingerprint_database(arguments.database_url)
+    fingerprint = fingerprint_database(arguments.database_url, exclude_tables=set(arguments.exclude_table))
     arguments.output.parent.mkdir(parents=True, exist_ok=True)
     arguments.output.write_text(json.dumps(fingerprint, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n", encoding="utf-8")
     return 0

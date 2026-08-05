@@ -1,55 +1,25 @@
 services:
-  postgres:
-    image: pgvector/pgvector:pg16
-    container_name: inkdesk-postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB:-inkdesk}
-      POSTGRES_USER: ${POSTGRES_USER:-inkdesk}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-inkdesk}
-    ports:
-      - "${POSTGRES_PORT:-5432}:5432"
-    volumes:
-      - inkdesk-postgres-data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-inkdesk} -d ${POSTGRES_DB:-inkdesk}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  minio:
-    image: minio/minio:latest
-    container_name: inkdesk-minio
-    restart: unless-stopped
-    command: server /data --console-address ":9001"
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-inkdesk}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-inkdeskminio}
-    ports:
-      - "${MINIO_API_PORT:-9000}:9000"
-      - "${MINIO_CONSOLE_PORT:-9001}:9001"
-    volumes:
-      - inkdesk-minio-data:/data
-
   server:
     build:
-      context: ../server
+      context: ..
+      dockerfile: infra/docker/local-server.Dockerfile
+      args:
+        HTTP_PROXY: ${HTTP_PROXY:-}
+        HTTPS_PROXY: ${HTTPS_PROXY:-}
+        NO_PROXY: ${NO_PROXY:-}
     container_name: inkdesk-server
     restart: unless-stopped
-    depends_on:
-      postgres:
-        condition: service_healthy
     environment:
-      INKDESK_DB_URL: postgresql+psycopg://${POSTGRES_USER:-inkdesk}:${POSTGRES_PASSWORD:-inkdesk}@postgres:5432/${POSTGRES_DB:-inkdesk}
+      INKDESK_ENV: ${INKDESK_ENV:-local}
       INKDESK_VAULT_ROOT: /app/inkdesk-vault
+      INKDESK_REPO_ROOT: /app/repository
+      INKDESK_ENABLE_FILE_WATCHER: ${INKDESK_ENABLE_FILE_WATCHER:-true}
+      INKDESK_GRAPH_SSE_HEARTBEAT_SECONDS: ${INKDESK_GRAPH_SSE_HEARTBEAT_SECONDS:-15}
+      INKDESK_AGENT_RUNTIME: ${INKDESK_AGENT_RUNTIME:-deterministic}
       INKDESK_AGENT_PROVIDER_PROFILE: ${INKDESK_AGENT_PROVIDER_PROFILE:-openai}
       INKDESK_AGENT_MODEL: ${INKDESK_AGENT_MODEL:-}
       INKDESK_AGENT_API_KEY: ${INKDESK_AGENT_API_KEY:-}
       INKDESK_AGENT_BASE_URL: ${INKDESK_AGENT_BASE_URL:-}
-      INKDESK_EMBEDDING_PROVIDER_PROFILE: ${INKDESK_EMBEDDING_PROVIDER_PROFILE:-openai}
-      INKDESK_EMBEDDING_MODEL: ${INKDESK_EMBEDDING_MODEL:-text-embedding-3-small}
-      INKDESK_EMBEDDING_API_KEY: ${INKDESK_EMBEDDING_API_KEY:-}
-      INKDESK_EMBEDDING_BASE_URL: ${INKDESK_EMBEDDING_BASE_URL:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENAI_BASE_URL: ${OPENAI_BASE_URL:-}
       DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
@@ -57,8 +27,7 @@ services:
       - "${INKDESK_SERVER_PORT:-8080}:8080"
     volumes:
       - inkdesk-vault-data:/app/inkdesk-vault
+      - ..:/app/repository:ro
 
 volumes:
-  inkdesk-postgres-data:
-  inkdesk-minio-data:
   inkdesk-vault-data:

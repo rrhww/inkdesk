@@ -63,6 +63,28 @@
 - manifest 将测试结果、契约/备份 SHA-256、数据库与 Vault 的组合源指纹、恢复报告和实际匹配的已知问题写到 `.local/f01-baseline/<runId>/`。部分模式只能诊断，不能报告通过。
 - `verify_restored_read_paths.py` 使用隔离设置，关闭 seed、编译 worker 和 web assist，只验证恢复后读路径，不会向恢复库写入产品数据。
 
+### F02 Alembic 数据库权威
+
+- `server/alembic/versions/20260712_f02_0001_baseline.py` 是当前 16 张应用表和 PostgreSQL `vector` extension 的唯一 DDL baseline；它显式 `op.create_table`，不调用 ORM `create_all()`，downgrade 明确拒绝。
+- `python -m inkdesk_server.db_migrations status|check|upgrade` 是唯一公开 migration 入口。未管理 PostgreSQL 只有在 F01 compatibility digest 精确匹配时才允许 stamp；unknown、partial、drift 和未知 revision 都 fail closed。
+- `db.init_db()` 仍保留给 app factory 兼容调用，但它只检查 head revision 与 schema readiness，不创建表、加列或创建 extension。测试 fixture 与 Docker entrypoint 必须先显式 upgrade。
+- PostgreSQL migration 在 preflight 到 postflight 持有 advisory lock；F02 verifier 使用 F01 dump 只恢复到 `inkdesk_f02_*` 临时目标，记录 schema/data 指纹和只读 API 结果后清理。
+- `server/src/main/resources/db/migration/V1-V8` 是冻结的 Flyway 历史，不再是运行权威。后续 schema 变化只能新增 Alembic revision。
+
+### F03 模块化应用组合壳
+
+- `inkdesk_server.api.app.create_api_app()` 只拥有 HTTP 组合：FastAPI metadata、CORS、统一错误处理，以及 system health 和 Vault 两个 router；它不初始化数据库、不 seed、不启动 Worker，也不构建 MCP。
+- `inkdesk_server.main.create_app()` 仍是 production composition root：它传入 lifespan 来组合纯壳，继续拥有 F02 readiness/seed、legacy routes、MCP mount 和 Compile Worker 生命周期。
+- 首次迁移只覆盖四个端点：`GET /health`、`GET /actuator/health`、`GET /api/vault/status`、`POST /api/vault/initialize`。知识健康的 `/api/health*` 是独立业务领域，保留在 legacy main。
+- 路由迁移的兼容性不能只看 HTTP 200：要同时锁定无 duplicate method/path、operation ID、错误处理、完整 canonical OpenAPI，以及 Docker 与真实浏览器的全栈闭环。
+
+### F04 默认 Organization 与 Capability Space
+
+- 旧 `workspace_id` 仍是所有现有领域的兼容隔离键；`workspace_space_bindings` 只把 Workspace 映射到 Project Space，不把 Personal Overlay 固化为单一外键。
+- 默认拓扑是 Organization -> Project -> Personal Overlay；固定 Organization ID 和 UUIDv5 identity 使 migration、seed bootstrap 与重复启动可幂等重建。
+- Adapter 是唯一默认 Workspace 入口：Research、HTTP legacy routes 和 MCP 仍返回 Workspace/workspace ID，但先验证 Space topology；拓扑缺失或损坏 fail closed。
+- `f02_0001` 与 `f04_0002` 使用不同 PostgreSQL schema digest。F01 adoption 必须先 stamp F02 再 upgrade F04，不能直接把 F01 schema 标记为新 head。
+
 ## 模糊区
 
 - behavioral contract cases 的实际执行 — 格式已定，contents 待 Skill 实战后产生

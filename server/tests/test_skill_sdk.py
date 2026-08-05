@@ -171,18 +171,17 @@ def test_structural_valid_comprehensive():
     assert _count_errors(findings) == 0, findings
 
 
-def test_structural_missing_contract():
+def test_structural_portable_skill_without_contract_is_valid():
     pkg = FIXTURES / "invalid" / "bad-missing-contract"
     findings = validate_structural(pkg)
-    assert _count_errors(findings) > 0
-    assert any(f.code == "STRUCT_MISSING_FILE" for f in findings)
+    assert _count_errors(findings) == 0
 
 
-def test_structural_missing_openai_yaml():
+def test_structural_agents_metadata_is_optional():
     pkg = FIXTURES / "invalid" / "bad-missing-openai"
     findings = validate_structural(pkg)
     errors = [f for f in findings if f.severity == Severity.ERROR]
-    assert any(f.code == "STRUCT_MISSING_AGENT_FILE" for f in errors)
+    assert not errors
 
 
 # ——— semantic validation ———
@@ -464,6 +463,7 @@ def test_real_skills_all_validate():
         meta = registry.resolve(p)
         assert meta is not None, f"Registry could not resolve {p.name}"
         vr = meta.validation_result
+        assert vr is not None, f"Validation crashed for {p.name}"
         if not vr.passed:
             failed.append((meta.name, vr.findings))
     assert not failed, f"Skills failed validation: {failed}"
@@ -487,6 +487,8 @@ def test_real_skills_link_completeness():
     all_ids = {p.name for p in packages}
     missing = []
     for p in packages:
+        if not (p / "contract.json").is_file():
+            continue
         ct = json.loads((p / "contract.json").read_text(encoding="utf-8"))
         for ns in ct.get("nextSkills", []):
             if ns["skillId"] not in all_ids:
@@ -500,7 +502,7 @@ def test_real_skills_router_has_all_links():
     registry = SkillRegistry([Path("vault/skills")])
     rt_ct = json.loads(Path("vault/skills/skill-router/contract.json").read_text(encoding="utf-8"))
     router_targets = {ns["skillId"] for ns in rt_ct.get("nextSkills", [])}
-    all_ids = {p.name for p in registry.discover()}
+    all_ids = {p.name for p in registry.discover() if (p / "contract.json").is_file()}
     all_ids.discard("skill-router")
     missing = all_ids - router_targets
     assert not missing, f"skill-router missing links to: {missing}"
@@ -550,6 +552,11 @@ def test_real_skills_producer_has_hard_gates():
     for p in registry.discover():
         if p.name == "skill-router":
             continue
+        if (p / "inkdesk.yaml").is_file():
+            import yaml
+            capability = yaml.safe_load((p / "inkdesk.yaml").read_text(encoding="utf-8"))
+            assert capability.get("gates"), f"{p.name} capability missing gates"
+            continue
         ct = json.loads((p / "contract.json").read_text(encoding="utf-8"))
         if ct.get("kind") == "producer":
             kinds = {g["kind"] for g in ct.get("hardGates", [])}
@@ -562,6 +569,8 @@ def test_real_skills_no_direct_wiki_write_claim():
     import json
     registry = SkillRegistry([Path("vault/skills")])
     for p in registry.discover():
+        if not (p / "contract.json").is_file():
+            continue
         raw = (p / "contract.json").read_text(encoding="utf-8")
         data = json.loads(raw)
         cw = data.get("writePolicy", {}).get("canonicalWiki", "")

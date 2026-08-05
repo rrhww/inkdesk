@@ -1,0 +1,48 @@
+schemaVersion: inkdesk.dev/v1alpha1
+id: harness-audit
+version: 0.2.0
+status: active
+workflowRef: harness-audit-v1
+inputSchema:
+  type: object
+  additionalProperties: false
+  properties:
+    target:
+      type: string
+      const: repository
+    depth:
+      type: string
+      enum: [quick, normal]
+    repoPath:
+      type: string
+  required: [target, depth]
+permissions:
+  repository: read-only
+  vault: proposal-only
+  shell: allowlisted
+  network: denied
+  external: denied
+executorPolicy:
+  allowed: [claude, codex]
+  default: claude
+  requires: [agent-loop, tool-use, streaming, interrupt, structured-output, hooks]
+gates:
+  - id: repository-exists
+    kind: repository_exists
+  - id: executor-available
+    kind: executor_available
+  - id: evidence-references-resolve
+    kind: findings_schema
+  - id: all-dimensions-scored
+    kind: report_schema
+evidence:
+  lanes: [projectHarness, agentCustomize, deliveryEvidence, leadSummary]
+artifacts:
+  - kind: evidence
+    path: .inkdesk/runs/{runId}/evidence.json
+  - kind: findings
+    path: .inkdesk/runs/{runId}/findings.json
+  - kind: report
+    path: .inkdesk/runs/{runId}/report.md
+  - kind: proposal
+    path: wiki/generated/{repo}-harness-audit.md

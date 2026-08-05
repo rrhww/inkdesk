@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import React from 'react';
 
 export default function AppLayout({
@@ -11,4 +12,10 @@ export default function AppLayout({
       {children}
     </div>
   );
+=======
+import type { ReactNode } from "react";
+
+export default function AppLayout({ children }: { children: ReactNode }) {
+  return children;
+>>>>>>> origin/main
 }

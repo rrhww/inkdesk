@@ -9,6 +9,7 @@ Thumbs.db
 # Node
 node_modules/
 .next/
+server/vault/.inkdesk/
 dist/
 coverage/
 

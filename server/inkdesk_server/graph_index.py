@@ -2,6 +2,10 @@ from __future__ import annotations
 
 import asyncio
 import json
+<<<<<<< HEAD
+=======
+import os
+>>>>>>> origin/main
 import re
 import threading
 from concurrent.futures import ThreadPoolExecutor
@@ -28,7 +32,13 @@ SKIPPED_PARTS = {
     ".venv",
     "__pycache__",
     "node_modules",
+<<<<<<< HEAD
     "target",
+=======
+    "playwright-report",
+    "target",
+    "test-results",
+>>>>>>> origin/main
 }
 
 
@@ -203,19 +213,42 @@ class DirectoryScanner:
         seen: set[Path] = set()
         wiki_root = self.vault_root / "wiki"
         if wiki_root.is_dir():
+<<<<<<< HEAD
             for path in sorted(wiki_root.rglob("*.md")):
+=======
+            for path in self._walk_markdown_files(wiki_root):
+>>>>>>> origin/main
                 resolved = path.resolve()
                 seen.add(resolved)
                 yield resolved, "vault"
 
         if not self.repo_root.is_dir():
             return
+<<<<<<< HEAD
         for path in sorted(self.repo_root.rglob("*.md")):
+=======
+        for path in self._walk_markdown_files(self.repo_root):
+>>>>>>> origin/main
             resolved = path.resolve()
             if resolved in seen or self._is_skipped(resolved):
                 continue
             yield resolved, "repo"
 
+<<<<<<< HEAD
+=======
+    def _walk_markdown_files(self, root: Path):
+        for current, directory_names, file_names in os.walk(root):
+            directory_names[:] = sorted(
+                name
+                for name in directory_names
+                if name not in SKIPPED_PARTS and name != ".inkdesk"
+            )
+            current_path = Path(current)
+            for file_name in sorted(file_names):
+                if file_name.casefold().endswith(".md"):
+                    yield current_path / file_name
+
+>>>>>>> origin/main
     def _is_skipped(self, path: Path) -> bool:
         try:
             relative = path.relative_to(self.repo_root)

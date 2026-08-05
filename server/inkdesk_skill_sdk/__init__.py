@@ -1,5 +1,15 @@
 """Inkdesk Skill SDK — contracts, validation, scaffolding, registry, routing graph."""
 
+from inkdesk_skill_sdk.capabilities import (
+    AgentSkillFrontmatter,
+    CapabilityManifest,
+    CapabilityPermissions,
+    ExecutorPolicy,
+    PackageFormat,
+    SkillPackage,
+    load_skill_package,
+)
+
 from inkdesk_skill_sdk.contracts import (
     CanonicalWikiPolicy,
     Contract,
@@ -11,6 +21,7 @@ from inkdesk_skill_sdk.contracts import (
     WritePolicy,
     generate_contract_json_schema,
 )
+<<<<<<< HEAD
 from inkdesk_skill_sdk.scheduler import (
     DagExecutionEvent,
     DagExecutionResult,
@@ -21,7 +32,12 @@ from inkdesk_skill_sdk.scheduler import (
     breadth_first_layers,
 )
 
+=======
+>>>>>>> origin/main
 __all__ = [
+    "AgentSkillFrontmatter",
+    "CapabilityManifest",
+    "CapabilityPermissions",
     "CanonicalWikiPolicy",
     "Contract",
     "HardGate",
@@ -31,6 +47,7 @@ __all__ = [
     "SkillStatus",
     "WritePolicy",
     "generate_contract_json_schema",
+<<<<<<< HEAD
     "DagExecutionEvent",
     "DagExecutionResult",
     "DagTask",
@@ -38,4 +55,10 @@ __all__ = [
     "DagValidationError",
     "KahnDagScheduler",
     "breadth_first_layers",
+=======
+    "ExecutorPolicy",
+    "PackageFormat",
+    "SkillPackage",
+    "load_skill_package",
+>>>>>>> origin/main
 ]

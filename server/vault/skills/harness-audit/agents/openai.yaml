@@ -1,0 +1,4 @@
+interface:
+  display_name: "Harness Audit"
+  short_description: "Audit the coding-agent harness from bounded evidence"
+  default_prompt: "Use $harness-audit to assess this repository without changing it."

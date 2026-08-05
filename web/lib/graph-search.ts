@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import type { Node } from "@xyflow/react";
+=======
+import type { Node } from "reactflow";
+>>>>>>> origin/main
 
 import type { GraphNodeData } from "@/lib/graph-layout";
 

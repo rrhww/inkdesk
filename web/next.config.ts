@@ -10,7 +10,11 @@ const nextConfig: NextConfig = {
   },
   generateBuildId: async () => `inkdesk-${Date.now().toString(36)}`,
   async rewrites() {
+<<<<<<< HEAD
     const apiBaseUrl = process.env.INKDESK_API_BASE_URL || "http://localhost:8000";
+=======
+    const apiBaseUrl = process.env.INKDESK_API_BASE_URL || "http://localhost:8080";
+>>>>>>> origin/main
     return [
       {
         source: "/api/:path*",

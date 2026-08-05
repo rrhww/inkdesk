@@ -1,7 +1,11 @@
 import type { ComponentType } from "react";
 import { Database, FileText, Zap } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
+<<<<<<< HEAD
 import { Handle, Position, type Node, type NodeProps } from "@xyflow/react";
+=======
+import { Handle, Position, type NodeProps } from "reactflow";
+>>>>>>> origin/main
 import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
@@ -28,11 +32,14 @@ type ModuleGroupNodeData = {
   label: string;
 };
 
+<<<<<<< HEAD
 type ConceptNodeType = Node<ConceptNodeData, "concept">;
 type EntityNodeType = Node<EntityNodeData, "entity">;
 type ActionNodeType = Node<ActionNodeData, "action">;
 type ModuleGroupNodeType = Node<ModuleGroupNodeData, "module">;
 
+=======
+>>>>>>> origin/main
 const HANDLE_OFFSETS = ["16.667%", "33.333%", "50%", "66.667%", "83.333%"] as const;
 
 function GraphHandles() {
@@ -80,7 +87,11 @@ function GraphHandles() {
   );
 }
 
+<<<<<<< HEAD
 export const ConceptNode: ComponentType<NodeProps<ConceptNodeType>> = ({ data }) => {
+=======
+export const ConceptNode: ComponentType<NodeProps<ConceptNodeData>> = ({ data }) => {
+>>>>>>> origin/main
   return (
     <div
       data-state={data.isActive ? "active" : "idle"}
@@ -107,7 +118,11 @@ export const ConceptNode: ComponentType<NodeProps<ConceptNodeType>> = ({ data })
   );
 };
 
+<<<<<<< HEAD
 export const EntityNode: ComponentType<NodeProps<EntityNodeType>> = ({ data }) => {
+=======
+export const EntityNode: ComponentType<NodeProps<EntityNodeData>> = ({ data }) => {
+>>>>>>> origin/main
   return (
     <div
       data-state={data.isActive ? "active" : "idle"}
@@ -137,7 +152,11 @@ export const EntityNode: ComponentType<NodeProps<EntityNodeType>> = ({ data }) =
   );
 };
 
+<<<<<<< HEAD
 export const ActionNode: ComponentType<NodeProps<ActionNodeType>> = ({ data }) => {
+=======
+export const ActionNode: ComponentType<NodeProps<ActionNodeData>> = ({ data }) => {
+>>>>>>> origin/main
   return (
     <div
       data-state={data.isActive ? "active" : "idle"}
@@ -167,7 +186,11 @@ export const ActionNode: ComponentType<NodeProps<ActionNodeType>> = ({ data }) =
   );
 };
 
+<<<<<<< HEAD
 export const ModuleGroupNode: ComponentType<NodeProps<ModuleGroupNodeType>> = ({ data }) => {
+=======
+export const ModuleGroupNode: ComponentType<NodeProps<ModuleGroupNodeData>> = ({ data }) => {
+>>>>>>> origin/main
   return (
     <div className="relative h-full w-full border-2 border-dashed border-slate-300 bg-slate-100/40">
       <div className="absolute -top-3 left-4 bg-[#F8FAFC] px-2">

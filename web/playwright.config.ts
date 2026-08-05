@@ -28,12 +28,14 @@ function resolveChromiumExecutablePath() {
 }
 
 const chromiumExecutablePath = resolveChromiumExecutablePath();
+const webPort = Number(process.env.INKDESK_E2E_WEB_PORT ?? 3301);
 
 export default defineConfig({
   testDir: "./tests/e2e",
   timeout: 30_000,
+  workers: 1,
   use: {
-    baseURL: "http://localhost:3301",
+    baseURL: `http://localhost:${webPort}`,
     trace: "on-first-retry",
     ...(chromiumExecutablePath
       ? {
@@ -44,8 +46,8 @@ export default defineConfig({
       : {})
   },
   webServer: {
-    command: "npm run build && npm run start -- --port 3301",
-    port: 3301,
+    command: `npm run build && npm run start -- --port ${webPort}`,
+    port: webPort,
     reuseExistingServer: true,
     timeout: 240_000
   },

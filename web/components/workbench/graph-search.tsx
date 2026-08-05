@@ -2,8 +2,13 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Search } from "lucide-react";
+<<<<<<< HEAD
 import type { Node } from "@xyflow/react";
 import { useReactFlow } from "@xyflow/react";
+=======
+import type { Node } from "reactflow";
+import { useReactFlow } from "reactflow";
+>>>>>>> origin/main
 
 import { findGraphNodes } from "@/lib/graph-search";
 import { graphNodeDimensions, type GraphNodeData } from "@/lib/graph-layout";

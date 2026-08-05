@@ -5,11 +5,19 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Inkdesk",
+<<<<<<< HEAD
   description: "面向研发人员的可信知识看板与上下文工作台",
   metadataBase: new URL("https://inkdesk.local"),
   openGraph: {
     title: "Inkdesk",
     description: "围绕项目主题呈现当前理解、关键决策、来源和知识缺口。",
+=======
+  description: "基于本地 Markdown 的研发知识图谱工作台",
+  metadataBase: new URL("https://inkdesk.local"),
+  openGraph: {
+    title: "Inkdesk",
+    description: "一个用于检索、浏览和追踪本地研发知识关系的私有图谱工作台。",
+>>>>>>> origin/main
     type: "website"
   }
 };

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "inkdesk-skill-sdk"
-version = "0.1.0"
+version = "0.2.0"
 description = "Inkdesk Skill Development Kit — contract models, validators, scaffolder, registry, routing graph"
 requires-python = ">=3.12"
 dependencies = [
@@ -22,5 +22,8 @@ dev = [
 inkdesk = "inkdesk_skill_sdk.cli:main"
 inkdesk-skill = "inkdesk_skill_sdk.cli:main"
 
-[tool.setuptools.packages.find]
-include = ["inkdesk_skill_sdk*"]
+[tool.setuptools]
+packages = ["inkdesk_skill_sdk"]
+
+[tool.setuptools.package-dir]
+inkdesk_skill_sdk = "."
