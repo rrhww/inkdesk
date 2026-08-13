@@ -1,7 +1,7 @@
 # Inkdesk 团队 AI 研发能力平台总开发路线图
 
 > 日期：2026-07-11
-> 状态：已确认；F01-F04 实现与验收完成，F04 待提交并合并
+> 状态：已确认；F01 工具与测试已合并，基线捕获和恢复演练待完成
 > 上位设计：[`2026-07-11-inkdesk-team-rd-capability-platform-design.md`](../specs/2026-07-11-inkdesk-team-rd-capability-platform-design.md)
 > 计划性质：Plan of Plans；定义全局顺序、能力边界和阶段门禁，不在一个计划中实施整个系统
 > 协作约束：Codex 维护计划、解释设计并审阅；用户负责编码、失败测试、调试、测试执行和浏览器验收
@@ -24,6 +24,8 @@
 ```
 
 本文覆盖当前仓库的渐进式重构与后续功能建设，不授权一次性重写，也不授权跳过阶段门禁提前建设高自治能力。
+
+Codex 内优先的宿主、执行器与长期演进映射见 [`2026-08-04-inkdesk-codex-integrated-long-term-roadmap.md`](./2026-08-04-inkdesk-codex-integrated-long-term-roadmap.md)。该文件当前是补充演进视图；只有 Windows/CDP Spike 通过并正式修订本路线后，才改变 P0 的权威执行顺序。
 
 ## 2. 总目标
 
@@ -253,9 +255,9 @@ flowchart TD
 | ID | 单一能力 | 依赖 | 主要边界 | 可观察验收 |
 | --- | --- | --- | --- | --- |
 | [F01](./2026-07-11-f01-current-contract-recovery-baseline-implementation.md) | 当前行为契约与恢复基线 | 无 | `server/tests/**`、`web/tests/**`、`docs/delivery/**` | 用户执行并保存后端、前端、OpenAPI、Vault 备份与数据库恢复证据；Codex 审阅，已知失败单独登记 |
-| F02（已完成） | Python 数据库迁移权威 | F01 | `server/pyproject.toml`、`server/alembic*`、`db.py` | 空库与现有库升级到同一 schema；后续不再向运行时升级数组新增 DDL |
-| [F03（已完成）](./2026-07-14-f03-modular-application-composition-shell-implementation.md) | 模块化应用组合壳 | F01、F02 | `main.py`、新 `api/app.py` 与 `api/routers/` | 已迁移 health / vault 路由；OpenAPI、状态码和响应体保持兼容 |
-| [F04（实现与验收完成，待提交）](./2026-07-16-f04-default-organization-capability-spaces-implementation.md) | 默认 Organization 与 Capability Space | F02、F03 | 新 `modules/spaces/`、身份与空间表、兼容 Workspace Adapter | 现有 Workspace 幂等映射到默认 Organization、Project Space 和 owner Personal Overlay；旧表与 API 不变，暂不增加登录或团队 UI |
+| F02 | Python 数据库迁移权威 | F01 | `server/pyproject.toml`、`server/alembic*`、`db.py` | 空库与现有库升级到同一 schema；后续不再向运行时升级数组新增 DDL |
+| F03 | 模块化应用组合壳 | F01 | `main.py`、新 `api/app.py` 与 `api/routers/` | 先迁移 health / vault 路由；OpenAPI、状态码和响应体保持兼容 |
+| F04 | 默认 Organization 与 Capability Space | F02、F03 | 新 `modules/spaces/`、身份与空间表、兼容 Workspace Adapter | 现有 Workspace 数据幂等回填到默认组织、个人空间和项目空间；暂不增加登录或团队 UI |
 | F05 | Durable Job / Attempt Kernel | F02、F03 | `infrastructure/jobs/`、Compile Worker Adapter | Job、Attempt、lease、heartbeat 和 idempotency key 可持久化；进程重启能接管未完成任务且不重复副作用 |
 
 ### P0-A 门禁
@@ -453,17 +455,17 @@ npm run e2e:fullstack
 
 ## 23. 当前激活计划
 
-F01-F03 已完成并合并。F03 通过 PR #7 进入 `origin/main`，merge commit 为 `77a848a`；focused、后端全量、PostgreSQL、Docker、OpenAPI 与全栈证据见 [`F03 模块化应用组合壳实施计划`](./2026-07-14-f03-modular-application-composition-shell-implementation.md)。
+路线图已经确认，当前只激活 [`F01 当前行为契约与恢复基线`](./2026-07-11-f01-current-contract-recovery-baseline-implementation.md)。F01 工具与测试已通过 PR #4 合并，详细计划已经回答：
 
-当前只展开 [`F04 默认 Organization 与 Capability Space`](./2026-07-16-f04-default-organization-capability-spaces-implementation.md)。F04 必须回答：
+- 当前哪些 API 和浏览器流程属于必须保留的行为。
+- 用户当前能稳定运行哪些测试，哪些失败是已知基线。
+- PostgreSQL 与 Vault 如何备份、恢复和校验一致性。
+- OpenAPI、数据库 schema 和关键示例数据如何形成迁移前快照。
+- 哪些旧实现明确只是兼容层，不应被测试永久固化。
 
-- 如何把每个旧 Workspace 映射到默认 Organization、Project Space 和 owner Personal Overlay，而不改写旧业务表。
-- 如何让 migration backfill 与 fresh seed bootstrap 使用同一确定性身份并保持幂等。
-- 如何让 HTTP、Research service 与 MCP 的默认 Workspace 解析经过兼容 Adapter，同时保持外部 ID/API 不变。
-- 如何让 F02 migration authority 正确支持第二个 revision、revision-aware schema contract 和 F01 adoption。
-- 如何证明拓扑损坏 fail closed、旧数据 fingerprint 不变，并能安全撤销 F04 派生数据。
+F01 不修改产品行为，不创建新领域表，也不开始 UI 重构。
 
-F04 不增加登录、团队管理 API/UI、RBAC、Domain Space、四级能力继承，也不把旧业务对象批量改为 `space_id`。
+F01 尚未完成：只有用户执行一次完整 `capture-baseline.ps1 -Mode all`，保存真实测试、备份、隔离恢复和校验证据，并经 Codex 审阅通过后，才能解锁 F02/F03。
 
 ## 24. 最终完成语义
 
