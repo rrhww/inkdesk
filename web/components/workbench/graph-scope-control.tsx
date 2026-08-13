@@ -6,6 +6,7 @@ type GraphScopeControlProps = {
   value: GraphScope;
   onChange: (scope: GraphScope) => void;
   disabled: boolean;
+  className?: string;
 };
 
 const scopeOptions: Array<{ value: GraphScope; label: string; accessibleLabel: string }> = [
@@ -14,12 +15,12 @@ const scopeOptions: Array<{ value: GraphScope; label: string; accessibleLabel: s
   { value: "repo", label: "REPO", accessibleLabel: "Repository nodes" }
 ];
 
-export function GraphScopeControl({ value, onChange, disabled }: GraphScopeControlProps) {
+export function GraphScopeControl({ value, onChange, disabled, className }: GraphScopeControlProps) {
   return (
     <div
       role="group"
       aria-label="Graph scope"
-      className="absolute left-1/2 top-36 z-10 flex -translate-x-1/2 border border-slate-300 bg-white lg:left-auto lg:right-6 lg:top-6 lg:translate-x-0"
+      className={className ?? "absolute left-1/2 top-36 z-10 flex -translate-x-1/2 border border-slate-300 bg-white lg:left-auto lg:right-6 lg:top-6 lg:translate-x-0"}
     >
       {scopeOptions.map((option) => {
         const selected = option.value === value;

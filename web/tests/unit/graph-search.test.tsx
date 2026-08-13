@@ -104,4 +104,23 @@ describe("graph search", () => {
     await user.keyboard("{Escape}");
     expect(input).toHaveValue("");
   });
+
+  it("can hand a result to hierarchical navigation without centering a stale canvas", async () => {
+    const user = userEvent.setup();
+    const onNodeSelect = vi.fn();
+    render(
+      <GraphSearch
+        nodes={nodes}
+        onNodeFocus={vi.fn()}
+        onNodeSelect={onNodeSelect}
+        centerOnSelect={false}
+      />
+    );
+
+    await user.type(screen.getByRole("combobox", { name: "Search graph nodes" }), "OrderBookingService");
+    await user.keyboard("{Enter}");
+
+    expect(onNodeSelect).toHaveBeenCalledWith(expect.objectContaining({ id: "order-service" }));
+    expect(setCenter).not.toHaveBeenCalled();
+  });
 });

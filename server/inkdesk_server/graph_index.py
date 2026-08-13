@@ -6,7 +6,7 @@ import os
 import re
 import threading
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
 from hashlib import sha256
 from pathlib import Path
@@ -17,6 +17,7 @@ from watchdog.events import FileSystemEvent, FileSystemEventHandler
 from watchdog.observers import Observer
 
 from inkdesk_server.core.config import Settings
+from inkdesk_server.graph_classification import GraphClassification, classify_document
 
 
 WIKILINK_PATTERN = re.compile(r"\[\[([^\]|#]+)(?:#[^\]|]+)?(?:\|[^\]]+)?\]\]")
@@ -44,6 +45,37 @@ class GraphNode:
     source: str
     status: str
     summary: str
+    classification: GraphClassification = field(default_factory=GraphClassification)
+
+    @classmethod
+    def from_dict(cls, payload: Mapping[str, Any]) -> "GraphNode":
+        raw_classification = payload.get("classification")
+        if isinstance(raw_classification, Mapping):
+            classification = GraphClassification(
+                stage=str(raw_classification.get("stage") or "knowledge"),
+                domain=str(raw_classification.get("domain") or "general"),
+                category=str(raw_classification.get("category") or "document"),
+                importance=str(raw_classification.get("importance") or "normal"),
+                visibility=str(raw_classification.get("visibility") or "secondary"),
+                origin=str(raw_classification.get("origin") or "fallback"),
+            )
+        else:
+            classification, _ = classify_document(
+                {},
+                str(payload.get("path") or ""),
+                source=str(payload.get("source") or "repo"),
+                kind=str(payload.get("kind") or "document"),
+            )
+        return cls(
+            id=str(payload["id"]),
+            label=str(payload["label"]),
+            kind=str(payload["kind"]),
+            path=str(payload["path"]),
+            source=str(payload["source"]),
+            status=str(payload["status"]),
+            summary=str(payload.get("summary") or ""),
+            classification=classification,
+        )
 
 
 @dataclass(frozen=True)
@@ -60,6 +92,7 @@ class GraphSnapshot:
     generated_at: str
     nodes: tuple[GraphNode, ...]
     edges: tuple[GraphEdge, ...]
+    classification_warnings: tuple[dict[str, str], ...] = ()
 
     @classmethod
     def empty(cls) -> "GraphSnapshot":
@@ -71,10 +104,12 @@ class GraphSnapshot:
             "generatedAt": self.generated_at,
             "nodes": [asdict(node) for node in self.nodes],
             "edges": [asdict(edge) for edge in self.edges],
+            "classificationWarnings": list(self.classification_warnings),
             "stats": {
                 "nodeCount": len(self.nodes),
                 "edgeCount": len(self.edges),
                 "missingCount": sum(1 for node in self.nodes if node.kind == "missing"),
+                "classificationWarningCount": len(self.classification_warnings),
             },
         }
 
@@ -95,6 +130,7 @@ class GraphSnapshot:
                 for edge in self.edges
                 if edge.source in primary_ids and edge.target in included_ids
             ),
+            classification_warnings=self.classification_warnings,
         )
 
 
@@ -103,6 +139,7 @@ class ParsedDocument:
     node: GraphNode
     body: str
     links: tuple[str, ...]
+    classification_warnings: tuple[dict[str, str], ...] = ()
 
 
 class DirectoryScanner:
@@ -119,6 +156,11 @@ class DirectoryScanner:
     def scan(self) -> GraphSnapshot:
         documents = [self._parse_document(path, source) for path, source in self._iter_markdown_files()]
         documents = [document for document in documents if document is not None]
+        classification_warnings = tuple(
+            warning
+            for document in documents
+            for warning in document.classification_warnings
+        )
         nodes = {document.node.id: document.node for document in documents}
         aliases = self._build_aliases(documents)
         edges: dict[str, GraphEdge] = {}
@@ -138,6 +180,14 @@ class DirectoryScanner:
                             source="unresolved",
                             status="missing",
                             summary="Unresolved knowledge link",
+                            classification=GraphClassification(
+                                stage="knowledge",
+                                domain="general",
+                                category="missing",
+                                importance="supporting",
+                                visibility="secondary",
+                                origin="rule",
+                            ),
                         ),
                     )
                 edge_id = sha256(f"{document.node.id}|{target_id}".encode("utf-8")).hexdigest()[:24]
@@ -149,6 +199,7 @@ class DirectoryScanner:
             {
                 "nodes": [asdict(node) for node in ordered_nodes],
                 "edges": [asdict(edge) for edge in ordered_edges],
+                "classificationWarnings": classification_warnings,
             },
             ensure_ascii=False,
             sort_keys=True,
@@ -159,6 +210,7 @@ class DirectoryScanner:
             generated_at=datetime.now(UTC).isoformat(),
             nodes=ordered_nodes,
             edges=ordered_edges,
+            classification_warnings=classification_warnings,
         )
 
         self.write_snapshot(snapshot)
@@ -170,8 +222,9 @@ class DirectoryScanner:
             return GraphSnapshot(
                 version=str(payload["version"]),
                 generated_at=str(payload["generatedAt"]),
-                nodes=tuple(GraphNode(**node) for node in payload.get("nodes", [])),
+                nodes=tuple(GraphNode.from_dict(node) for node in payload.get("nodes", [])),
                 edges=tuple(GraphEdge(**edge) for edge in payload.get("edges", [])),
+                classification_warnings=tuple(payload.get("classificationWarnings", [])),
             )
         except (OSError, KeyError, TypeError, ValueError, json.JSONDecodeError):
             return GraphSnapshot.empty()
@@ -254,17 +307,25 @@ class DirectoryScanner:
         title_match = HEADING_PATTERN.search(body)
         title = str(metadata.get("title") or (title_match.group(1).strip() if title_match else path.stem))
         summary = self._summary(metadata, body)
+        kind = self._kind(metadata, relative)
+        classification, warnings = classify_document(metadata, relative, source=source, kind=kind)
         node = GraphNode(
             id=f"{source}:{relative}",
             label=title,
-            kind=self._kind(metadata, relative),
+            kind=kind,
             path=relative,
             source=source,
             status=str(metadata.get("status") or "indexed"),
             summary=summary,
+            classification=classification,
         )
         links = tuple(dict.fromkeys(WIKILINK_PATTERN.findall(body) + MARKDOWN_LINK_PATTERN.findall(body)))
-        return ParsedDocument(node=node, body=body, links=links)
+        return ParsedDocument(
+            node=node,
+            body=body,
+            links=links,
+            classification_warnings=tuple({"path": relative, **asdict(warning)} for warning in warnings),
+        )
 
     def _split_frontmatter(self, content: str) -> tuple[dict[str, Any], str]:
         if not content.startswith("---\n") and not content.startswith("---\r\n"):

@@ -11,10 +11,20 @@ import { graphNodeDimensions, type GraphNodeData } from "@/lib/graph-layout";
 type GraphSearchProps = {
   nodes: readonly Node<GraphNodeData>[];
   onNodeFocus: (nodeId: string) => void;
+  onNodeSelect?: (node: Node<GraphNodeData>) => void;
+  centerOnSelect?: boolean;
   disabled?: boolean;
+  className?: string;
 };
 
-export function GraphSearch({ nodes, onNodeFocus, disabled = false }: GraphSearchProps) {
+export function GraphSearch({
+  nodes,
+  onNodeFocus,
+  onNodeSelect,
+  centerOnSelect = true,
+  disabled = false,
+  className
+}: GraphSearchProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeIndex, setActiveIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -24,19 +34,22 @@ export function GraphSearch({ nodes, onNodeFocus, disabled = false }: GraphSearc
 
   const focusNode = useCallback(
     (node: Node<GraphNodeData>) => {
-      const dimensions = graphNodeDimensions(node.type);
-      const width = node.width ?? dimensions.width;
-      const height = node.height ?? dimensions.height;
-      const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
-      setCenter(node.position.x + width / 2, node.position.y + height / 2, {
-        zoom: 1.2,
-        duration: reduceMotion ? 0 : 240
-      });
+      if (centerOnSelect) {
+        const dimensions = graphNodeDimensions(node.type);
+        const width = node.width ?? dimensions.width;
+        const height = node.height ?? dimensions.height;
+        const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+        setCenter(node.position.x + width / 2, node.position.y + height / 2, {
+          zoom: 1.2,
+          duration: reduceMotion ? 0 : 240
+        });
+      }
+      onNodeSelect?.(node);
       onNodeFocus(node.id);
       setSearchTerm("");
       setActiveIndex(-1);
     },
-    [onNodeFocus, setCenter]
+    [centerOnSelect, onNodeFocus, onNodeSelect, setCenter]
   );
 
   useEffect(() => {
@@ -80,7 +93,7 @@ export function GraphSearch({ nodes, onNodeFocus, disabled = false }: GraphSearc
   };
 
   return (
-    <div className="absolute left-1/2 top-20 z-10 w-[min(22rem,calc(100vw-2rem))] -translate-x-1/2 sm:top-6">
+    <div className={className ?? "absolute left-1/2 top-20 z-10 w-[min(22rem,calc(100vw-2rem))] -translate-x-1/2 sm:top-6"}>
       <label htmlFor="graph-search" className="sr-only">
         Search graph nodes
       </label>
@@ -131,7 +144,9 @@ export function GraphSearch({ nodes, onNodeFocus, disabled = false }: GraphSearc
                 }`}
               >
                 <span className="min-w-0 truncate font-mono text-xs font-semibold text-slate-800">{node.data.label}</span>
-                <span className="shrink-0 font-mono text-[10px] uppercase text-slate-500">{node.data.kind}</span>
+                <span className="shrink-0 text-right font-mono text-[10px] uppercase text-slate-500">
+                  {node.data.stage && node.data.domain ? `${node.data.stage} / ${node.data.domain}` : node.data.kind}
+                </span>
               </button>
             ))
           ) : (

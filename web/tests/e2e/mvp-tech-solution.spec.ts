@@ -10,6 +10,7 @@ const useDockerCli = process.env.INKDESK_E2E_DOCKER_CLI === "true";
 
 test("turns a PRD into a live technical-solution graph node", async ({ page }, testInfo) => {
   test.setTimeout(120_000);
+  const apiBaseUrl = process.env.INKDESK_API_BASE_URL ?? "http://127.0.0.1:8080";
   const repositoryRoot = path.resolve(process.cwd(), "..");
   const serverRoot = path.join(repositoryRoot, "server");
   const prdPath = path.join(repositoryRoot, "examples", "mock-interview-prd.md");
@@ -48,7 +49,9 @@ test("turns a PRD into a live technical-solution graph node", async ({ page }, t
       .toBe(false);
   }
   await page.goto("/app/wiki");
-  await expect(page.getByText(/^GRAPH SYNC ACTIVE \/ \d+ NODES$/)).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByText(/^GRAPH SYNC ACTIVE \/ \d+ DOCUMENTS$/)).toBeVisible({ timeout: 60_000 });
+  await page.getByText("ADVANCED", { exact: true }).click();
+  await page.getByRole("button", { name: "Raw graph" }).click();
   const sourceNode = page.getByTestId("rf__node-repo:examples/mock-interview-prd.md");
   await expect(sourceNode).toBeVisible({ timeout: 30_000 });
 
@@ -81,7 +84,7 @@ test("turns a PRD into a live technical-solution graph node", async ({ page }, t
             "--prd",
             prdPath,
             "--server",
-            "http://127.0.0.1:8080"
+            apiBaseUrl
           ],
           {
             cwd: serverRoot,
@@ -107,8 +110,11 @@ test("turns a PRD into a live technical-solution graph node", async ({ page }, t
     }
     await expect(dependencyEdge).toBeVisible();
 
-    await solutionNode.click();
-    const reader = page.locator("aside");
+    const search = page.getByRole("combobox", { name: "Search graph nodes" });
+    await search.fill("智能模拟面试系统 PRD 技术方案");
+    await expect(page.getByRole("option", { name: /智能模拟面试系统 PRD 技术方案/ })).toBeVisible();
+    await page.keyboard.press("Enter");
+    const reader = page.getByRole("dialog");
     await expect(reader.getByText("wiki/generated/mock-interview-prd-tech-solution.md", { exact: true })).toBeVisible();
     await expect(
       reader.getByRole("article").getByRole("heading", { name: "智能模拟面试系统 PRD 技术方案", level: 1 })

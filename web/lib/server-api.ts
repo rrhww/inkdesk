@@ -109,6 +109,23 @@ export async function postInkdeskFormData<T>(path: string, body: FormData) {
   return (await response.json()) as T;
 }
 
+export type GraphStage =
+  | "requirements"
+  | "design"
+  | "implementation"
+  | "verification"
+  | "delivery"
+  | "knowledge";
+
+export type GraphClassification = {
+  stage: GraphStage;
+  domain: string;
+  category: string;
+  importance: "core" | "normal" | "supporting";
+  visibility: "primary" | "secondary" | "hidden";
+  origin: "frontmatter" | "rule" | "fallback";
+};
+
 export type GraphSnapshotNode = {
   id: string;
   label: string;
@@ -117,6 +134,7 @@ export type GraphSnapshotNode = {
   source: string;
   status: string;
   summary: string;
+  classification?: GraphClassification;
 };
 
 export type GraphSnapshotEdge = {
@@ -135,7 +153,9 @@ export type GraphSnapshot = {
     nodeCount: number;
     edgeCount: number;
     missingCount: number;
+    classificationWarningCount?: number;
   };
+  classificationWarnings?: Array<{ path: string; field: string; value: string; message: string }>;
 };
 
 export type GraphNodeDocument = {

@@ -1,7 +1,7 @@
 import dagre, { type Graph } from "@dagrejs/dagre";
 import type { Edge, Node } from "reactflow";
 
-import type { GraphSnapshot, GraphSnapshotEdge, GraphSnapshotNode } from "@/lib/server-api";
+import type { GraphClassification, GraphSnapshot, GraphSnapshotEdge, GraphSnapshotNode, GraphStage } from "@/lib/server-api";
 
 export type GraphNodeData = {
   label: string;
@@ -12,6 +12,15 @@ export type GraphNodeData = {
   path: string;
   status: string;
   summary: string;
+  role?: "stage" | "domain" | "document" | "health";
+  stage?: GraphStage;
+  domain?: string;
+  category?: string;
+  classification?: GraphClassification;
+  primaryCount?: number;
+  secondaryCount?: number;
+  issueCount?: number;
+  totalCount?: number;
 };
 
 type PathEdge = Pick<Edge, "id" | "source" | "target">;
@@ -267,8 +276,13 @@ export function layoutGraphSnapshot(snapshot: GraphSnapshot): {
           documentId: node.source === "unresolved" ? undefined : node.id,
           kind: node.kind,
           path: node.path,
-          status: node.status,
-          summary: node.summary
+            status: node.status,
+            summary: node.summary,
+            role: "document" as const,
+            stage: node.classification?.stage,
+            domain: node.classification?.domain,
+            category: node.classification?.category,
+            classification: node.classification
         }
       };
       })
