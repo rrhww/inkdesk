@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, ArrowLeft, Check, Circle, ExternalLink, FileSearch, Loader2, OctagonX, ShieldCheck, Square } from "lucide-react";
 
@@ -115,9 +116,9 @@ export function RunInspector({ runId }: { runId: string }) {
     <main className="min-h-screen bg-[#f7f8f8] text-ink-text">
       <header className="border-b border-ink-line bg-white">
         <div className="mx-auto flex max-w-[1440px] items-center gap-4 px-5 py-4 lg:px-8">
-          <a href="/app/wiki" className="grid size-9 place-items-center border border-ink-line text-ink-muted hover:bg-ink-low" title="Back to graph">
+          <Link href="/app/wiki" className="grid size-9 place-items-center border border-ink-line text-ink-muted hover:bg-ink-low" title="Back to graph">
             <ArrowLeft className="size-4" aria-hidden />
-          </a>
+          </Link>
           <div className="min-w-0 flex-1">
             <p className="text-xs font-semibold uppercase text-ink-primary">Harness Audit</p>
             <h1 className="truncate font-headline text-xl font-bold">{runId}</h1>
