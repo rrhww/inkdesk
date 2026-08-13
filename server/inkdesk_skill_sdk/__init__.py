@@ -21,6 +21,15 @@ from inkdesk_skill_sdk.contracts import (
     WritePolicy,
     generate_contract_json_schema,
 )
+from inkdesk_skill_sdk.scheduler import (
+    DagExecutionEvent,
+    DagExecutionResult,
+    DagTask,
+    DagTaskResult,
+    DagValidationError,
+    KahnDagScheduler,
+    breadth_first_layers,
+)
 __all__ = [
     "AgentSkillFrontmatter",
     "CapabilityManifest",
@@ -38,4 +47,11 @@ __all__ = [
     "PackageFormat",
     "SkillPackage",
     "load_skill_package",
+    "DagExecutionEvent",
+    "DagExecutionResult",
+    "DagTask",
+    "DagTaskResult",
+    "DagValidationError",
+    "KahnDagScheduler",
+    "breadth_first_layers",
 ]

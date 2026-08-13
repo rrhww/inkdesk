@@ -39,7 +39,6 @@ web-dev-*.err
 .worktrees/
 .local/
 publish-flow-cookies.txt
-.playwright-mcp/
 
 # Generated assets
 assets/wireframes/*.tmp
@@ -69,3 +68,11 @@ inkdesk-vault/
 server/inkdesk-vault/
 server/.dev-vault/
 server/*.db
+server/.data/
+
+# Local tool data (untracked, keep on disk)
+.dev-vault/
+.playwright-cli/
+.qoder/
+inkdesk-traework-redesign/
+web/output/

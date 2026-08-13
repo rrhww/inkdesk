@@ -27,4 +27,5 @@ def temp_app_env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[Pa
     monkeypatch.setenv("OPENAI_BASE_URL", "")
     monkeypatch.setenv("DEEPSEEK_API_KEY", "")
     monkeypatch.setenv("INKDESK_ENABLE_FILE_WATCHER", "false")
+    monkeypatch.setenv("INKDESK_DATABASE_PATH", str(tmp_path / "inkdesk.sqlite"))
     yield vault_root
