@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { RotateCw, X } from "lucide-react";
-import ReactFlow, {
+import {
+  ReactFlow,
   applyEdgeChanges,
   applyNodeChanges,
   Background,
@@ -14,14 +15,15 @@ import ReactFlow, {
   type EdgeChange,
   type Node,
   type NodeChange
-} from "reactflow";
-import "reactflow/dist/style.css";
+} from "@xyflow/react";
+import "@xyflow/react/dist/style.css";
 
 import { ActionNode, ConceptNode, EntityNode, ModuleGroupNode } from "@/components/ui/graph-nodes";
 import { GraphScopeControl } from "@/components/workbench/graph-scope-control";
 import { GraphViewControl, type GraphViewMode } from "@/components/workbench/graph-view-control";
 import { MarkdownViewer } from "@/components/workbench/markdown-viewer";
 import { GraphSearch } from "@/components/workbench/graph-search";
+import { KnowledgeBoard } from "@/components/workbench/knowledge-board";
 import {
   deriveTaskFocusGraph,
   layoutGraphSnapshot,
@@ -289,12 +291,14 @@ function InkdeskGraphCanvas() {
   }, [graphView]);
 
   const onNodesChange = useCallback(
-    (changes: NodeChange[]) => setNodes((currentNodes) => applyNodeChanges(changes, currentNodes)),
+    (changes: NodeChange<Node<GraphNodeData>>[]) =>
+      setNodes((currentNodes) => applyNodeChanges(changes, currentNodes)),
     []
   );
 
   const onEdgesChange = useCallback(
-    (changes: EdgeChange[]) => setEdges((currentEdges) => applyEdgeChanges(changes, currentEdges)),
+    (changes: EdgeChange<Edge>[]) =>
+      setEdges((currentEdges) => applyEdgeChanges(changes, currentEdges)),
     []
   );
 
@@ -543,10 +547,14 @@ function InkdeskGraphCanvas() {
   );
 }
 
-export default function InkdeskGraphBoard() {
+export function InkdeskGraphBoard() {
   return (
     <ReactFlowProvider>
       <InkdeskGraphCanvas />
     </ReactFlowProvider>
   );
+}
+
+export default function InkdeskKnowledgeBoard() {
+  return <KnowledgeBoard />;
 }

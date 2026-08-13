@@ -47,7 +47,7 @@ test("turns a PRD into a live technical-solution graph node", async ({ page }, t
       })
       .toBe(false);
   }
-  await page.goto("/app/wiki");
+  await page.goto("/app/wiki/graph");
   await expect(page.getByText(/^GRAPH SYNC ACTIVE \/ \d+ NODES$/)).toBeVisible({ timeout: 60_000 });
   const sourceNode = page.getByTestId("rf__node-repo:examples/mock-interview-prd.md");
   await expect(sourceNode).toBeVisible({ timeout: 30_000 });

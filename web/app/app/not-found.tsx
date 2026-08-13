@@ -6,10 +6,10 @@ export default function AppNotFound() {
       <div className="text-[11px] uppercase tracking-[0.2em] text-ink-muted">路径不存在</div>
       <h1 className="mt-4 font-headline text-5xl font-extrabold tracking-tight text-ink-text">这条路径当前不存在</h1>
       <p className="mt-5 max-w-2xl text-sm leading-7 text-ink-muted">
-        可以回到 Dev Run Console，重新进入任务、raw、ingest、wiki 或通过 Context Ask 追问当前研究流。
+        可以回到知识拓扑，继续查看节点状态、证据覆盖和治理风险。
       </p>
-      <Link href="/app" className="mt-8 rounded-sm bg-ink-primary px-5 py-3 text-sm font-semibold text-white">
-        回到 Dev Run Console
+      <Link href="/app/wiki" className="mt-8 rounded-sm bg-ink-primary px-5 py-3 text-sm font-semibold text-white">
+        回到知识拓扑
       </Link>
     </main>
   );

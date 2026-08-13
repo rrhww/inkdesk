@@ -2,7 +2,7 @@ import React from "react";
 
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type { Node } from "reactflow";
+import type { Node } from "@xyflow/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { GraphSearch } from "@/components/workbench/graph-search";
@@ -11,8 +11,8 @@ import type { GraphNodeData } from "@/lib/graph-layout";
 
 const setCenter = vi.hoisted(() => vi.fn());
 
-vi.mock("reactflow", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("reactflow")>();
+vi.mock("@xyflow/react", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@xyflow/react")>();
   return {
     ...actual,
     useReactFlow: () => ({ setCenter })

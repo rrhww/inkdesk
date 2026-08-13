@@ -1,7 +1,7 @@
 import type { ComponentType } from "react";
 import { Database, FileText, Zap } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
-import { Handle, Position, type NodeProps } from "reactflow";
+import { Handle, Position, type Node, type NodeProps } from "@xyflow/react";
 import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
@@ -27,6 +27,11 @@ type ActionNodeData = {
 type ModuleGroupNodeData = {
   label: string;
 };
+
+type ConceptNodeType = Node<ConceptNodeData, "concept">;
+type EntityNodeType = Node<EntityNodeData, "entity">;
+type ActionNodeType = Node<ActionNodeData, "action">;
+type ModuleGroupNodeType = Node<ModuleGroupNodeData, "module">;
 
 const HANDLE_OFFSETS = ["16.667%", "33.333%", "50%", "66.667%", "83.333%"] as const;
 
@@ -75,7 +80,7 @@ function GraphHandles() {
   );
 }
 
-export const ConceptNode: ComponentType<NodeProps<ConceptNodeData>> = ({ data }) => {
+export const ConceptNode: ComponentType<NodeProps<ConceptNodeType>> = ({ data }) => {
   return (
     <div
       data-state={data.isActive ? "active" : "idle"}
@@ -102,7 +107,7 @@ export const ConceptNode: ComponentType<NodeProps<ConceptNodeData>> = ({ data })
   );
 };
 
-export const EntityNode: ComponentType<NodeProps<EntityNodeData>> = ({ data }) => {
+export const EntityNode: ComponentType<NodeProps<EntityNodeType>> = ({ data }) => {
   return (
     <div
       data-state={data.isActive ? "active" : "idle"}
@@ -132,7 +137,7 @@ export const EntityNode: ComponentType<NodeProps<EntityNodeData>> = ({ data }) =
   );
 };
 
-export const ActionNode: ComponentType<NodeProps<ActionNodeData>> = ({ data }) => {
+export const ActionNode: ComponentType<NodeProps<ActionNodeType>> = ({ data }) => {
   return (
     <div
       data-state={data.isActive ? "active" : "idle"}
@@ -162,7 +167,7 @@ export const ActionNode: ComponentType<NodeProps<ActionNodeData>> = ({ data }) =
   );
 };
 
-export const ModuleGroupNode: ComponentType<NodeProps<ModuleGroupNodeData>> = ({ data }) => {
+export const ModuleGroupNode: ComponentType<NodeProps<ModuleGroupNodeType>> = ({ data }) => {
   return (
     <div className="relative h-full w-full border-2 border-dashed border-slate-300 bg-slate-100/40">
       <div className="absolute -top-3 left-4 bg-[#F8FAFC] px-2">

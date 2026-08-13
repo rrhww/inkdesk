@@ -227,6 +227,142 @@ export type HarnessRunEvent = {
   data: Record<string, unknown>;
 };
 
+export type KnowledgeHealthSignal = {
+  id?: string;
+  type: "missing_link" | "stale" | "unsupported" | "conflicting" | "open_question";
+  severity: "info" | "warning" | "critical";
+  title: string;
+  detail: string;
+  sourcePath?: string | null;
+};
+
+export type KnowledgeSource = {
+  id: string;
+  documentId: string;
+  title: string;
+  path: string;
+  source: string;
+  kind: string;
+  summary: string;
+  updatedAt: string;
+  href?: string | null;
+  locator?: Record<string, string | number> | null;
+  excerpt?: string;
+  contentHash?: string | null;
+  sourceCoverage?: string;
+  provenanceStatus?: string;
+};
+
+export type KnowledgeTopic = {
+  id: string;
+  title: string;
+  summary: string;
+  path: string;
+  source: string;
+  kind: string;
+  status: string;
+  updatedAt: string;
+  sourceCount: number;
+  openQuestionCount: number;
+  signalCount: number;
+  signals: KnowledgeHealthSignal[];
+  healthSignals?: KnowledgeHealthSignal[];
+  vaultPath?: string | null;
+  sourceCoverage?: string;
+  provenanceStatus?: string;
+};
+
+export type KnowledgeTopicList = {
+  topics: KnowledgeTopic[];
+  stats: {
+    topicCount: number;
+    sourceCount: number;
+    signalCount: number;
+    attentionCount?: number;
+  };
+};
+
+export type KnowledgeBriefing = KnowledgeTopic & {
+  currentUnderstanding: string[];
+  keyDecisions: string[];
+  openQuestions: string[];
+  codePaths: string[];
+  relatedTopics: Array<{ id: string; title: string; kind: string }>;
+  sources: KnowledgeSource[];
+  confidence: number;
+  documentId: string;
+};
+
+export type KnowledgeSearchResult = {
+  query: string;
+  results: KnowledgeTopic[];
+};
+
+export type TaskOriginType = "realtime_requirement" | "knowledge_signal" | "execution_finding" | "manual";
+export type TaskStatus = "backlog" | "ready" | "doing" | "review" | "blocked" | "done";
+export type TaskContextStatus = "pending" | "searching" | "ready" | "gap" | "failed";
+
+export type DevelopmentTask = {
+  id: string;
+  title: string;
+  goal: string;
+  status: TaskStatus;
+  originType: TaskOriginType;
+  originRef?: string | null;
+  priority: string;
+  risk: string;
+  contextStatus: TaskContextStatus;
+  knowledgeTopicIds: string[];
+  version: number;
+  createdAt: string;
+  updatedAt: string;
+  contextPack?: Record<string, unknown> | null;
+  knowledgeGap?: Record<string, unknown> | null;
+};
+
+export type KnowledgeSignalRecord = KnowledgeHealthSignal & {
+  id: string;
+  topicId: string;
+  status: "open" | "acknowledged" | "resolved" | "dismissed";
+  refs: { claimIds?: string[]; evidenceIds?: string[] };
+  version: number;
+  detail: string;
+};
+
+export type KnowledgeClaim = {
+  id: string;
+  topicId: string;
+  text: string;
+  status: string;
+  sourcePath?: string | null;
+  locator: Record<string, string | number>;
+  contentHash: string;
+  evidence: KnowledgeEvidence[];
+};
+
+export type KnowledgeEvidence = {
+  id: string;
+  claimId: string;
+  sourceId?: string | null;
+  sourcePath: string;
+  locator: Record<string, string | number>;
+  stance: string;
+  excerpt: string;
+  contentHash: string;
+};
+
+export type KnowledgeReview = {
+  id: string;
+  signalId?: string | null;
+  topicId: string;
+  action: string;
+  proposal: Record<string, unknown>;
+  note?: string | null;
+  status: string;
+  createdAt: string;
+  decidedAt?: string | null;
+};
+
 function isGraphSnapshot(value: unknown): value is GraphSnapshot {
   if (!value || typeof value !== "object") {
     return false;
@@ -380,6 +516,52 @@ function subscribeToRunEvents(
   };
 }
 
+function subscribeToKnowledgeEvents(onUpdate: (event: { version?: string }) => void) {
+  const apiBaseUrl = resolveApiBaseUrl();
+  if (!apiBaseUrl) {
+    return () => undefined;
+  }
+  const source = new EventSource(`${apiBaseUrl}/knowledge/stream`);
+  const handle = (event: MessageEvent) => {
+    try {
+      onUpdate(JSON.parse(event.data));
+    } catch {
+      // Ignore malformed invalidation events.
+    }
+  };
+  source.addEventListener("knowledge.updated", handle);
+  source.onmessage = handle;
+  return () => source.close();
+}
+
+function subscribeToTaskEvents(
+  onUpdate: (event: { taskId: string | null; version: number | null }) => void,
+  onStatus?: (status: "connecting" | "connected" | "offline") => void
+) {
+  const apiBaseUrl = resolveApiBaseUrl();
+  if (!apiBaseUrl) {
+    onStatus?.("offline");
+    return () => undefined;
+  }
+  onStatus?.("connecting");
+  const source = new EventSource(`${apiBaseUrl}/tasks/stream`);
+  source.onopen = () => onStatus?.("connected");
+  const handle = (event: MessageEvent) => {
+    try {
+      onUpdate(JSON.parse(event.data));
+    } catch {
+      // Ignore malformed invalidation events.
+    }
+  };
+  source.addEventListener("tasks.updated", handle);
+  source.onmessage = handle;
+  source.onerror = () => {
+    source.close();
+    onStatus?.("offline");
+  };
+  return () => source.close();
+}
+
 export const ServerAPI = {
   fetchGraphTopology: (scope: GraphScope = "all") =>
     fetchInkdeskJson<GraphSnapshot>(scope === "all" ? "/graph" : `/graph?source=${scope}`),
@@ -396,6 +578,54 @@ export const ServerAPI = {
       `/runs/${encodeURIComponent(runId)}/permissions/${encodeURIComponent(permissionId)}/decision`,
       { decision }
     ),
+  fetchKnowledgeTopics: () => fetchInkdeskJson<KnowledgeTopicList>("/knowledge/topics"),
+  searchKnowledge: (query: string) =>
+    fetchInkdeskJson<KnowledgeSearchResult>(`/knowledge/search?q=${encodeURIComponent(query)}`),
+  fetchKnowledgeBriefing: (topicId: string) =>
+    fetchInkdeskJson<KnowledgeBriefing>(`/knowledge/topics/${encodeURIComponent(topicId)}/briefing`),
+  fetchKnowledgeDocument: (topicId: string) =>
+    fetchInkdeskJson<{ documentId: string; title: string; source: string; path: string; content: string; contentHash: string }>(
+      `/knowledge/topics/${encodeURIComponent(topicId)}/document`
+    ),
+  fetchKnowledgeSignals: (filters?: { status?: string; type?: string; topicId?: string }) => {
+    const params = new URLSearchParams();
+    if (filters?.status) params.set("status", filters.status);
+    if (filters?.type) params.set("type", filters.type);
+    if (filters?.topicId) params.set("topicId", filters.topicId);
+    const suffix = params.toString() ? `?${params.toString()}` : "";
+    return fetchInkdeskJson<{ signals: KnowledgeSignalRecord[] }>(`/knowledge/signals${suffix}`);
+  },
+  reviewKnowledgeSignal: (
+    signalId: string,
+    payload: { action: "acknowledge" | "resolve" | "dismiss" | "reopen"; ifVersion: number; note?: string }
+  ) => postInkdeskJson<KnowledgeSignalRecord>(`/knowledge/signals/${encodeURIComponent(signalId)}/actions`, payload),
+  fetchKnowledgeHealthSummary: () =>
+    fetchInkdeskJson<{ total: number; active: number; byType: Record<string, number> }>("/knowledge/health/summary"),
+  fetchTasks: (filters?: { status?: TaskStatus; originType?: TaskOriginType; contextStatus?: TaskContextStatus }) => {
+    const params = new URLSearchParams();
+    if (filters?.status) params.set("status", filters.status);
+    if (filters?.originType) params.set("originType", filters.originType);
+    if (filters?.contextStatus) params.set("contextStatus", filters.contextStatus);
+    const suffix = params.toString() ? `?${params.toString()}` : "";
+    return fetchInkdeskJson<{ tasks: DevelopmentTask[] }>(`/tasks${suffix}`);
+  },
+  createTask: (payload: {
+    title: string;
+    goal: string;
+    originType: TaskOriginType;
+    originRef?: string;
+    priority?: string;
+    risk?: string;
+    knowledgeTopicIds?: string[];
+  }) => postInkdeskJson<DevelopmentTask>("/tasks", payload),
+  fetchTask: (taskId: string) =>
+    fetchInkdeskJson<DevelopmentTask>(`/tasks/${encodeURIComponent(taskId)}`),
+  assembleTaskContext: (taskId: string, force = false) =>
+    postInkdeskJson<DevelopmentTask>(`/tasks/${encodeURIComponent(taskId)}/context${force ? "?force=true" : ""}`, {}),
+  transitionTask: (taskId: string, status: TaskStatus, ifVersion: number) =>
+    postInkdeskJson<DevelopmentTask>(`/tasks/${encodeURIComponent(taskId)}/transition`, { status, ifVersion }),
   subscribeToGraphEvents,
-  subscribeToRunEvents
+  subscribeToRunEvents,
+  subscribeToKnowledgeEvents,
+  subscribeToTaskEvents
 };

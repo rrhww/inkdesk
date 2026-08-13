@@ -6,7 +6,7 @@ import { expect, test } from "@playwright/test";
 test("renders and reads the live Vault Markdown graph", async ({ page }, testInfo) => {
   test.setTimeout(90_000);
 
-  await page.goto("/app/wiki");
+  await page.goto("/app/wiki/graph");
   await expect(page.getByText(/^GRAPH SYNC ACTIVE \/ \d+ NODES$/)).toBeVisible({ timeout: 60_000 });
 
   const nodes = page.locator(".react-flow__node");
@@ -86,7 +86,7 @@ test("keeps the live graph and reader usable on a narrow viewport", async ({ pag
   test.setTimeout(90_000);
   await page.setViewportSize({ width: 390, height: 844 });
 
-  await page.goto("/app/wiki");
+  await page.goto("/app/wiki/graph");
   await expect(page.getByText(/^GRAPH SYNC ACTIVE \/ \d+ NODES$/)).toBeVisible({ timeout: 60_000 });
   await expect.poll(() => page.locator(".react-flow__node").count()).toBeGreaterThan(5);
 
@@ -115,7 +115,7 @@ test("keeps the live graph and reader usable on a narrow viewport", async ({ pag
 
 test("disables graph focus motion when reduced motion is requested", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
-  await page.goto("/app/wiki");
+  await page.goto("/app/wiki/graph");
   await expect(page.getByText(/^GRAPH SYNC ACTIVE \/ \d+ NODES$/)).toBeVisible({ timeout: 60_000 });
 
   const search = page.getByRole("combobox", { name: "Search graph nodes" });
@@ -137,7 +137,7 @@ test("locates graph nodes and renders Mermaid from live Vault Markdown", async (
   const probePath = path.resolve(process.cwd(), "..", "server", "vault", "wiki", "mermaid-live-probe.md");
 
   await rm(probePath, { force: true });
-  await page.goto("/app/wiki");
+  await page.goto("/app/wiki/graph");
   await expect(page.getByText(/^GRAPH SYNC ACTIVE \/ \d+ NODES$/)).toBeVisible({ timeout: 60_000 });
 
   const search = page.getByRole("combobox", { name: "Search graph nodes" });
@@ -182,7 +182,7 @@ test("applies Watchdog graph updates without reloading the page", async ({ page 
   const probePath = path.resolve(process.cwd(), "..", "server", "vault", "wiki", "sse-live-probe.md");
 
   await rm(probePath, { force: true });
-  await page.goto("/app/wiki");
+  await page.goto("/app/wiki/graph");
   await expect(page.getByText(/^GRAPH SYNC ACTIVE \/ \d+ NODES$/)).toBeVisible({ timeout: 60_000 });
   const nodes = page.locator(".react-flow__node");
   const baselineNodeCount = await nodes.count();
@@ -209,7 +209,7 @@ test("applies Watchdog graph updates without reloading the page", async ({ page 
 
 test("groups code nodes and reduces graph noise through view modes and semantic zoom", async ({ page }, testInfo) => {
   test.setTimeout(90_000);
-  await page.goto("/app/wiki");
+  await page.goto("/app/wiki/graph");
   await expect(page.getByText(/^GRAPH SYNC ACTIVE \/ \d+ NODES$/)).toBeVisible({ timeout: 60_000 });
 
   const viewControl = page.getByRole("group", { name: "Graph view" });

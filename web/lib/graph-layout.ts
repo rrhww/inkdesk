@@ -1,5 +1,5 @@
 import dagre, { type Graph } from "@dagrejs/dagre";
-import type { Edge, Node } from "reactflow";
+import type { Edge, Node } from "@xyflow/react";
 
 import type { GraphSnapshot, GraphSnapshotEdge, GraphSnapshotNode } from "@/lib/server-api";
 
