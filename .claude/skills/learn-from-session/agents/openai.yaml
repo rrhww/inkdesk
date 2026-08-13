@@ -1,4 +1,0 @@
-interface:
-  display_name: "Learn From Session"
-  short_description: "Turn coding sessions into active learning reports"
-  default_prompt: "Use $learn-from-session to turn this coding session into an interactive HTML learning workbook."
